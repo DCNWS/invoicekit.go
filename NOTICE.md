@@ -102,13 +102,15 @@ unmodified so the reader is tested against files a real producer wrote. The
 static site serves both of them, with `invoice-model.json`, from `samples/` as
 starting points for the generator, so this notice ships alongside them.
 
-`js/test/fixtures/hybrid-a3.pdf` and `js/test/fixtures/hybrid-plain.pdf` are
-those two files with an invoice attached by our own `einv embed`, using the
-sample in `testdata/samples/cii-xrechnung.xml`. They are reproducible:
+`testdata/hybrid-a3.pdf` and `testdata/hybrid-plain.pdf` are those two files
+with an invoice attached by our own `einv embed`, using the sample in
+`testdata/samples/cii-xrechnung.xml`. The TypeScript package
+([`invoicekit.ts`](https://github.com/DCNWS/invoicekit.ts)) ships the same two
+files byte for byte under `test/fixtures/`. They are reproducible:
 
 ```
 go run ./cmd/einv embed -now 2026-10-31T09:00:00Z \
-  -o js/test/fixtures/hybrid-a3.pdf testdata/invoice-pdfa3.pdf testdata/samples/cii-xrechnung.xml
+  -o testdata/hybrid-a3.pdf testdata/invoice-pdfa3.pdf testdata/samples/cii-xrechnung.xml
 ```
 
 The `-now` flag pins the timestamps, so rebuilding them byte-for-byte is a
