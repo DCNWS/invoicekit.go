@@ -84,8 +84,9 @@ func usage() {
 	fmt.Fprint(os.Stderr, `einv `+version+` - EN 16931 invoice validation (CII and UBL), pure Go
 
 Usage:
-  einv validate [-json] [-max N] [-cius NAME] [-profile NAME] <file|->...
-                                              validate documents
+  einv validate [-json] [-max N] [-syntax cii|ubl] [-phases a,b]
+                                              [-cius NAME] [-profile NAME]
+                                              <file|->...  validate documents
   einv gen [-syntax S] [-o out] [-cius NAME] [-profile NAME] <file|->
                                               render an invoice model (JSON)
   einv parse [-o out] <file|->                read a document as an invoice

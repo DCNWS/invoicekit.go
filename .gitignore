@@ -7,3 +7,6 @@
 *.test
 /bin/
 .DS_Store
+
+# wasm build output
+/wasm/

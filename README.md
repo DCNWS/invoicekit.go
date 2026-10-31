@@ -12,15 +12,16 @@ evaluator and Schematron runner written from scratch in Go, with the official
 rule sets embedded.
 
 ```
-go get github.com/dcnws/invoicekit.go
+go get github.com/dcnws/invoicekit.go   # the library
+go install github.com/dcnws/invoicekit.go/cmd/einv@latest   # the `einv` tool
 ```
 
-The same engine ships as the `einv` command line tool in this repository and as
-WebAssembly in [`invoicekit.ts`](https://github.com/dcnws/invoicekit.ts), so a Go
-service, a CI pipeline and a browser tab all give the same verdict from the same
-code. See [Command line](#command-line).
+The module path ends in `.go` and the package is called `einvoice`, so an import
+names one and the code uses the other:
 
 ```go
+import einvoice "github.com/dcnws/invoicekit.go"
+
 res, err := einvoice.Validate(data, einvoice.Options{})   // syntax auto-detected
 if err != nil {
     return err
@@ -222,11 +223,11 @@ The PDF parser compiles too, so a hybrid invoice can be audited and taken apart
 client-side — no upload of the PDF pages either, which is where the client name
 and bank details are.
 
-The WebAssembly entry point is `cmd/einv-wasm`: build it and the TypeScript
-package wraps it.
+The WebAssembly entry point is `cmd/einv-wasm`, and `scripts/build-wasm.sh`
+builds it with the JS glue it needs:
 
 ```
-GOOS=js GOARCH=wasm go build -o einv.wasm ./cmd/einv-wasm
+./scripts/build-wasm.sh        # -> wasm/einv.wasm (9.4 MB, 2.3 MB gzipped) + wasm_exec.js
 ```
 
 The TypeScript package, its tests and its npm packaging live in
