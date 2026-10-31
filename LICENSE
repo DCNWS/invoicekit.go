@@ -1,0 +1,31 @@
+The Go source code in this repository (everything except the Schematron files
+under internal/en16931/schemas/ and the texts under LICENSES/) is:
+
+Copyright (c) 2026 Winston Hale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The validation rule sets shipped under internal/en16931/schemas/ are not MIT
+licensed and keep their own terms: the CEN/EN 16931 Schematron artefacts are
+copyright the European Union under the EUPL v1.2 (LICENSES/EUPL-1.2.txt), the
+XRechnung CIUS rule sets are copyright the coordinate IT office of the German
+federal administration under the Apache License 2.0 (LICENSES/Apache-2.0.txt),
+and the Peppol BIS Billing 3.0 rule sets are copyright OpenPeppol AISBL and CEN,
+redistributed unmodified under the notice in LICENSES/Peppol-BIS-3.0-notice.txt.
+See NOTICE.md.

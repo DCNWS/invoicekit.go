@@ -1,0 +1,857 @@
+[
+  {
+    "id": "BR-01",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-02",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-03",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-04",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-05",
+    "kind": "official-testset",
+    "what": "BR-CO-17.xml#1"
+  },
+  {
+    "id": "BR-06",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-07",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-08",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-09",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-10",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-11",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-12",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-13",
+    "kind": "corpus",
+    "what": "BR-12+BR-13+BR-14+BR-15+BR-CO-10+BR-CO-13--SpecifiedTradeSettlementHeaderMonetarySummation_empty.xml"
+  },
+  {
+    "id": "BR-14",
+    "kind": "corpus",
+    "what": "BR-12+BR-13+BR-14+BR-15+BR-CO-10+BR-CO-13--SpecifiedTradeSettlementHeaderMonetarySummation_empty.xml"
+  },
+  {
+    "id": "BR-15",
+    "kind": "corpus",
+    "what": "BR-12+BR-13+BR-14+BR-15+BR-CO-10+BR-CO-13--SpecifiedTradeSettlementHeaderMonetarySummation_empty.xml"
+  },
+  {
+    "id": "BR-16",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-17",
+    "kind": "corpus",
+    "what": "BR-17--PayeeTradeParty_text0.xml"
+  },
+  {
+    "id": "BR-18",
+    "kind": "corpus",
+    "what": "BR-18+BR-19+BR-20+BR-56--SellerTaxRepresentativeTradeParty_text0.xml"
+  },
+  {
+    "id": "BR-19",
+    "kind": "corpus",
+    "what": "BR-18+BR-19+BR-20+BR-56--SellerTaxRepresentativeTradeParty_text0.xml"
+  },
+  {
+    "id": "BR-20",
+    "kind": "corpus",
+    "what": "BR-18+BR-19+BR-20+BR-56--SellerTaxRepresentativeTradeParty_text0.xml"
+  },
+  {
+    "id": "BR-21",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-22",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-23",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-24",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-25",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-26",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-27",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-28",
+    "kind": "corpus",
+    "what": "BR-28--ChargeAmount_empty.xml"
+  },
+  {
+    "id": "BR-29",
+    "kind": "corpus",
+    "what": "BR-29--StartDateTime_text0.xml"
+  },
+  {
+    "id": "BR-30",
+    "kind": "corpus",
+    "what": "BR-30--StartDateTime_text0.xml"
+  },
+  {
+    "id": "BR-31",
+    "kind": "corpus",
+    "what": "BR-31+BR-CO-11+BR-S-08--ActualAmount_del.xml"
+  },
+  {
+    "id": "BR-32",
+    "kind": "corpus",
+    "what": "BR-32+BR-S-08--CategoryTradeTax_del.xml"
+  },
+  {
+    "id": "BR-33",
+    "kind": "corpus",
+    "what": "BR-33+BR-CO-21--Reason_del.xml"
+  },
+  {
+    "id": "BR-36",
+    "kind": "corpus",
+    "what": "BR-36+BR-CO-12+BR-S-08--ActualAmount_del.xml"
+  },
+  {
+    "id": "BR-37",
+    "kind": "corpus",
+    "what": "BR-37+BR-S-08--CategoryTradeTax_text0.xml"
+  },
+  {
+    "id": "BR-38",
+    "kind": "corpus",
+    "what": "BR-38+BR-CO-22--Reason_del.xml"
+  },
+  {
+    "id": "BR-41",
+    "kind": "corpus",
+    "what": "BR-41--ActualAmount_del.xml"
+  },
+  {
+    "id": "BR-42",
+    "kind": "corpus",
+    "what": "BR-42+BR-CO-23--Reason_del.xml"
+  },
+  {
+    "id": "BR-43",
+    "kind": "corpus",
+    "what": "BR-43--ActualAmount_del.xml"
+  },
+  {
+    "id": "BR-44",
+    "kind": "corpus",
+    "what": "BR-44+BR-CO-24--Reason_del.xml"
+  },
+  {
+    "id": "BR-45",
+    "kind": "corpus",
+    "what": "BR-45+BR-46+BR-47+BR-48+BR-CO-17+BR-Z-01--ApplicableTradeTax_text1.xml"
+  },
+  {
+    "id": "BR-46",
+    "kind": "corpus",
+    "what": "BR-45+BR-46+BR-47+BR-48+BR-CO-17+BR-Z-01--ApplicableTradeTax_text1.xml"
+  },
+  {
+    "id": "BR-47",
+    "kind": "corpus",
+    "what": "BR-45+BR-46+BR-47+BR-48+BR-CO-17+BR-Z-01--ApplicableTradeTax_text1.xml"
+  },
+  {
+    "id": "BR-48",
+    "kind": "corpus",
+    "what": "BR-45+BR-46+BR-47+BR-48+BR-CO-17+BR-Z-01--ApplicableTradeTax_text1.xml"
+  },
+  {
+    "id": "BR-49",
+    "kind": "corpus",
+    "what": "BR-49--SpecifiedTradeSettlementPaymentMeans_text0.xml"
+  },
+  {
+    "id": "BR-50",
+    "kind": "corpus",
+    "what": "BR-50+BR-61+CII-SR-470--PayeePartyCreditorFinancialAccount_text3.xml"
+  },
+  {
+    "id": "BR-52",
+    "kind": "corpus",
+    "what": "BR-52--AdditionalReferencedDocument_text3.xml"
+  },
+  {
+    "id": "BR-53",
+    "kind": "corpus",
+    "what": "BR-53+BR-CL-05+BR-DEC-15--TaxCurrencyCode_text2.xml"
+  },
+  {
+    "id": "BR-54",
+    "kind": "corpus",
+    "what": "BR-54+CII-SR-069+CII-SR-072--ApplicableProductCharacteristic_empty.xml"
+  },
+  {
+    "id": "BR-55",
+    "kind": "corpus",
+    "what": "BR-55--InvoiceReferencedDocument_text2.xml"
+  },
+  {
+    "id": "BR-56",
+    "kind": "corpus",
+    "what": "BR-18+BR-19+BR-20+BR-56--SellerTaxRepresentativeTradeParty_text0.xml"
+  },
+  {
+    "id": "BR-57",
+    "kind": "corpus",
+    "what": "BR-57--PostalTradeAddress_text1.xml"
+  },
+  {
+    "id": "BR-61",
+    "kind": "corpus",
+    "what": "BR-50+BR-61+CII-SR-470--PayeePartyCreditorFinancialAccount_text3.xml"
+  },
+  {
+    "id": "BR-62",
+    "kind": "corpus",
+    "what": "BR-62--URIUniversalCommunication_empty.xml"
+  },
+  {
+    "id": "BR-63",
+    "kind": "corpus",
+    "what": "BR-63--URIUniversalCommunication_text2.xml"
+  },
+  {
+    "id": "BR-64",
+    "kind": "corpus",
+    "what": "BR-64+CII-SR-046--GlobalID_attr-schemeID_del.xml"
+  },
+  {
+    "id": "BR-65",
+    "kind": "corpus",
+    "what": "BR-65--ClassCode_attr-listID_del.xml"
+  },
+  {
+    "id": "BR-CL-01",
+    "kind": "corpus",
+    "what": "BR-CL-01--TypeCode_text4.xml"
+  },
+  {
+    "id": "BR-CL-03",
+    "kind": "corpus",
+    "what": "BR-CL-03--TaxTotalAmount_attr-currencyID_junk.xml"
+  },
+  {
+    "id": "BR-CL-04",
+    "kind": "corpus",
+    "what": "BR-05+BR-CL-04--InvoiceCurrencyCode_empty.xml"
+  },
+  {
+    "id": "BR-CL-05",
+    "kind": "corpus",
+    "what": "BR-53+BR-CL-05+BR-DEC-15--TaxCurrencyCode_text2.xml"
+  },
+  {
+    "id": "BR-CL-07",
+    "kind": "corpus",
+    "what": "BR-CL-07--ReferenceTypeCode_empty.xml"
+  },
+  {
+    "id": "BR-CL-08",
+    "kind": "corpus",
+    "what": "BR-CL-08--SubjectCode_empty.xml"
+  },
+  {
+    "id": "BR-CL-10",
+    "kind": "corpus",
+    "what": "BR-CL-10--GlobalID_attr-schemeID_junk.xml"
+  },
+  {
+    "id": "BR-CL-11",
+    "kind": "corpus",
+    "what": "BR-CL-11--ID_attr-schemeID_junk.xml"
+  },
+  {
+    "id": "BR-CL-13",
+    "kind": "corpus",
+    "what": "BR-CL-13--ClassCode_attr-listID_junk.xml"
+  },
+  {
+    "id": "BR-CL-14",
+    "kind": "corpus",
+    "what": "BR-09+BR-CL-14--CountryID_empty.xml"
+  },
+  {
+    "id": "BR-CL-15",
+    "kind": "corpus",
+    "what": "BR-CL-15--ID_empty.xml"
+  },
+  {
+    "id": "BR-CL-16",
+    "kind": "corpus",
+    "what": "BR-CL-16+CII-SR-467--TypeCode_empty.xml"
+  },
+  {
+    "id": "BR-CL-17",
+    "kind": "corpus",
+    "what": "BR-CL-17+BR-O-08+BR-O-13+BR-O-14--CategoryCode_text0.xml"
+  },
+  {
+    "id": "BR-CL-18",
+    "kind": "corpus",
+    "what": "BR-CL-18+BR-O-08+BR-O-11+BR-O-12--CategoryCode_empty.xml"
+  },
+  {
+    "id": "BR-CL-19",
+    "kind": "corpus",
+    "what": "BR-CL-19--ReasonCode_text1.xml"
+  },
+  {
+    "id": "BR-CL-20",
+    "kind": "corpus",
+    "what": "BR-CL-20--ReasonCode_text0.xml"
+  },
+  {
+    "id": "BR-CL-21",
+    "kind": "corpus",
+    "what": "BR-CL-21--GlobalID_attr-schemeID_junk.xml"
+  },
+  {
+    "id": "BR-CL-22",
+    "kind": "corpus",
+    "what": "BR-CL-22--ExemptionReasonCode_empty.xml"
+  },
+  {
+    "id": "BR-CL-23",
+    "kind": "corpus",
+    "what": "BR-CL-23--BilledQuantity_attr-unitCode_junk.xml"
+  },
+  {
+    "id": "BR-CL-24",
+    "kind": "corpus",
+    "what": "BR-CL-24--AttachmentBinaryObject_attr-mimeCode_junk.xml"
+  },
+  {
+    "id": "BR-CL-25",
+    "kind": "corpus",
+    "what": "BR-CL-25--URIID_attr-schemeID_junk.xml"
+  },
+  {
+    "id": "BR-CL-26",
+    "kind": "corpus",
+    "what": "BR-CL-26--GlobalID_attr-schemeID_junk.xml"
+  },
+  {
+    "id": "BR-CO-04",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-CO-09",
+    "kind": "corpus",
+    "what": "BR-CO-09--ID_text0.xml"
+  },
+  {
+    "id": "BR-CO-10",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-CO-11",
+    "kind": "corpus",
+    "what": "BR-31+BR-CO-11+BR-S-08--ActualAmount_del.xml"
+  },
+  {
+    "id": "BR-CO-12",
+    "kind": "corpus",
+    "what": "BR-36+BR-CO-12+BR-S-08--ActualAmount_del.xml"
+  },
+  {
+    "id": "BR-CO-13",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-CO-14",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#1"
+  },
+  {
+    "id": "BR-CO-15",
+    "kind": "official-testset",
+    "what": "BR-CO-15-2.xml#2"
+  },
+  {
+    "id": "BR-CO-16",
+    "kind": "corpus",
+    "what": "BR-CO-15+BR-CO-16--GrandTotalAmount_text0.xml"
+  },
+  {
+    "id": "BR-CO-17",
+    "kind": "official-testset",
+    "what": "BR-CO-17.xml#4"
+  },
+  {
+    "id": "BR-CO-18",
+    "kind": "corpus",
+    "what": "BR-05+BR-CO-18+BR-Z-01--ApplicableHeaderTradeSettlement_text4.xml"
+  },
+  {
+    "id": "BR-CO-19",
+    "kind": "corpus",
+    "what": "BR-CO-19--BillingSpecifiedPeriod_empty.xml"
+  },
+  {
+    "id": "BR-CO-20",
+    "kind": "corpus",
+    "what": "BR-CO-20--BillingSpecifiedPeriod_text1.xml"
+  },
+  {
+    "id": "BR-CO-21",
+    "kind": "corpus",
+    "what": "BR-33+BR-CO-21--Reason_del.xml"
+  },
+  {
+    "id": "BR-CO-22",
+    "kind": "corpus",
+    "what": "BR-38+BR-CO-22--Reason_del.xml"
+  },
+  {
+    "id": "BR-CO-23",
+    "kind": "corpus",
+    "what": "BR-42+BR-CO-23--Reason_del.xml"
+  },
+  {
+    "id": "BR-CO-24",
+    "kind": "corpus",
+    "what": "BR-44+BR-CO-24--Reason_del.xml"
+  },
+  {
+    "id": "BR-CO-26",
+    "kind": "corpus",
+    "what": "BR-06+BR-08+BR-09+BR-CO-26+BR-S-02+BR-Z-02--SellerTradeParty_text2.xml"
+  },
+  {
+    "id": "BR-DEC-13",
+    "kind": "corpus",
+    "what": "BR-CO-14+BR-DEC-13--TaxTotalAmount_empty.xml"
+  },
+  {
+    "id": "BR-DEC-15",
+    "kind": "corpus",
+    "what": "BR-53+BR-CL-05+BR-DEC-15--TaxCurrencyCode_text2.xml"
+  },
+  {
+    "id": "BR-E-01",
+    "kind": "corpus",
+    "what": "BR-CO-11+BR-CO-12+BR-CO-14+BR-CO-15+BR-E-01+BR-E-08+BR-S-08+CII-SR-469--SupplyChainTradeTransaction_dup.xml"
+  },
+  {
+    "id": "BR-E-02",
+    "kind": "corpus",
+    "what": "BR-06+BR-07+BR-08+BR-09+BR-10+BR-11+BR-E-02+BR-S-02+BR-S-03+BR-S-04--ApplicableHeaderTradeAgreement_empty.xml"
+  },
+  {
+    "id": "BR-E-05",
+    "kind": "corpus",
+    "what": "BR-E-05--RateApplicablePercent_empty.xml"
+  },
+  {
+    "id": "BR-E-08",
+    "kind": "corpus",
+    "what": "BR-CO-11+BR-CO-12+BR-CO-14+BR-CO-15+BR-E-01+BR-E-08+BR-S-08+CII-SR-469--SupplyChainTradeTransaction_dup.xml"
+  },
+  {
+    "id": "BR-E-09",
+    "kind": "corpus",
+    "what": "BR-CO-14+BR-CO-17+BR-E-09--CalculatedAmount_empty.xml"
+  },
+  {
+    "id": "BR-E-10",
+    "kind": "corpus",
+    "what": "BR-E-10--ExemptionReason_del.xml"
+  },
+  {
+    "id": "BR-O-01",
+    "kind": "corpus",
+    "what": "BR-O-01+BR-O-08--SupplyChainTradeTransaction_dup.xml"
+  },
+  {
+    "id": "BR-O-08",
+    "kind": "corpus",
+    "what": "BR-21+BR-22+BR-23+BR-24+BR-25+BR-26+BR-27+BR-CO-04+BR-CO-10+BR-O-08--IncludedSupplyChainTradeLineItem_text4.xml"
+  },
+  {
+    "id": "BR-O-09",
+    "kind": "corpus",
+    "what": "BR-46+BR-CO-17+BR-O-09--CalculatedAmount_del.xml"
+  },
+  {
+    "id": "BR-O-10",
+    "kind": "corpus",
+    "what": "BR-O-10--ExemptionReason_del.xml"
+  },
+  {
+    "id": "BR-O-11",
+    "kind": "corpus",
+    "what": "BR-CL-18+BR-O-08+BR-O-11+BR-O-12--CategoryCode_empty.xml"
+  },
+  {
+    "id": "BR-O-12",
+    "kind": "corpus",
+    "what": "BR-CL-18+BR-O-08+BR-O-11+BR-O-12--CategoryCode_empty.xml"
+  },
+  {
+    "id": "BR-O-13",
+    "kind": "corpus",
+    "what": "BR-CL-17+BR-O-08+BR-O-13+BR-O-14--CategoryCode_text0.xml"
+  },
+  {
+    "id": "BR-O-14",
+    "kind": "corpus",
+    "what": "BR-CL-17+BR-O-08+BR-O-13+BR-O-14--CategoryCode_text0.xml"
+  },
+  {
+    "id": "BR-S-01",
+    "kind": "corpus",
+    "what": "BR-CO-14+BR-CO-18+BR-S-01--ApplicableTradeTax_del.xml"
+  },
+  {
+    "id": "BR-S-02",
+    "kind": "corpus",
+    "what": "BR-06+BR-07+BR-08+BR-09+BR-10+BR-11+BR-E-02+BR-S-02+BR-S-03+BR-S-04--ApplicableHeaderTradeAgreement_empty.xml"
+  },
+  {
+    "id": "BR-S-03",
+    "kind": "corpus",
+    "what": "BR-06+BR-07+BR-08+BR-09+BR-10+BR-11+BR-E-02+BR-S-02+BR-S-03+BR-S-04--ApplicableHeaderTradeAgreement_empty.xml"
+  },
+  {
+    "id": "BR-S-04",
+    "kind": "corpus",
+    "what": "BR-06+BR-07+BR-08+BR-09+BR-10+BR-11+BR-E-02+BR-S-02+BR-S-03+BR-S-04--ApplicableHeaderTradeAgreement_empty.xml"
+  },
+  {
+    "id": "BR-S-05",
+    "kind": "corpus",
+    "what": "BR-S-05+BR-S-08--RateApplicablePercent_text2.xml"
+  },
+  {
+    "id": "BR-S-06",
+    "kind": "corpus",
+    "what": "BR-S-06+BR-S-08--RateApplicablePercent_empty.xml"
+  },
+  {
+    "id": "BR-S-07",
+    "kind": "corpus",
+    "what": "BR-S-07+BR-S-08--RateApplicablePercent_del.xml"
+  },
+  {
+    "id": "BR-S-08",
+    "kind": "official-testset",
+    "what": "BR-CO-17.xml#1"
+  },
+  {
+    "id": "BR-S-09",
+    "kind": "official-testset",
+    "what": "BR-CO-17.xml#2"
+  },
+  {
+    "id": "BR-Z-01",
+    "kind": "corpus",
+    "what": "BR-05+BR-CO-18+BR-Z-01--ApplicableHeaderTradeSettlement_text4.xml"
+  },
+  {
+    "id": "BR-Z-02",
+    "kind": "corpus",
+    "what": "BR-06+BR-07+BR-08+BR-09+BR-10+BR-11+BR-S-02+BR-Z-02--ApplicableHeaderTradeAgreement_empty.xml"
+  },
+  {
+    "id": "BR-Z-05",
+    "kind": "corpus",
+    "what": "BR-Z-05--RateApplicablePercent_del.xml"
+  },
+  {
+    "id": "BR-Z-08",
+    "kind": "corpus",
+    "what": "BR-CO-10+BR-Z-08--LineTotalAmount_empty.xml"
+  },
+  {
+    "id": "BR-Z-09",
+    "kind": "corpus",
+    "what": "BR-46+BR-CO-17+BR-Z-09--CalculatedAmount_del.xml"
+  },
+  {
+    "id": "CII-DT-097",
+    "kind": "corpus",
+    "what": "BR-03+CII-DT-097--DateTimeString_empty.xml"
+  },
+  {
+    "id": "CII-DT-105",
+    "kind": "corpus",
+    "what": "CII-DT-105--AttachmentBinaryObject_attr-mimeCode_del.xml"
+  },
+  {
+    "id": "CII-DT-106",
+    "kind": "corpus",
+    "what": "CII-DT-106--AttachmentBinaryObject_attr-filename_del.xml"
+  },
+  {
+    "id": "CII-SR-003",
+    "kind": "corpus",
+    "what": "CII-SR-003--BusinessProcessSpecifiedDocumentContextParameter_dup.xml"
+  },
+  {
+    "id": "CII-SR-009",
+    "kind": "corpus",
+    "what": "BR-01+CII-SR-009+CII-SR-010--ExchangedDocumentContext_text3.xml"
+  },
+  {
+    "id": "CII-SR-010",
+    "kind": "corpus",
+    "what": "BR-01+CII-SR-009+CII-SR-010--ExchangedDocumentContext_text3.xml"
+  },
+  {
+    "id": "CII-SR-014",
+    "kind": "corpus",
+    "what": "BR-02+BR-03+BR-04+CII-SR-014--ExchangedDocument_text0.xml"
+  },
+  {
+    "id": "CII-SR-030",
+    "kind": "corpus",
+    "what": "CII-SR-030--Content_dup.xml"
+  },
+  {
+    "id": "CII-SR-039",
+    "kind": "corpus",
+    "what": "CII-SR-039+CII-SR-040--IncludedNote_dup.xml"
+  },
+  {
+    "id": "CII-SR-040",
+    "kind": "corpus",
+    "what": "CII-SR-039+CII-SR-040--IncludedNote_dup.xml"
+  },
+  {
+    "id": "CII-SR-046",
+    "kind": "corpus",
+    "what": "BR-64+CII-SR-046--GlobalID_attr-schemeID_del.xml"
+  },
+  {
+    "id": "CII-SR-069",
+    "kind": "corpus",
+    "what": "BR-54+CII-SR-069+CII-SR-072--ApplicableProductCharacteristic_empty.xml"
+  },
+  {
+    "id": "CII-SR-072",
+    "kind": "corpus",
+    "what": "BR-54+CII-SR-069+CII-SR-072--ApplicableProductCharacteristic_empty.xml"
+  },
+  {
+    "id": "CII-SR-090",
+    "kind": "corpus",
+    "what": "CII-SR-090--OriginTradeCountry_dup.xml"
+  },
+  {
+    "id": "CII-SR-119",
+    "kind": "corpus",
+    "what": "CII-SR-119--ChargeIndicator_empty.xml"
+  },
+  {
+    "id": "CII-SR-439",
+    "kind": "corpus",
+    "what": "BR-26+BR-27+CII-SR-439--SpecifiedLineTradeAgreement_text0.xml"
+  },
+  {
+    "id": "CII-SR-440",
+    "kind": "corpus",
+    "what": "CII-SR-440--ActualAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-441",
+    "kind": "corpus",
+    "what": "CII-SR-439+CII-SR-441--NetPriceProductTradePrice_dup.xml"
+  },
+  {
+    "id": "CII-SR-452",
+    "kind": "corpus",
+    "what": "CII-SR-452+CII-SR-453+CII-SR-497--SpecifiedTradePaymentTerms_dup.xml"
+  },
+  {
+    "id": "CII-SR-453",
+    "kind": "corpus",
+    "what": "CII-SR-452+CII-SR-453+CII-SR-497--SpecifiedTradePaymentTerms_dup.xml"
+  },
+  {
+    "id": "CII-SR-454",
+    "kind": "corpus",
+    "what": "BR-24+BR-CO-04+BR-CO-10+BR-S-08+CII-SR-454--SpecifiedLineTradeSettlement_empty.xml"
+  },
+  {
+    "id": "CII-SR-455",
+    "kind": "corpus",
+    "what": "CII-SR-455+CII-SR-459--SellerTradeParty_dup.xml"
+  },
+  {
+    "id": "CII-SR-456",
+    "kind": "corpus",
+    "what": "CII-SR-456+CII-SR-460--BuyerTradeParty_dup.xml"
+  },
+  {
+    "id": "CII-SR-458",
+    "kind": "corpus",
+    "what": "CII-SR-458--AdditionalReferencedDocument_dup.xml"
+  },
+  {
+    "id": "CII-SR-459",
+    "kind": "corpus",
+    "what": "CII-SR-455+CII-SR-459--SellerTradeParty_dup.xml"
+  },
+  {
+    "id": "CII-SR-460",
+    "kind": "corpus",
+    "what": "CII-SR-456+CII-SR-460--BuyerTradeParty_dup.xml"
+  },
+  {
+    "id": "CII-SR-461",
+    "kind": "corpus",
+    "what": "BR-CO-14+CII-SR-461--ApplicableTradeTax_dup.xml"
+  },
+  {
+    "id": "CII-SR-463",
+    "kind": "corpus",
+    "what": "CII-SR-463--SpecifiedTradeAllowanceCharge_text1.xml"
+  },
+  {
+    "id": "CII-SR-467",
+    "kind": "corpus",
+    "what": "BR-CL-16+CII-SR-467--TypeCode_empty.xml"
+  },
+  {
+    "id": "CII-SR-469",
+    "kind": "corpus",
+    "what": "BR-CO-11+BR-CO-12+BR-CO-14+BR-CO-15+BR-E-01+BR-E-08+BR-S-08+CII-SR-469--SupplyChainTradeTransaction_dup.xml"
+  },
+  {
+    "id": "CII-SR-470",
+    "kind": "corpus",
+    "what": "BR-50+BR-61+CII-SR-470--PayeePartyCreditorFinancialAccount_text3.xml"
+  },
+  {
+    "id": "CII-SR-472",
+    "kind": "corpus",
+    "what": "CII-SR-472--CategoryTradeTax_dup.xml"
+  },
+  {
+    "id": "CII-SR-473",
+    "kind": "corpus",
+    "what": "CII-SR-473--ActualAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-474",
+    "kind": "corpus",
+    "what": "CII-SR-474--AdditionalReferencedDocument_dup.xml"
+  },
+  {
+    "id": "CII-SR-475",
+    "kind": "corpus",
+    "what": "CII-SR-475--Name_dup.xml"
+  },
+  {
+    "id": "CII-SR-476",
+    "kind": "corpus",
+    "what": "CII-SR-476--AttachmentBinaryObject_dup.xml"
+  },
+  {
+    "id": "CII-SR-477",
+    "kind": "corpus",
+    "what": "CII-SR-477--LineTotalAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-478",
+    "kind": "corpus",
+    "what": "CII-SR-478--ChargeTotalAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-479",
+    "kind": "corpus",
+    "what": "CII-SR-479--AllowanceTotalAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-480",
+    "kind": "corpus",
+    "what": "CII-SR-480--TaxBasisTotalAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-482",
+    "kind": "corpus",
+    "what": "CII-SR-482--GrandTotalAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-484",
+    "kind": "corpus",
+    "what": "CII-SR-484--TotalPrepaidAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-487",
+    "kind": "corpus",
+    "what": "CII-SR-487--DuePayableAmount_dup.xml"
+  },
+  {
+    "id": "CII-SR-497",
+    "kind": "corpus",
+    "what": "CII-SR-452+CII-SR-453+CII-SR-497--SpecifiedTradePaymentTerms_dup.xml"
+  }
+]

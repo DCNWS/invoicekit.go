@@ -1,0 +1,9 @@
+# build output
+/einv
+/einv.wasm
+/dbg
+/dist/
+/coverage
+*.test
+/bin/
+.DS_Store

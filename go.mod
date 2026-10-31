@@ -1,0 +1,3 @@
+module github.com/dcnws/invoicekit.go
+
+go 1.27.3

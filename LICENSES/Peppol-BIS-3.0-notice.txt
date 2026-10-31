@@ -1,0 +1,38 @@
+Notice for the Peppol BIS Billing 3.0 rule sets shipped under
+internal/en16931/schemas/peppol/
+
+These four Schematron files are the validation artefacts OpenPEPPOL publishes
+for Peppol BIS Billing 3.0, release 3.0.21 (May 2026):
+
+  CEN-EN16931-CII.sch   CEN-EN16931-UBL.sch
+  PEPPOL-EN16931-CII.sch   PEPPOL-EN16931-UBL.sch
+
+Source: https://github.com/OpenPeppol/peppol-bis-invoice-3  (directory rules/sch)
+
+Upstream publishes no licence file with them. What upstream does state, in the
+profile's own "Statement of copyright" (guide/profile/introduction.adoc and
+guide/bis/introduction.adoc):
+
+  The copyright of CEN/EN 16931:2017 is owned by CEN and its members - the
+  European National Standards Bodies. A copy of CEN/EN 16931-1:2017 may be
+  obtained free of charge from any CEN member.
+
+  OpenPeppol AISBL holds the copyright of this Peppol BIS, developed and
+  published subject to the conditions of the agreement between the European
+  Commission and CEN allowing derivate works to be developed and distributed
+  with no additional licensing requirements. CEN and the National Standards
+  Bodies bears no liability from the content and implementation of this Peppol
+  BIS.
+
+Each artefact file carries its own header, which we keep verbatim:
+
+  This schematron uses business terms defined the CEN/EN16931-1 and is
+  reproduced with permission from CEN. CEN bears no liability from the use of
+  the content and implementation of this schematron and gives no warranties
+  expressed or implied for any purpose.
+
+Redistribution here: the four files are byte-for-byte the released files, gzipped
+and nothing else. Peppol BIS Billing 3.0 is a trademark of OpenPEPPOL; the rule
+sets are used to validate documents, not to present this software as OpenPEPPOL's
+or as endorsed by it. Anyone validating live traffic should read the current
+terms with OpenPEPPOL directly.

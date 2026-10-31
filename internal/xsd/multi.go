@@ -1,0 +1,35 @@
+package xsd
+
+import (
+	"fmt"
+	"os"
+	"path"
+)
+
+// LoadMulti parses several schema documents into one model, which is how both
+// UBL document types share a single component set.
+func LoadMulti(dir string, files []string) (*Model, error) {
+	r := &reader{
+		m:      NewModel(),
+		loaded: map[string]bool{},
+		simple: map[string]bool{},
+	}
+	l := FileLoader(dir)
+	for _, f := range files {
+		src, err := os.ReadFile(f)
+		if err != nil {
+			return nil, fmt.Errorf("read %s: %w", f, err)
+		}
+		if err := r.file(f, src, l, nil); err != nil {
+			return nil, err
+		}
+	}
+	if err := r.resolve(); err != nil {
+		return nil, err
+	}
+	r.m.Source = fmt.Sprintf("%d schema files in %s, %d components", len(r.loaded), dir, len(r.m.Types)+len(r.m.Decls))
+	return r.m, nil
+}
+
+// Dir returns the directory of a path, for provenance strings.
+func Dir(p string) string { return path.Dir(p) }

@@ -1,0 +1,1357 @@
+[
+  {
+    "id": "BR-01",
+    "kind": "official-testset",
+    "what": "BR-01.xml#2"
+  },
+  {
+    "id": "BR-02",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-03",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-04",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-05",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-06",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-07",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-08",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-09",
+    "kind": "official-testset",
+    "what": "BR-08.xml#2"
+  },
+  {
+    "id": "BR-10",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-11",
+    "kind": "official-testset",
+    "what": "BR-10.xml#2"
+  },
+  {
+    "id": "BR-12",
+    "kind": "official-testset",
+    "what": "BR-12.xml#2"
+  },
+  {
+    "id": "BR-13",
+    "kind": "official-testset",
+    "what": "BR-12.xml#1"
+  },
+  {
+    "id": "BR-14",
+    "kind": "official-testset",
+    "what": "BR-12.xml#1"
+  },
+  {
+    "id": "BR-15",
+    "kind": "official-testset",
+    "what": "BR-12.xml#1"
+  },
+  {
+    "id": "BR-16",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-17",
+    "kind": "official-testset",
+    "what": "BR-17.xml#2"
+  },
+  {
+    "id": "BR-18",
+    "kind": "official-testset",
+    "what": "BR-18.xml#2"
+  },
+  {
+    "id": "BR-19",
+    "kind": "official-testset",
+    "what": "BR-18.xml#1"
+  },
+  {
+    "id": "BR-20",
+    "kind": "official-testset",
+    "what": "BR-19.xml#2"
+  },
+  {
+    "id": "BR-21",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-22",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-23",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-24",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-25",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-26",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-27",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-28",
+    "kind": "official-testset",
+    "what": "BR-28.xml#3"
+  },
+  {
+    "id": "BR-29",
+    "kind": "official-testset",
+    "what": "BR-29.xml#3"
+  },
+  {
+    "id": "BR-30",
+    "kind": "official-testset",
+    "what": "BR-30.xml#3"
+  },
+  {
+    "id": "BR-31",
+    "kind": "official-testset",
+    "what": "BR-31.xml#2"
+  },
+  {
+    "id": "BR-32",
+    "kind": "official-testset",
+    "what": "BR-31.xml#1"
+  },
+  {
+    "id": "BR-33",
+    "kind": "official-testset",
+    "what": "BR-31.xml#1"
+  },
+  {
+    "id": "BR-36",
+    "kind": "official-testset",
+    "what": "BR-36.xml#2"
+  },
+  {
+    "id": "BR-37",
+    "kind": "official-testset",
+    "what": "BR-36.xml#1"
+  },
+  {
+    "id": "BR-38",
+    "kind": "official-testset",
+    "what": "BR-36.xml#1"
+  },
+  {
+    "id": "BR-41",
+    "kind": "official-testset",
+    "what": "BR-41.xml#2"
+  },
+  {
+    "id": "BR-42",
+    "kind": "official-testset",
+    "what": "BR-41.xml#1"
+  },
+  {
+    "id": "BR-43",
+    "kind": "official-testset",
+    "what": "BR-43.xml#2"
+  },
+  {
+    "id": "BR-44",
+    "kind": "official-testset",
+    "what": "BR-43.xml#1"
+  },
+  {
+    "id": "BR-45",
+    "kind": "official-testset",
+    "what": "BR-45.xml#2"
+  },
+  {
+    "id": "BR-46",
+    "kind": "official-testset",
+    "what": "BR-45.xml#1"
+  },
+  {
+    "id": "BR-47",
+    "kind": "official-testset",
+    "what": "BR-45.xml#1"
+  },
+  {
+    "id": "BR-48",
+    "kind": "official-testset",
+    "what": "BR-45.xml#1"
+  },
+  {
+    "id": "BR-49",
+    "kind": "official-testset",
+    "what": "BR-49.xml#2"
+  },
+  {
+    "id": "BR-50",
+    "kind": "official-testset",
+    "what": "BR-50.xml#4"
+  },
+  {
+    "id": "BR-51",
+    "kind": "official-testset",
+    "what": "BR-51.xml#2"
+  },
+  {
+    "id": "BR-52",
+    "kind": "official-testset",
+    "what": "BR-52.xml#2"
+  },
+  {
+    "id": "BR-53",
+    "kind": "official-testset",
+    "what": "BR-53.xml#2"
+  },
+  {
+    "id": "BR-54",
+    "kind": "official-testset",
+    "what": "BR-54.xml#2"
+  },
+  {
+    "id": "BR-55",
+    "kind": "official-testset",
+    "what": "BR-55.xml#2"
+  },
+  {
+    "id": "BR-56",
+    "kind": "official-testset",
+    "what": "BR-18.xml#1"
+  },
+  {
+    "id": "BR-57",
+    "kind": "official-testset",
+    "what": "BR-57.xml#2"
+  },
+  {
+    "id": "BR-61",
+    "kind": "official-testset",
+    "what": "BR-50.xml#4"
+  },
+  {
+    "id": "BR-62",
+    "kind": "official-testset",
+    "what": "BR-62.xml#2"
+  },
+  {
+    "id": "BR-63",
+    "kind": "official-testset",
+    "what": "BR-63.xml#2"
+  },
+  {
+    "id": "BR-64",
+    "kind": "official-testset",
+    "what": "BR-64.xml#2"
+  },
+  {
+    "id": "BR-65",
+    "kind": "official-testset",
+    "what": "BR-65.xml#2"
+  },
+  {
+    "id": "BR-AE-01",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#5"
+  },
+  {
+    "id": "BR-AE-02",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-03",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-04",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-05",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-06",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-07",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-08",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-09",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-AE-10",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#1"
+  },
+  {
+    "id": "BR-CL-01",
+    "kind": "official-testset",
+    "what": "BR-04.xml#1"
+  },
+  {
+    "id": "BR-CL-03",
+    "kind": "official-testset",
+    "what": "BR-24.xml#1"
+  },
+  {
+    "id": "BR-CL-04",
+    "kind": "official-testset",
+    "what": "BR-05.xml#1"
+  },
+  {
+    "id": "BR-CL-05",
+    "kind": "official-testset",
+    "what": "BR-CL-05.xml#2"
+  },
+  {
+    "id": "BR-CL-06",
+    "kind": "official-testset",
+    "what": "BR-CL-06.xml#2"
+  },
+  {
+    "id": "BR-CL-07",
+    "kind": "official-testset",
+    "what": "BR-CL-07.xml#3"
+  },
+  {
+    "id": "BR-CL-10",
+    "kind": "official-testset",
+    "what": "BR-CL-10.xml#2"
+  },
+  {
+    "id": "BR-CL-11",
+    "kind": "official-testset",
+    "what": "BR-CL-11.xml#2"
+  },
+  {
+    "id": "BR-CL-13",
+    "kind": "official-testset",
+    "what": "BR-65.xml#1"
+  },
+  {
+    "id": "BR-CL-14",
+    "kind": "official-testset",
+    "what": "BR-CL-14.xml#2"
+  },
+  {
+    "id": "BR-CL-15",
+    "kind": "official-testset",
+    "what": "BR-CL-15.xml#2"
+  },
+  {
+    "id": "BR-CL-16",
+    "kind": "official-testset",
+    "what": "BR-CL-16.xml#2"
+  },
+  {
+    "id": "BR-CL-17",
+    "kind": "official-testset",
+    "what": "BR-CL-17.xml#2"
+  },
+  {
+    "id": "BR-CL-18",
+    "kind": "official-testset",
+    "what": "BR-CL-18.xml#2"
+  },
+  {
+    "id": "BR-CL-19",
+    "kind": "official-testset",
+    "what": "BR-33.xml#2"
+  },
+  {
+    "id": "BR-CL-20",
+    "kind": "official-testset",
+    "what": "BR-38.xml#2"
+  },
+  {
+    "id": "BR-CL-21",
+    "kind": "official-testset",
+    "what": "BR-64.xml#1"
+  },
+  {
+    "id": "BR-CL-22",
+    "kind": "official-testset",
+    "what": "BR-AE-10.xml#2"
+  },
+  {
+    "id": "BR-CL-23",
+    "kind": "official-testset",
+    "what": "BR-CL-23.xml#2"
+  },
+  {
+    "id": "BR-CL-24",
+    "kind": "official-testset",
+    "what": "BR-CL-24.xml#2"
+  },
+  {
+    "id": "BR-CL-25",
+    "kind": "official-testset",
+    "what": "BR-62.xml#1"
+  },
+  {
+    "id": "BR-CL-26",
+    "kind": "corpus",
+    "what": "BR-CL-26--ID_attr-schemeID_junk.xml"
+  },
+  {
+    "id": "BR-CO-03",
+    "kind": "official-testset",
+    "what": "BR-CO-03.xml#4"
+  },
+  {
+    "id": "BR-CO-04",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "BR-CO-09",
+    "kind": "official-testset",
+    "what": "BR-56.xml#1"
+  },
+  {
+    "id": "BR-CO-10",
+    "kind": "official-testset",
+    "what": "BR-12.xml#1"
+  },
+  {
+    "id": "BR-CO-11",
+    "kind": "official-testset",
+    "what": "BR-CL-03.xml#1"
+  },
+  {
+    "id": "BR-CO-12",
+    "kind": "official-testset",
+    "what": "BR-CL-03.xml#1"
+  },
+  {
+    "id": "BR-CO-13",
+    "kind": "official-testset",
+    "what": "BR-12.xml#1"
+  },
+  {
+    "id": "BR-CO-14",
+    "kind": "official-testset",
+    "what": "BR-45.xml#1"
+  },
+  {
+    "id": "BR-CO-15",
+    "kind": "official-testset",
+    "what": "BR-05.xml#1"
+  },
+  {
+    "id": "BR-CO-16",
+    "kind": "official-testset",
+    "what": "BR-14.xml#1"
+  },
+  {
+    "id": "BR-CO-17",
+    "kind": "official-testset",
+    "what": "BR-45.xml#1"
+  },
+  {
+    "id": "BR-CO-18",
+    "kind": "official-testset",
+    "what": "BR-01.xml#1"
+  },
+  {
+    "id": "BR-CO-19",
+    "kind": "official-testset",
+    "what": "BR-CO-03.xml#3"
+  },
+  {
+    "id": "BR-CO-20",
+    "kind": "official-testset",
+    "what": "BR-CO-20.xml#4"
+  },
+  {
+    "id": "BR-CO-21",
+    "kind": "official-testset",
+    "what": "BR-31.xml#1"
+  },
+  {
+    "id": "BR-CO-22",
+    "kind": "official-testset",
+    "what": "BR-36.xml#1"
+  },
+  {
+    "id": "BR-CO-23",
+    "kind": "official-testset",
+    "what": "BR-41.xml#1"
+  },
+  {
+    "id": "BR-CO-24",
+    "kind": "official-testset",
+    "what": "BR-43.xml#1"
+  },
+  {
+    "id": "BR-CO-26",
+    "kind": "official-testset",
+    "what": "BR-06.xml#1"
+  },
+  {
+    "id": "BR-DEC-09",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-10",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-11",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-12",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-14",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-16",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-17",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-18",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-19",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-20",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-DEC-23",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "BR-E-01",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#5"
+  },
+  {
+    "id": "BR-E-02",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-03",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-04",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-05",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-06",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-07",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-08",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-09",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-E-10",
+    "kind": "official-testset",
+    "what": "BR-E-01.xml#1"
+  },
+  {
+    "id": "BR-G-01",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#5"
+  },
+  {
+    "id": "BR-G-02",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-03",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-04",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-05",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-06",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-07",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-08",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-09",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-G-10",
+    "kind": "official-testset",
+    "what": "BR-G-01.xml#1"
+  },
+  {
+    "id": "BR-IC-01",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#5"
+  },
+  {
+    "id": "BR-IC-02",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-03",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-04",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-05",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-06",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-07",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-08",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-09",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-10",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-11",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IC-12",
+    "kind": "official-testset",
+    "what": "BR-IC-01.xml#1"
+  },
+  {
+    "id": "BR-IG-01",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#5"
+  },
+  {
+    "id": "BR-IG-02",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#1"
+  },
+  {
+    "id": "BR-IG-03",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#1"
+  },
+  {
+    "id": "BR-IG-04",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#1"
+  },
+  {
+    "id": "BR-IG-05",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#1"
+  },
+  {
+    "id": "BR-IG-06",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#1"
+  },
+  {
+    "id": "BR-IG-07",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#1"
+  },
+  {
+    "id": "BR-IG-08",
+    "kind": "official-testset",
+    "what": "BR-IG-08-1.xml#5"
+  },
+  {
+    "id": "BR-IG-09",
+    "kind": "official-testset",
+    "what": "BR-IG-01.xml#1"
+  },
+  {
+    "id": "BR-IG-10",
+    "kind": "official-testset",
+    "what": "BR-IG-10.xml#2"
+  },
+  {
+    "id": "BR-IP-01",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#5"
+  },
+  {
+    "id": "BR-IP-02",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#1"
+  },
+  {
+    "id": "BR-IP-03",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#1"
+  },
+  {
+    "id": "BR-IP-04",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#1"
+  },
+  {
+    "id": "BR-IP-05",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#1"
+  },
+  {
+    "id": "BR-IP-06",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#1"
+  },
+  {
+    "id": "BR-IP-07",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#1"
+  },
+  {
+    "id": "BR-IP-08",
+    "kind": "official-testset",
+    "what": "BR-IP-08-1.xml#5"
+  },
+  {
+    "id": "BR-IP-09",
+    "kind": "official-testset",
+    "what": "BR-IP-01.xml#1"
+  },
+  {
+    "id": "BR-IP-10",
+    "kind": "official-testset",
+    "what": "BR-IP-10.xml#2"
+  },
+  {
+    "id": "BR-O-01",
+    "kind": "official-testset",
+    "what": "BR-O-01.xml#5"
+  },
+  {
+    "id": "BR-O-02",
+    "kind": "official-testset",
+    "what": "BR-O-02.xml#2"
+  },
+  {
+    "id": "BR-O-03",
+    "kind": "official-testset",
+    "what": "BR-O-03.xml#2"
+  },
+  {
+    "id": "BR-O-04",
+    "kind": "official-testset",
+    "what": "BR-O-04.xml#2"
+  },
+  {
+    "id": "BR-O-05",
+    "kind": "official-testset",
+    "what": "BR-O-05.xml#2"
+  },
+  {
+    "id": "BR-O-06",
+    "kind": "official-testset",
+    "what": "BR-O-06.xml#2"
+  },
+  {
+    "id": "BR-O-07",
+    "kind": "official-testset",
+    "what": "BR-O-07.xml#2"
+  },
+  {
+    "id": "BR-O-08",
+    "kind": "official-testset",
+    "what": "BR-48.xml#2"
+  },
+  {
+    "id": "BR-O-09",
+    "kind": "official-testset",
+    "what": "BR-48.xml#2"
+  },
+  {
+    "id": "BR-O-10",
+    "kind": "official-testset",
+    "what": "BR-48.xml#2"
+  },
+  {
+    "id": "BR-O-11",
+    "kind": "official-testset",
+    "what": "BR-O-11.xml#2"
+  },
+  {
+    "id": "BR-O-12",
+    "kind": "official-testset",
+    "what": "BR-O-12.xml#3"
+  },
+  {
+    "id": "BR-O-13",
+    "kind": "official-testset",
+    "what": "BR-O-13.xml#2"
+  },
+  {
+    "id": "BR-O-14",
+    "kind": "official-testset",
+    "what": "BR-O-14.xml#2"
+  },
+  {
+    "id": "BR-S-01",
+    "kind": "official-testset",
+    "what": "BR-32.xml#1"
+  },
+  {
+    "id": "BR-S-02",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#10"
+  },
+  {
+    "id": "BR-S-03",
+    "kind": "official-testset",
+    "what": "BR-32.xml#1"
+  },
+  {
+    "id": "BR-S-04",
+    "kind": "official-testset",
+    "what": "BR-37.xml#1"
+  },
+  {
+    "id": "BR-S-05",
+    "kind": "official-testset",
+    "what": "BR-AE-01.xml#10"
+  },
+  {
+    "id": "BR-S-06",
+    "kind": "official-testset",
+    "what": "BR-32.xml#1"
+  },
+  {
+    "id": "BR-S-07",
+    "kind": "official-testset",
+    "what": "BR-37.xml#1"
+  },
+  {
+    "id": "BR-S-08",
+    "kind": "official-testset",
+    "what": "BR-48.xml#1"
+  },
+  {
+    "id": "BR-S-09",
+    "kind": "official-testset",
+    "what": "BR-47.xml#1"
+  },
+  {
+    "id": "BR-S-10",
+    "kind": "official-testset",
+    "what": "BR-S-10.xml#2"
+  },
+  {
+    "id": "BR-Z-01",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#5"
+  },
+  {
+    "id": "BR-Z-02",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-03",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-04",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-05",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-06",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-07",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-08",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-09",
+    "kind": "official-testset",
+    "what": "BR-Z-01.xml#1"
+  },
+  {
+    "id": "BR-Z-10",
+    "kind": "official-testset",
+    "what": "BR-Z-10.xml#2"
+  },
+  {
+    "id": "UBL-CR-002",
+    "kind": "corpus",
+    "what": "UBL-CR-002--UBLVersionID_empty.xml"
+  },
+  {
+    "id": "UBL-CR-185",
+    "kind": "official-testset",
+    "what": "BR-CL-14.xml#1"
+  },
+  {
+    "id": "UBL-CR-249",
+    "kind": "official-testset",
+    "what": "BR-CL-14.xml#1"
+  },
+  {
+    "id": "UBL-CR-302",
+    "kind": "official-testset",
+    "what": "BR-CL-10.xml#1"
+  },
+  {
+    "id": "UBL-CR-412",
+    "kind": "official-testset",
+    "what": "BR-CO-25.xml#1"
+  },
+  {
+    "id": "UBL-CR-652",
+    "kind": "official-testset",
+    "what": "BR-CO-09.xml#1"
+  },
+  {
+    "id": "UBL-CR-660",
+    "kind": "official-testset",
+    "what": "BR-08.xml#1"
+  },
+  {
+    "id": "UBL-CR-665",
+    "kind": "official-testset",
+    "what": "BR-CL-07.xml#4"
+  },
+  {
+    "id": "UBL-CR-678",
+    "kind": "official-testset",
+    "what": "BR-E-06.xml#1"
+  },
+  {
+    "id": "UBL-DT-01",
+    "kind": "official-testset",
+    "what": "UBL-DT-01.xml#2"
+  },
+  {
+    "id": "UBL-DT-06",
+    "kind": "official-testset",
+    "what": "UBL-DT-06.xml#2"
+  },
+  {
+    "id": "UBL-DT-07",
+    "kind": "official-testset",
+    "what": "BR-CL-24.xml#1"
+  },
+  {
+    "id": "UBL-SR-01",
+    "kind": "corpus",
+    "what": "UBL-SR-01--ContractDocumentReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-02",
+    "kind": "corpus",
+    "what": "UBL-SR-02--ReceiptDocumentReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-03",
+    "kind": "corpus",
+    "what": "UBL-SR-03--DespatchDocumentReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-04",
+    "kind": "corpus",
+    "what": "UBL-SR-04--AdditionalDocumentReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-05",
+    "kind": "corpus",
+    "what": "UBL-SR-05--PaymentTerms_dup.xml"
+  },
+  {
+    "id": "UBL-SR-06",
+    "kind": "corpus",
+    "what": "UBL-SR-06--InvoiceDocumentReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-07",
+    "kind": "official-testset",
+    "what": "BR-55.xml#2"
+  },
+  {
+    "id": "UBL-SR-08",
+    "kind": "corpus",
+    "what": "UBL-SR-08--InvoicePeriod_dup.xml"
+  },
+  {
+    "id": "UBL-SR-09",
+    "kind": "corpus",
+    "what": "UBL-SR-09+UBL-SR-10+UBL-SR-11+UBL-SR-12+UBL-SR-13+UBL-SR-14+UBL-SR-57--AccountingSupplierParty_dup.xml"
+  },
+  {
+    "id": "UBL-SR-10",
+    "kind": "corpus",
+    "what": "UBL-SR-09+UBL-SR-10+UBL-SR-11+UBL-SR-12+UBL-SR-13+UBL-SR-14+UBL-SR-57--AccountingSupplierParty_dup.xml"
+  },
+  {
+    "id": "UBL-SR-11",
+    "kind": "official-testset",
+    "what": "BR-CL-11.xml#1"
+  },
+  {
+    "id": "UBL-SR-12",
+    "kind": "official-testset",
+    "what": "UBL-SR-12.xml#2"
+  },
+  {
+    "id": "UBL-SR-13",
+    "kind": "official-testset",
+    "what": "UBL-SR-42.xml#2"
+  },
+  {
+    "id": "UBL-SR-14",
+    "kind": "corpus",
+    "what": "UBL-SR-09+UBL-SR-10+UBL-SR-11+UBL-SR-12+UBL-SR-13+UBL-SR-14+UBL-SR-57--AccountingSupplierParty_dup.xml"
+  },
+  {
+    "id": "UBL-SR-15",
+    "kind": "corpus",
+    "what": "UBL-SR-15+UBL-SR-17+UBL-SR-40+UBL-SR-57--Party_dup.xml"
+  },
+  {
+    "id": "UBL-SR-16",
+    "kind": "official-testset",
+    "what": "BR-CL-10.xml#1"
+  },
+  {
+    "id": "UBL-SR-17",
+    "kind": "official-testset",
+    "what": "BR-CL-11.xml#1"
+  },
+  {
+    "id": "UBL-SR-18",
+    "kind": "official-testset",
+    "what": "UBL-SR-18.xml#2"
+  },
+  {
+    "id": "UBL-SR-19",
+    "kind": "official-testset",
+    "what": "BR-17.xml#1"
+  },
+  {
+    "id": "UBL-SR-20",
+    "kind": "official-testset",
+    "what": "BR-17.xml#1"
+  },
+  {
+    "id": "UBL-SR-21",
+    "kind": "official-testset",
+    "what": "BR-17.xml#1"
+  },
+  {
+    "id": "UBL-SR-22",
+    "kind": "corpus",
+    "what": "UBL-SR-22--PartyName_dup.xml"
+  },
+  {
+    "id": "UBL-SR-23",
+    "kind": "corpus",
+    "what": "UBL-SR-23--PartyTaxScheme_dup.xml"
+  },
+  {
+    "id": "UBL-SR-24",
+    "kind": "corpus",
+    "what": "UBL-SR-24--Delivery_dup.xml"
+  },
+  {
+    "id": "UBL-SR-25",
+    "kind": "corpus",
+    "what": "UBL-SR-25--DeliveryParty_empty.xml"
+  },
+  {
+    "id": "UBL-SR-26",
+    "kind": "corpus",
+    "what": "UBL-SR-26--PaymentID_dup.xml"
+  },
+  {
+    "id": "UBL-SR-27",
+    "kind": "corpus",
+    "what": "UBL-SR-27--PaymentMeansCode_dup.xml"
+  },
+  {
+    "id": "UBL-SR-29",
+    "kind": "official-testset",
+    "what": "BR-CL-10.xml#1"
+  },
+  {
+    "id": "UBL-SR-30",
+    "kind": "corpus",
+    "what": "UBL-SR-30--AllowanceChargeReason_dup.xml"
+  },
+  {
+    "id": "UBL-SR-31",
+    "kind": "corpus",
+    "what": "UBL-SR-31--AllowanceChargeReason_dup.xml"
+  },
+  {
+    "id": "UBL-SR-32",
+    "kind": "corpus",
+    "what": "BR-E-01+UBL-SR-32--TaxCategory_dup.xml"
+  },
+  {
+    "id": "UBL-SR-33",
+    "kind": "corpus",
+    "what": "UBL-SR-33--DocumentDescription_dup.xml"
+  },
+  {
+    "id": "UBL-SR-34",
+    "kind": "corpus",
+    "what": "UBL-SR-34--Note_dup.xml"
+  },
+  {
+    "id": "UBL-SR-35",
+    "kind": "corpus",
+    "what": "UBL-SR-35--OrderLineReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-36",
+    "kind": "corpus",
+    "what": "UBL-SR-36--InvoicePeriod_dup.xml"
+  },
+  {
+    "id": "UBL-SR-37",
+    "kind": "corpus",
+    "what": "UBL-SR-37--Price_dup.xml"
+  },
+  {
+    "id": "UBL-SR-39",
+    "kind": "corpus",
+    "what": "UBL-SR-39--ID_dup.xml"
+  },
+  {
+    "id": "UBL-SR-40",
+    "kind": "corpus",
+    "what": "UBL-SR-15+UBL-SR-17+UBL-SR-40+UBL-SR-57--Party_dup.xml"
+  },
+  {
+    "id": "UBL-SR-42",
+    "kind": "official-testset",
+    "what": "UBL-SR-42.xml#2"
+  },
+  {
+    "id": "UBL-SR-43",
+    "kind": "official-testset",
+    "what": "BR-CL-07.xml#4"
+  },
+  {
+    "id": "UBL-SR-44",
+    "kind": "official-testset",
+    "what": "UBL-SR-44.xml#3"
+  },
+  {
+    "id": "UBL-SR-46",
+    "kind": "corpus",
+    "what": "UBL-SR-46--PaymentMeans_dup.xml"
+  },
+  {
+    "id": "UBL-SR-47",
+    "kind": "official-testset",
+    "what": "UBL-SR-47.xml#3"
+  },
+  {
+    "id": "UBL-SR-48",
+    "kind": "official-testset",
+    "what": "BR-16.xml#1"
+  },
+  {
+    "id": "UBL-SR-49",
+    "kind": "official-testset",
+    "what": "BR-CL-06.xml#1"
+  },
+  {
+    "id": "UBL-SR-50",
+    "kind": "corpus",
+    "what": "UBL-SR-48+UBL-SR-50--Item_dup.xml"
+  },
+  {
+    "id": "UBL-SR-51",
+    "kind": "corpus",
+    "what": "UBL-SR-51--AddressLine_dup.xml"
+  },
+  {
+    "id": "UBL-SR-52",
+    "kind": "corpus",
+    "what": "UBL-SR-52--DocumentReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-53",
+    "kind": "official-testset",
+    "what": "BR-AE-02.xml#7"
+  },
+  {
+    "id": "UBL-SR-56",
+    "kind": "corpus",
+    "what": "UBL-SR-56--OriginatorDocumentReference_dup.xml"
+  },
+  {
+    "id": "UBL-SR-57",
+    "kind": "official-testset",
+    "what": "BR-CL-11.xml#1"
+  },
+  {
+    "id": "UBL-SR-58",
+    "kind": "corpus",
+    "what": "UBL-SR-58+UBL-SR-59--PayeeFinancialAccount_dup.xml"
+  },
+  {
+    "id": "UBL-SR-59",
+    "kind": "official-testset",
+    "what": "BR-50.xml#4"
+  }
+]

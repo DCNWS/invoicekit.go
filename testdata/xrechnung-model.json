@@ -1,0 +1,141 @@
+{
+  "id": "XR-2024-0311",
+  "issueDate": "2024-03-14",
+  "dueDate": "2024-04-13",
+  "typeCode": "380",
+  "currency": "EUR",
+  "seller": {
+    "name": "Hale und Sohne GmbH",
+    "address": {
+      "line1": "Bunhillstrasse 12",
+      "city": "Berlin",
+      "postalCode": "10115",
+      "country": "DE"
+    },
+    "taxIds": [
+      {
+        "value": "DE123456789",
+        "scheme": "VAT"
+      }
+    ],
+    "contact": {
+      "name": "Buchhaltung",
+      "phone": "+49 30 9404 5500",
+      "email": "buchhaltung@hale.example"
+    },
+    "eaddress": "elektronisch@hale.example"
+  },
+  "buyer": {
+    "name": "Contoso Behoerde",
+    "address": {
+      "line1": "Marktstrasse 45",
+      "city": "Hamburg",
+      "postalCode": "20095",
+      "country": "DE"
+    },
+    "taxIds": [
+      {
+        "value": "DE987654321",
+        "scheme": "VAT"
+      }
+    ],
+    "eaddress": "rechnungseingang@contoso.example"
+  },
+  "payment": {
+    "code": "58",
+    "name": "SEPA credit transfer",
+    "remitInfo": "REF XR-2024-0311"
+  },
+  "sellerAccount": {
+    "iban": "DE89370400440532013000",
+    "bic": "COBADEFFXXX",
+    "name": "Hale und Sohne GmbH"
+  },
+  "delivery": {
+    "name": "Lager 4",
+    "address": {
+      "line1": "Uferstrasse 9",
+      "city": "Hamburg",
+      "postalCode": "20359",
+      "country": "DE"
+    },
+    "arrivalDate": "2024-03-20"
+  },
+  "references": [
+    {
+      "type": "buyerOrder",
+      "id": "BO-3310"
+    },
+    {
+      "type": "salesOrder",
+      "id": "SO-2201"
+    }
+  ],
+  "terms": [
+    "Payment due within 30 days of invoice date."
+  ],
+  "allowances": [
+    {
+      "percent": 5,
+      "reason": "Volume discount",
+      "reasonCode": "95",
+      "taxCategory": "S",
+      "taxRate": 20
+    }
+  ],
+  "charges": [
+    {
+      "amount": 12.5,
+      "reason": "Handling",
+      "reasonCode": "AA",
+      "taxCategory": "S",
+      "taxRate": 20
+    }
+  ],
+  "lines": [
+    {
+      "id": "1",
+      "note": "Includes fitting",
+      "quantity": 10,
+      "unitCode": "C62",
+      "grossPrice": 30,
+      "netPrice": 24,
+      "taxCategory": "S",
+      "taxRate": 20,
+      "item": {
+        "name": "Widget",
+        "description": "Large blue widget",
+        "sellerId": "W-100",
+        "attributes": [
+          {
+            "name": "Colour",
+            "value": "Blue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "quantity": 3,
+      "unitCode": "C62",
+      "netPrice": 120,
+      "taxCategory": "S",
+      "taxRate": 20,
+      "item": {
+        "name": "Gadget"
+      }
+    },
+    {
+      "id": "3",
+      "quantity": 1,
+      "unitCode": "C62",
+      "netPrice": 40,
+      "taxCategory": "Z",
+      "taxRate": 0,
+      "item": {
+        "name": "Zero rated spare"
+      }
+    }
+  ],
+  "buyerReference": "04011002-1234567890-00"
+}
