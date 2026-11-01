@@ -7,14 +7,14 @@ on:
 jobs:
   go:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: ['1.22', '1.24', 'stable']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      # The Go version is read from go.mod, never written here: a pinned
+      # version here silently rots, and a version bump that has not been
+      # reviewed on this corpus is exactly what should fail loudly.
+      - uses: actions/setup-go@v7
         with:
-          go-version: ${{ matrix.go }}
+          go-version-file: go.mod
       - run: test -z "$(gofmt -l .)"
       - run: go vet ./...
       - run: go build ./...
@@ -29,10 +29,13 @@ jobs:
     steps:
       # The corpora go one level above the checkout, which is where the suites
       # look for them when EINVOICE_REF and friends are unset.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: git clone --depth 1 https://github.com/ConnectingEurope/eInvoicing-EN16931.git ../ref-en16931
+      # Pinned: the expected-rule-count tests below are assertions about this
+      # ref of the bis spec, so cloning its default branch would let an
+      # upstream release change what "correct" means without a commit here.
       - run: git clone --depth 1 --branch 3.0.21 https://github.com/OpenPeppol/peppol-bis-invoice-3.git ../ref-peppol
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
-          go-version: '1.24'
+          go-version-file: go.mod
       - run: go vet ./... && go test -race ./...

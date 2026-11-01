@@ -116,3 +116,14 @@ go run ./cmd/einv embed -now 2026-10-31T09:00:00Z \
 The `-now` flag pins the timestamps, so rebuilding them byte-for-byte is a
 matter of re-running the command, and the fonts and profile inside them are the
 same URW faces and Ghostscript profile as their sources.
+
+One caveat on "reproducible": the attached invoice is a compressed stream, and
+the Go standard library's deflate implementation can change its output between
+releases even when its decoding stays compatible. These fixtures were produced
+by the Go version declared in `go.mod` — currently **1.27** — and Go 1.26 and
+earlier write different bytes for the same invoice. That is not a bug in the
+engine: any reader gets the same invoice either way. It is a fact about the
+checked-in files, and it is why the CI workflows take their Go version from
+`go.mod` instead of naming one, and why the TypeScript package compares its
+WebAssembly output against these exact bytes — an upgrade that changes them
+should show up as a failing test, not as a fixture quietly rewritten.
