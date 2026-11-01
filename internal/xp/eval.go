@@ -863,9 +863,19 @@ func evalPath(px *pathExpr, c ctx) (any, error) {
 		cur = []any{c.node}
 	}
 	all := append([]expr{px.first}, px.rest...)
-	for _, st := range all {
+	for i := 0; i < len(all); i++ {
+		st := all[i]
 		switch s := st.(type) {
 		case *nodeTest:
+			if nx, ok := fusedChild(all, i); ok {
+				nxt, err := stepDescChild(cur, nx, c)
+				if err != nil {
+					return nil, err
+				}
+				cur = nxt
+				i++ // the child step folded into this one
+				continue
+			}
 			nxt, err := step(cur, s, c)
 			if err != nil {
 				return nil, err
@@ -999,6 +1009,64 @@ func applyPreds(base any, preds []expr, c ctx) (any, error) {
 		cur = keep
 	}
 	return cur, nil
+}
+
+// fusedChild reports the child step that can be folded into the unpredicated
+// descendant-or-self::node() step at index i — that is, a plain "//name" — and
+// returns false when the pair has to run as two steps. Folding means the
+// intermediate list of every node in the subtree is never built, which for a
+// document of this size is the largest temporary allocation the evaluator
+// makes. Predicates on the child step keep their meaning: they apply to the
+// children of each parent, exactly as they would per context node in a plain
+// child step.
+func fusedChild(all []expr, i int) (*nodeTest, bool) {
+	s, ok := all[i].(*nodeTest)
+	if !ok || s.axis != "descendant-or-self" || s.kind != "node" || len(s.pred) > 0 {
+		return nil, false
+	}
+	if i+1 >= len(all) {
+		return nil, false
+	}
+	nx, ok := all[i+1].(*nodeTest)
+	if !ok || nx.axis != "child" || nx.kind != "" {
+		return nil, false
+	}
+	return nx, true
+}
+
+// stepDescChild collects, for every descendant of each context item, the
+// children matching nt, walking the tree with an explicit stack so that no
+// intermediate list of all the nodes is built.
+func stepDescChild(cur []any, nt *nodeTest, c ctx) ([]any, error) {
+	var out []any
+	var stack []*Node
+	for _, n := range cur {
+		el, ok := n.(*Node)
+		if !ok {
+			continue
+		}
+		stack = append(stack[:0], el)
+		for len(stack) > 0 {
+			x := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			start := len(out)
+			for _, ch := range x.Children {
+				if matchTest(nt, ch) {
+					out = append(out, ch)
+				}
+				stack = append(stack, ch)
+			}
+			if len(nt.pred) > 0 {
+				kept, err := applyPreds(out[start:], nt.pred, c)
+				if err != nil {
+					return nil, err
+				}
+				k, _ := kept.([]any)
+				out = append(out[:start], k...)
+			}
+		}
+	}
+	return dedupSort(out), nil
 }
 
 func step(cur []any, nt *nodeTest, c ctx) ([]any, error) {
@@ -1227,27 +1295,28 @@ func ordOf(v any) (int, int) {
 	return 0, 0
 }
 
+// dedupSmall is the node-set size at or below which dedupSort compares items
+// with each other rather than building a map: a step usually yields a handful
+// of nodes, and hashing those costs more time and more bytes than scanning.
+const dedupSmall = 24
+
 // dedupSort returns a unique, document-ordered sequence when all items are
-// nodes, otherwise the sequence with duplicate atomics removed per XPath.
+// nodes, otherwise the sequence with duplicate atomics removed per XPath. A
+// sequence that is already unique and in document order — which most steps in
+// a real evaluation produce — is handed back as it stands, without copying.
 func dedupSort(s []any) []any {
-	if len(s) == 0 {
+	if len(s) < 2 {
 		return s
 	}
 	if allNodes(s) {
-		seen := map[any]bool{}
-		var u []any
-		for _, x := range s {
-			if !seen[x] {
-				seen[x] = true
-				u = append(u, x)
-			}
+		if sortedUnique(s) {
+			return s
 		}
-		sortNodes(u)
-		return u
+		return dedupNodes(s)
 	}
 	// Mixed or atomic sequences: only nodes are deduplicated (by identity).
 	// Non-node items may legitimately repeat, and order is preserved.
-	seen := map[any]bool{}
+	seen := make(map[any]bool, len(s))
 	u := make([]any, 0, len(s))
 	for _, x := range s {
 		if isNode(x) {
@@ -1259,6 +1328,57 @@ func dedupSort(s []any) []any {
 		u = append(u, x)
 	}
 	return u
+}
+
+// dedupNodes drops nodes that appear more than once, keeping the first, then
+// puts the result in document order.
+func dedupNodes(s []any) []any {
+	u := make([]any, 0, len(s))
+	if len(s) <= dedupSmall {
+		for _, x := range s {
+			if !holds(u, x) {
+				u = append(u, x)
+			}
+		}
+	} else {
+		seen := make(map[any]bool, len(s))
+		for _, x := range s {
+			if !seen[x] {
+				seen[x] = true
+				u = append(u, x)
+			}
+		}
+	}
+	sortNodes(u)
+	return u
+}
+
+// holds reports whether u already contains x. Nodes are compared by identity,
+// which is what membership of an XPath node-set means.
+func holds(u []any, x any) bool {
+	for _, y := range u {
+		if y == x {
+			return true
+		}
+	}
+	return false
+}
+
+// sortedUnique reports whether s holds distinct nodes in document order, the
+// sequence dedupSort would return unchanged. It is only called when every item
+// is a node, so == compares pointers rather than hashing them.
+func sortedUnique(s []any) bool {
+	for i := 1; i < len(s); i++ {
+		if s[i-1] == s[i] {
+			return false
+		}
+		a1, a2 := ordOf(s[i])
+		b1, b2 := ordOf(s[i-1])
+		if a1 < b1 || (a1 == b1 && a2 < b2) {
+			return false
+		}
+	}
+	return true
 }
 
 func sortNodes(s []any) {

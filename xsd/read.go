@@ -50,6 +50,9 @@ func Load(p string, src []byte, l Loader) (*Model, error) {
 	if err := r.resolve(); err != nil {
 		return nil, err
 	}
+	// Compile the matchers now: validation only ever reads them, which is what
+	// makes one cached model safe to use from several goroutines.
+	r.m.Compile()
 	return r.m, nil
 }
 

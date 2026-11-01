@@ -33,11 +33,19 @@ const maxExpand = 32
 type st struct {
 	term *Term
 	eps  []*st
+	// idx is the state's number within its machine, assigned by indexStates.
+	// The closure walk uses it as a bit position, which is what makes spotting
+	// a state it has already seen cost nothing.
+	idx int
 }
 
 // frag is a compiled content model.
 type frag struct {
 	start, end *st
+	// first is the epsilon closure of start: the states a document can be in
+	// before it has matched any child at all. It is the same for every element
+	// of the type, so it is worked out once here rather than on every check.
+	first []*st
 }
 
 // compile builds a state machine that accepts exactly the sequences a content
@@ -46,7 +54,79 @@ type frag struct {
 func compile(t *Term) *frag {
 	s, e := &st{}, &st{}
 	wirePart(s, e, t)
-	return &frag{start: s, end: e}
+	f := &frag{start: s, end: e}
+	indexStates(f)
+	f.first = closure([]*st{s})
+	return f
+}
+
+// indexStates numbers the states of one machine from 0. The numbers are only
+// used as bit positions inside that machine, so they never have to be unique
+// across machines, and every closure walk stays inside one. A machine wider
+// than the bitset numbers every state past the end, which sends any walk that
+// touches it down the map path: checking one input state then covers the whole
+// machine.
+func indexStates(f *frag) {
+	var all []*st
+	seen := map[*st]bool{}
+	var walk func(s *st)
+	walk = func(s *st) {
+		if seen[s] {
+			return
+		}
+		seen[s] = true
+		all = append(all, s)
+		for _, e := range s.eps {
+			walk(e)
+		}
+	}
+	walk(f.start)
+	if len(all) > closureStateMax {
+		for _, s := range all {
+			s.idx = closureStateMax
+		}
+		return
+	}
+	for i, s := range all {
+		s.idx = i
+	}
+}
+
+// Compile prepares every content model in the model for matching. A model is
+// read by many validations at once — the library caches one per syntax — so
+// nothing on the validation path may fill in a lazily compiled part of it:
+// Load calls this before the model is handed out.
+func (m *Model) Compile() {
+	seen := map[*Type]bool{}
+	var walkTerm func(p *Term)
+	walkType := func(t *Type) {
+		if t == nil || seen[t] {
+			return
+		}
+		seen[t] = true
+		if t.Term != nil {
+			t.fragFor()
+		}
+		walkTerm(t.Term)
+	}
+	walkTerm = func(p *Term) {
+		if p == nil {
+			return
+		}
+		if p.Decl != nil {
+			walkType(p.Decl.Type)
+		}
+		walkType(p.Type)
+		for _, q := range p.Parts {
+			walkTerm(q)
+		}
+	}
+	for _, d := range m.Decls {
+		walkType(d.Type)
+	}
+	for _, t := range m.Types {
+		walkType(t)
+	}
 }
 
 // wireSeq wires parts in order.
@@ -152,12 +232,26 @@ func (m *Model) Validate(d *xp.Doc) []Finding {
 	return out
 }
 
-// accept reports whether a term takes the given element.
+// accept reports whether a term takes the given element. The term name is
+// already in Clark notation, so it is split in place and compared part by
+// part: building the candidate's Clark name for every comparison in every
+// state set was costing more than the comparisons themselves.
 func (t *Term) accept(ns, name string) bool {
 	if t.Kind == Any {
 		return true
 	}
-	return t.Name == clark(ns, name)
+	if ns == "" {
+		return t.Name == name
+	}
+	id := t.Name
+	if id == "" || id[0] != '{' {
+		return false
+	}
+	i := strings.IndexByte(id, '}')
+	if i < 0 {
+		return false
+	}
+	return id[1:i] == ns && id[i+1:] == name
 }
 
 // check validates the children of el against the content model of ct.
@@ -166,7 +260,7 @@ func (m *Model) check(el *xp.Node, ct *Type, path string, out *[]Finding) {
 		if len(el.Children) > 0 {
 			names := make([]string, 0, len(el.Children))
 			for _, c := range el.Children {
-				names = append(names, show(clark(c.NS, c.Name)))
+				names = append(names, c.Name)
 			}
 			*out = append(*out, Finding{
 				Path:    path,
@@ -176,7 +270,7 @@ func (m *Model) check(el *xp.Node, ct *Type, path string, out *[]Finding) {
 		return
 	}
 	f := ct.fragFor()
-	cur := closure([]*st{f.start})
+	cur := f.first
 	for _, ch := range el.Children {
 		var raw []*st
 		var matched *Term
@@ -191,14 +285,14 @@ func (m *Model) check(el *xp.Node, ct *Type, path string, out *[]Finding) {
 		}
 		if matched == nil {
 			*out = append(*out, Finding{
-				Path: path + "/" + show(clark(ch.NS, ch.Name)),
+				Path: path + "/" + ch.Name,
 				Message: fmt.Sprintf("element %s is not allowed here; expected %s",
-					show(clark(ch.NS, ch.Name)), expectList(cur)),
+					ch.Name, expectList(cur)),
 			})
 			continue
 		}
 		cur = closure(raw)
-		m.check(ch, matched.content(), path+"/"+show(clark(ch.NS, ch.Name)), out)
+		m.check(ch, matched.content(), path+"/"+ch.Name, out)
 	}
 	if !contains(cur, f.end) {
 		*out = append(*out, Finding{
@@ -221,7 +315,46 @@ func (t *Term) content() *Type {
 // before the machine may move past it. Without that rule every reordering of a
 // sequence looks legal, because the machine can drift forward through the
 // elements it has not seen yet.
+// closureStateMax is wider than the widest content model in either EN 16931
+// syntax (the broadest UBL machine has 504 states), so the map path below is
+// only a guard against a schema that grows.
+const closureStateMax = 2048
+
+// closureWords is one 64-bit word per 64 states of that bound.
+const closureWords = closureStateMax / 64
+
 func closure(in []*st) []*st {
+	var bits [closureWords]uint64
+	for _, s := range in {
+		if s.idx >= closureStateMax {
+			return closureMap(in)
+		}
+	}
+	return closureBits(nil, &bits, in)
+}
+
+// closureBits walks the machine with a bitset of visited states on the stack:
+// one zeroed array per check replaces the map the validator used to build for
+// every element it looked at, and testing a bit costs less than scanning the
+// states collected so far. The bits pointer keeps the array off the heap.
+func closureBits(out []*st, bits *[closureWords]uint64, in []*st) []*st {
+	for _, s := range in {
+		w, b := s.idx>>6, uint(s.idx&63)
+		if bits[w]&(1<<b) != 0 {
+			continue
+		}
+		bits[w] |= 1 << b
+		out = append(out, s)
+		if s.term != nil {
+			continue
+		}
+		out = closureBits(out, bits, s.eps)
+	}
+	return out
+}
+
+// closureMap is the guard for a machine wider than closureStateMax.
+func closureMap(in []*st) []*st {
 	var out []*st
 	seen := map[*st]bool{}
 	var visit func(s *st)
