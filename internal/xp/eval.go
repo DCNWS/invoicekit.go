@@ -538,54 +538,112 @@ func cmpAtom(op string, a, b any) bool {
 
 // ---------- evaluation ----------
 
+// evalWrapped evaluates a public Expr handed back to the engine. Expr
+// satisfies this package's private expr interface, so a nested public Expr
+// reaches eval: an extension function's local variable holds one, as does any
+// sub-expression handed in already compiled. Unwrap it and evaluate in the
+// surrounding context.
+func evalWrapped(x Expr, c ctx) (any, error) {
+	if x.e == nil {
+		return nil, errf("expression %q has no compiled body", x.src)
+	}
+	return eval(x.e, c)
+}
+
+// evalSeq evaluates every item of a sequence expression and concatenates the
+// results, which is how a union written (a, b) is read.
+func evalSeq(x *seqExpr, c ctx) (any, error) {
+	var out []any
+	for _, it := range x.items {
+		v, err := eval(it, c)
+		if err != nil {
+			return nil, err
+		}
+		if s2, ok := v.([]any); ok {
+			out = append(out, s2...)
+			continue
+		}
+		out = append(out, v)
+	}
+	return out, nil
+}
+
+// evalVar looks a variable up, preferring the binding of the innermost
+// enclosing function or FLWOR clause over a global declared by the caller.
+func evalVar(x *varExpr, c ctx) (any, error) {
+	if v, ok := c.vars[x.name]; ok {
+		return v, nil
+	}
+	if v, ok := c.env.globals[x.name]; ok {
+		return v, nil
+	}
+	return nil, errf("undefined variable $%s", x.name)
+}
+
+func evalIf(x *ifExpr, c ctx) (any, error) {
+	cv, err := eval(x.cond, c)
+	if err != nil {
+		return nil, err
+	}
+	if boolean(cv) {
+		return eval(x.a, c)
+	}
+	return eval(x.b, c)
+}
+
+func evalCast(x *castExpr, c ctx) (any, error) {
+	v, err := eval(x.x, c)
+	if err != nil {
+		return nil, err
+	}
+	return castTo(v, x.name)
+}
+
+func evalCastable(x *castableExpr, c ctx) (any, error) {
+	v, err := eval(x.x, c)
+	if err != nil {
+		return nil, err
+	}
+	return castable(v, x.name), nil
+}
+
+// evalUnary applies unary minus and unary plus. An empty sequence stays empty
+// rather than turning into zero, and anything that is not a number yields NaN,
+// as XPath 2.0 requires.
+func evalUnary(x *unExpr, c ctx) (any, error) {
+	v, err := eval(x.x, c)
+	if err != nil {
+		return nil, err
+	}
+	if isEmptySeq(v) {
+		return []any{}, nil
+	}
+	n, ok := numOf(v)
+	if !ok {
+		return nanValue, nil
+	}
+	if x.op == "-" {
+		return new(big.Rat).Neg(n), nil
+	}
+	return n, nil
+}
+
 func eval(e expr, c ctx) (any, error) {
 	switch x := e.(type) {
 	case nil:
 		return []any{}, nil
 	case Expr:
-		// Expr satisfies this package's private expr interface, so a nested
-		// public Expr reaches eval: an extension function's local variable
-		// holds one, as does any sub-expression handed in already compiled.
-		// Unwrap it and evaluate in the surrounding context.
-		if x.e == nil {
-			return nil, errf("expression %q has no compiled body", x.src)
-		}
-		return eval(x.e, c)
+		return evalWrapped(x, c)
 	case *seqExpr:
-		var out []any
-		for _, it := range x.items {
-			v, err := eval(it, c)
-			if err != nil {
-				return nil, err
-			}
-			if s2, ok := v.([]any); ok {
-				out = append(out, s2...)
-			} else {
-				out = append(out, v)
-			}
-		}
-		return out, nil
+		return evalSeq(x, c)
 	case *litStr:
 		return x.s, nil
 	case *litNum:
 		return x.r, nil
 	case *varExpr:
-		if v, ok := c.vars[x.name]; ok {
-			return v, nil
-		}
-		if v, ok := c.env.globals[x.name]; ok {
-			return v, nil
-		}
-		return nil, errf("undefined variable $%s", x.name)
+		return evalVar(x, c)
 	case *ifExpr:
-		cv, err := eval(x.cond, c)
-		if err != nil {
-			return nil, err
-		}
-		if boolean(cv) {
-			return eval(x.a, c)
-		}
-		return eval(x.b, c)
+		return evalIf(x, c)
 	case *quantExpr:
 		return evalQuant(x, c)
 	case *forExpr:
@@ -593,38 +651,16 @@ func eval(e expr, c ctx) (any, error) {
 	case *binExpr:
 		return evalBin(x, c)
 	case *castExpr:
-		v, err := eval(x.x, c)
-		if err != nil {
-			return nil, err
-		}
-		return castTo(v, x.name)
+		return evalCast(x, c)
 
 	case *castableExpr:
-		v, err := eval(x.x, c)
-		if err != nil {
-			return nil, err
-		}
-		return castable(v, x.name), nil
+		return evalCastable(x, c)
 
 	case *rangeExpr:
 		return evalRange(x, c)
 
 	case *unExpr:
-		v, err := eval(x.x, c)
-		if err != nil {
-			return nil, err
-		}
-		if isEmptySeq(v) {
-			return []any{}, nil
-		}
-		n, ok := numOf(v)
-		if !ok {
-			return nanValue, nil
-		}
-		if x.op == "-" {
-			return new(big.Rat).Neg(n), nil
-		}
-		return n, nil
+		return evalUnary(x, c)
 	case *pathExpr:
 		return evalPath(x, c)
 	case *filterExpr:

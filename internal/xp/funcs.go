@@ -81,38 +81,263 @@ func rat(v int64) *big.Rat { return new(big.Rat).SetInt64(v) }
 
 var boolWords = map[string]bool{"true": true, "false": false, "1": true, "0": false}
 
-func evalFunc(f *funcCall, c ctx) (any, error) {
-	name := local(f.name)
-	xs := isXSCast(f.name)
-	args := make([]any, 0, len(f.args))
-	for _, a := range f.args {
-		v, err := eval(a, c)
+// argv is one builtin call: the evaluated arguments plus the pieces of the
+// evaluation context builtins need. The accessor fields keep the table below
+// readable. args[i] is the i-th argument; arg(i) yields the empty sequence for
+// a missing argument, which is what the specification asks for; focus(i) falls
+// back to the context item, which is what the optional arguments of fn:name,
+// fn:local-name, fn:string-length, fn:number and fn:data default to in XPath
+// 2.0/3.1. The bare name() form matters: the EN 16931 schemas use it in
+// //*[ends-with(name(), 'Amount')].
+type argv struct {
+	name  string          // the function name as written, prefix included
+	xs    bool            // whether that name carried an xs: or xsd: prefix
+	narg  int             // arguments actually supplied
+	args  []any           // the evaluated arguments, left to right
+	node  any             // the context item
+	pos   int             // 1-based position of the context item
+	size  int             // size of the context sequence
+	arg   func(i int) any // argument i, or the empty sequence
+	focus func(i int) any // argument i, or the context item
+}
+
+// builtin implements one entry of the builtins table.
+type builtin func(a *argv) (any, error)
+
+// fnNumber coerces to a number and changes nothing else. It serves both the
+// XPath number() and the XML Schema numeric datatypes, which this engine
+// represents with one rational type.
+func fnNumber(a *argv) (any, error) {
+	return mapNum(a.arg(0), func(n *big.Rat) any { return n })
+}
+
+// fnTrimCast casts to a string, dropping the whitespace the schema types
+// allow around the value. It is also the fallback for an unknown xs: name.
+func fnTrimCast(a *argv) (any, error) {
+	return mapStr(a.arg(0), func(s string) any { return strings.TrimSpace(s) }), nil
+}
+
+// fnUnsupported reports a function whose name is recognised but whose
+// semantics are not implemented, which is a different diagnosis from a name
+// nobody ever declared.
+func fnUnsupported(a *argv) (any, error) {
+	return nil, errf("function %s not supported", a.name)
+}
+
+// builtins dispatches a call by the local part of its name, whether or not the
+// caller qualified it. Functions declared by a schema are checked first, in
+// evalFunc.
+var builtins = map[string]builtin{
+	"not":      func(a *argv) (any, error) { return !boolean(a.arg(0)), nil },
+	"true":     func(*argv) (any, error) { return true, nil },
+	"false":    func(*argv) (any, error) { return false, nil },
+	"boolean":  func(a *argv) (any, error) { return boolean(a.arg(0)), nil },
+	"exists":   func(a *argv) (any, error) { return len(seqOf(a.arg(0))) > 0, nil },
+	"empty":    func(a *argv) (any, error) { return len(seqOf(a.arg(0))) == 0, nil },
+	"count":    func(a *argv) (any, error) { return rat(int64(len(seqOf(a.arg(0))))), nil },
+	"last":     func(a *argv) (any, error) { return rat(int64(a.size)), nil },
+	"position": func(a *argv) (any, error) { return rat(int64(a.pos)), nil },
+
+	"string": func(a *argv) (any, error) {
+		if a.narg == 0 {
+			return stringOf(a.node), nil
+		}
+		return mapStr(a.arg(0), func(s string) any { return s }), nil
+	},
+	"concat": func(a *argv) (any, error) {
+		var b strings.Builder
+		for _, x := range a.args {
+			for _, it := range seqOf(x) {
+				b.WriteString(stringOf(it))
+			}
+		}
+		return b.String(), nil
+	},
+	"string-length": func(a *argv) (any, error) {
+		return mapStr(a.focus(0), func(s string) any { return rat(int64(len([]rune(s)))) }), nil
+	},
+	"normalize-space": func(a *argv) (any, error) {
+		if a.narg == 0 {
+			return normalizeSpace(stringOf(a.node)), nil
+		}
+		return mapStr(a.arg(0), func(s string) any { return normalizeSpace(s) }), nil
+	},
+	"upper-case": func(a *argv) (any, error) {
+		return mapStr(a.arg(0), func(s string) any { return strings.ToUpper(s) }), nil
+	},
+	"lower-case": func(a *argv) (any, error) {
+		return mapStr(a.arg(0), func(s string) any { return strings.ToLower(s) }), nil
+	},
+	"contains":          func(a *argv) (any, error) { return strings.Contains(str(a.arg(0)), str(a.arg(1))), nil },
+	"starts-with":       func(a *argv) (any, error) { return strings.HasPrefix(str(a.arg(0)), str(a.arg(1))), nil },
+	"ends-with":         func(a *argv) (any, error) { return strings.HasSuffix(str(a.arg(0)), str(a.arg(1))), nil },
+	"substring":         func(a *argv) (any, error) { return substring(str(a.arg(0)), a.arg(1), a.arg(2)), nil },
+	"normalize-unicode": func(a *argv) (any, error) { return str(a.arg(0)), nil },
+	"substring-after": func(a *argv) (any, error) {
+		if _, rest, found := strings.Cut(str(a.arg(0)), str(a.arg(1))); found {
+			return rest, nil
+		}
+		return "", nil
+	},
+	"substring-before": func(a *argv) (any, error) {
+		if before, _, found := strings.Cut(str(a.arg(0)), str(a.arg(1))); found {
+			return before, nil
+		}
+		return "", nil
+	},
+	"translate": func(a *argv) (any, error) {
+		from, to := str(a.arg(1)), str(a.arg(2))
+		return mapStr(a.arg(0), func(s string) any { return translate(from, to, s) }), nil
+	},
+	"matches": func(a *argv) (any, error) {
+		return matches(str(a.arg(0)), str(a.arg(1)), str(a.arg(2)))
+	},
+	"replace": func(a *argv) (any, error) {
+		return fnReplace(a.arg(0), a.arg(1), a.arg(2), str(a.arg(3)))
+	},
+	"tokenize": func(a *argv) (any, error) {
+		re, err := compileXPPattern(str(a.arg(1)), str(a.arg(2)))
 		if err != nil {
 			return nil, err
 		}
-		args = append(args, v)
-	}
-	// A missing optional argument is the empty sequence, not the focus node;
-	// functions that take an implicit focus argument test narg explicitly.
-	arg := func(i int) any {
-		if i < len(args) {
-			return args[i]
+		var out []any
+		for _, p := range re.Split(str(a.arg(0)), -1) {
+			out = append(out, p)
 		}
-		return nil
-	}
-	narg := len(args)
-	// focus returns argument i, defaulting to the context item when the
-	// argument was omitted. In XPath 2.0/3.1 fn:name, fn:local-name,
-	// fn:string-length, fn:number and fn:data all take an optional argument
-	// whose default is the focus node, and the EN 16931 schemas rely on the
-	// bare name() form (e.g. //*[ends-with(name(), 'Amount')]).
-	focus := func(i int) any {
-		if i < len(args) {
-			return args[i]
-		}
-		return c.node
-	}
+		return out, nil
+	},
+	"string-to-codepoints": func(a *argv) (any, error) { return stringToCodepoints(a.arg(0)), nil },
+	"codepoints-to-string": func(a *argv) (any, error) { return codepointsToString(a.arg(0)) },
 
+	"sum": func(a *argv) (any, error) {
+		tot := new(big.Rat)
+		for _, it := range seqOf(a.arg(0)) {
+			n, ok := numOf(it)
+			if !ok {
+				return nanValue, nil
+			}
+			tot.Add(tot, n)
+		}
+		return tot, nil
+	},
+	"min": func(a *argv) (any, error) { return minmax(a.arg(0), -1) },
+	"max": func(a *argv) (any, error) { return minmax(a.arg(0), 1) },
+	"abs": func(a *argv) (any, error) {
+		return mapNum(a.arg(0), func(n *big.Rat) any { return new(big.Rat).Abs(n) })
+	},
+	"round": func(a *argv) (any, error) {
+		return mapNum(a.arg(0), func(n *big.Rat) any { return roundRat(n, true) })
+	},
+	"round-half-even": func(a *argv) (any, error) {
+		return mapNum(a.arg(0), func(n *big.Rat) any { return roundRat(n, false) })
+	},
+	"floor": func(a *argv) (any, error) { return mapNum(a.arg(0), func(n *big.Rat) any { return floorRat(n) }) },
+	"ceiling": func(a *argv) (any, error) {
+		return mapNum(a.arg(0), func(n *big.Rat) any {
+			f := floorRat(n)
+			if new(big.Rat).Sub(n, f).Sign() != 0 {
+				return new(big.Rat).Add(f, rat(1))
+			}
+			return f
+		})
+	},
+	"number": fnNumber,
+	"booleanCast": func(a *argv) (any, error) {
+		return boolWords[strings.TrimSpace(str(a.arg(0)))], nil
+	},
+
+	"distinct-values": func(a *argv) (any, error) {
+		seen := map[string]bool{}
+		var out []any
+		for _, it := range seqOf(a.arg(0)) {
+			s := stringOf(it)
+			if !seen[s] {
+				seen[s] = true
+				out = append(out, s)
+			}
+		}
+		return out, nil
+	},
+	"reverse": func(a *argv) (any, error) {
+		sq := seqOf(a.arg(0))
+		out := make([]any, 0, len(sq))
+		for _, v := range slices.Backward(sq) {
+			out = append(out, v)
+		}
+		return out, nil
+	},
+	"string-join": func(a *argv) (any, error) {
+		var parts []string
+		for _, it := range seqOf(a.arg(0)) {
+			parts = append(parts, stringOf(it))
+		}
+		return strings.Join(parts, str(a.arg(1))), nil
+	},
+	"index-of": func(a *argv) (any, error) {
+		target := str(a.arg(1))
+		var out []any
+		for i, it := range seqOf(a.arg(0)) {
+			if stringOf(it) == target {
+				out = append(out, rat(int64(i+1)))
+			}
+		}
+		return out, nil
+	},
+
+	"name":              func(a *argv) (any, error) { return nameOf(a.focus(0), true), nil },
+	"local-name":        func(a *argv) (any, error) { return nameOf(a.focus(0), false), nil },
+	"prefix-from-QName": func(a *argv) (any, error) { return nameOf(a.arg(0), false), nil },
+}
+
+// fnAlias marks names that share an implementation with another entry.
+func fnAlias(alias, target string) { builtins[alias] = builtins[target] }
+
+// fnUnsupportedNames lists the recognised-but-unimplemented functions: those
+// needing a document store, a namespace resolver or a formatting language.
+var fnUnsupportedNames = []string{
+	"namespace-uri-for-prefix", "resolve-uri", "doc", "document", "doc-available",
+	"unparsed-text", "format-number", "current", "root", "generate-id",
+	"compare", "contains-token",
+}
+
+// fnNumericNames lists the numeric XML Schema datatypes, all represented by
+// one rational number in this engine.
+var fnNumericNames = []string{
+	"integer", "decimal", "double", "float", "nonNegativeInteger", "positiveInteger",
+	"int", "long", "short", "byte", "unsignedInt", "unsignedShort", "gYear", "gMonth",
+}
+
+func init() {
+	for _, n := range fnUnsupportedNames {
+		builtins[n] = fnUnsupported
+	}
+	for _, n := range fnNumericNames {
+		builtins[n] = fnNumber
+	}
+	for _, pair := range [][2]string{{"data", "boolean"}, {"node-name", "name"}, {"prefixed-name", "name"}} {
+		fnAlias(pair[0], pair[1])
+	}
+}
+
+// evalFunc evaluates a function call. Arguments are evaluated left to right
+// first, so an error in an argument is reported before a complaint about the
+// function itself.
+func evalFunc(f *funcCall, c ctx) (any, error) {
+	args, err := evalArgs(f.args, c)
+	if err != nil {
+		return nil, err
+	}
+	a := &argv{
+		name:  f.name,
+		xs:    isXSCast(f.name),
+		narg:  len(args),
+		args:  args,
+		node:  c.node,
+		pos:   c.pos,
+		size:  c.size,
+		arg:   func(i int) any { return nth(args, i, nil) },
+		focus: func(i int) any { return nth(args, i, c.node) },
+	}
 	// A function declared by the schema wins over the builtin table: an
 	// extension function name is always prefixed, but the dispatch below looks
 	// at the local part only.
@@ -121,188 +346,35 @@ func evalFunc(f *funcCall, c ctx) (any, error) {
 			return callFunc(fn, args, c)
 		}
 	}
+	if b, ok := builtins[local(f.name)]; ok {
+		return b(a)
+	}
+	if a.xs {
+		// An unknown XML Schema type name still behaves as a string cast.
+		return fnTrimCast(a)
+	}
+	return nil, errf("unknown function %s", f.name)
+}
 
-	switch name {
-	case "not":
-		return !boolean(arg(0)), nil
-	case "true":
-		return true, nil
-	case "false":
-		return false, nil
-	case "boolean", "data":
-		return boolean(arg(0)), nil
-	case "exists":
-		return len(seqOf(arg(0))) > 0, nil
-	case "empty":
-		return len(seqOf(arg(0))) == 0, nil
-	case "count":
-		return rat(int64(len(seqOf(arg(0))))), nil
-	case "string":
-		if narg == 0 {
-			return stringOf(c.node), nil
-		}
-		return mapStr(args[0], func(s string) any { return s }), nil
-	case "concat":
-		var b strings.Builder
-		for _, a := range args {
-			for _, it := range seqOf(a) {
-				b.WriteString(stringOf(it))
-			}
-		}
-		return b.String(), nil
-	case "string-length":
-		return mapStr(focus(0), func(s string) any { return rat(int64(len([]rune(s)))) }), nil
-	case "normalize-space":
-		if narg == 0 {
-			return normalizeSpace(stringOf(c.node)), nil
-		}
-		return mapStr(args[0], func(s string) any { return normalizeSpace(s) }), nil
-	case "upper-case":
-		return mapStr(arg(0), func(s string) any { return strings.ToUpper(s) }), nil
-	case "lower-case":
-		return mapStr(arg(0), func(s string) any { return strings.ToLower(s) }), nil
-	case "contains":
-		return strings.Contains(str(arg(0)), str(arg(1))), nil
-	case "starts-with":
-		return strings.HasPrefix(str(arg(0)), str(arg(1))), nil
-	case "ends-with":
-		return strings.HasSuffix(str(arg(0)), str(arg(1))), nil
-	case "substring-after":
-		a, b := str(arg(0)), str(arg(1))
-		if _, rest, found := strings.Cut(a, b); found {
-			return rest, nil
-		}
-		return "", nil
-	case "substring-before":
-		a, b := str(arg(0)), str(arg(1))
-		if before, _, found := strings.Cut(a, b); found {
-			return before, nil
-		}
-		return "", nil
-	case "substring":
-		return substring(str(arg(0)), arg(1), arg(2)), nil
-	case "translate":
-		return mapStr(args[0], func(s string) any {
-			return translate(str(arg(1)), str(arg(2)), s)
-		}), nil
-	case "matches":
-		return matches(str(arg(0)), str(arg(1)), str(arg(2)))
-	case "replace":
-		return fnReplace(arg(0), arg(1), arg(2), str(arg(3)))
-	case "tokenize":
-		re, err := compileXPPattern(str(arg(1)), str(arg(2)))
+// nth returns argument i, or dflt when the argument was not supplied.
+func nth(args []any, i int, dflt any) any {
+	if i < len(args) {
+		return args[i]
+	}
+	return dflt
+}
+
+// evalArgs evaluates a call's arguments left to right.
+func evalArgs(es []expr, c ctx) ([]any, error) {
+	args := make([]any, 0, len(es))
+	for _, e := range es {
+		v, err := eval(e, c)
 		if err != nil {
 			return nil, err
 		}
-		var out []any
-		for _, p := range re.Split(str(arg(0)), -1) {
-			out = append(out, p)
-		}
-		return out, nil
-	case "normalize-unicode":
-		return str(arg(0)), nil
-	case "sum":
-		tot := new(big.Rat)
-		for _, it := range seqOf(arg(0)) {
-			n, ok := numOf(it)
-			if !ok {
-				return nanValue, nil
-			}
-			tot.Add(tot, n)
-		}
-		return tot, nil
-	case "min":
-		return minmax(arg(0), -1)
-	case "max":
-		return minmax(arg(0), 1)
-	case "abs":
-		return mapNum(arg(0), func(n *big.Rat) any { return new(big.Rat).Abs(n) })
-	case "round":
-		return mapNum(arg(0), func(n *big.Rat) any { return roundRat(n, true) })
-	case "round-half-even":
-		return mapNum(arg(0), func(n *big.Rat) any { return roundRat(n, false) })
-	case "floor":
-		return mapNum(arg(0), func(n *big.Rat) any { return floorRat(n) })
-	case "ceiling":
-		return mapNum(arg(0), func(n *big.Rat) any {
-			f := floorRat(n)
-			if new(big.Rat).Sub(n, f).Sign() != 0 {
-				return new(big.Rat).Add(f, rat(1))
-			}
-			return f
-		})
-	case "number":
-		_ = focus
-		return mapNum(arg(0), func(n *big.Rat) any { return n })
-	case "integer", "decimal", "double", "float", "nonNegativeInteger", "positiveInteger",
-		"int", "long", "short", "byte", "unsignedInt", "unsignedShort", "gYear", "gMonth":
-		return mapNum(arg(0), func(n *big.Rat) any { return n })
-	case "booleanCast":
-		return boolWords[strings.TrimSpace(str(arg(0)))], nil
-	case "date", "dateTime", "time", "anyURI", "QName", "ID", "IDREF", "base64Binary", "hexBinary", "duration":
-		if xs && name != "string" {
-			return mapStr(arg(0), func(s string) any { return strings.TrimSpace(s) }), nil
-		}
-	case "distinct-values":
-		seen := map[string]bool{}
-		var out []any
-		for _, it := range seqOf(arg(0)) {
-			s := stringOf(it)
-			if !seen[s] {
-				seen[s] = true
-				out = append(out, s)
-			}
-		}
-		return out, nil
-	case "string-to-codepoints":
-		return stringToCodepoints(arg(0)), nil
-	case "codepoints-to-string":
-		return codepointsToString(arg(0))
-	case "reverse":
-		sq := seqOf(arg(0))
-		out := make([]any, 0, len(sq))
-		for _, v := range slices.Backward(sq) {
-			out = append(out, v)
-		}
-		return out, nil
-	case "string-join":
-		sep := ""
-		if narg > 1 {
-			sep = str(args[1])
-		}
-		var parts []string
-		for _, it := range seqOf(arg(0)) {
-			parts = append(parts, stringOf(it))
-		}
-		return strings.Join(parts, sep), nil
-	case "index-of":
-		target := str(arg(1))
-		var out []any
-		for i, it := range seqOf(arg(0)) {
-			if stringOf(it) == target {
-				out = append(out, rat(int64(i+1)))
-			}
-		}
-		return out, nil
-	case "last":
-		return rat(int64(c.size)), nil
-	case "position":
-		return rat(int64(c.pos)), nil
-	case "name", "node-name", "prefixed-name":
-		return nameOf(focus(0), true), nil
-	case "local-name":
-		return nameOf(focus(0), false), nil
-	case "prefix-from-QName":
-		return nameOf(arg(0), false), nil
-	case "namespace-uri-for-prefix", "resolve-uri", "doc", "document", "doc-available",
-		"unparsed-text", "format-number", "current", "root", "generate-id", "compare", "contains-token":
-		return nil, errf("function %s not supported", f.name)
+		args = append(args, v)
 	}
-	if xs {
-		// Unknown XML Schema builtin: treat as a string cast.
-		return mapStr(arg(0), func(s string) any { return strings.TrimSpace(s) }), nil
-	}
-	return nil, errf("unknown function %s", f.name)
+	return args, nil
 }
 
 // translate applies the XPath character mapping: every character of in that

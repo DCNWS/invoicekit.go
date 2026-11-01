@@ -31,3 +31,13 @@ linters:
     dupl:
       # Tokens count to trigger issue.
       threshold: 100
+  exclusions:
+    # A test that walks a table of cases is branchy by construction: every case
+    # adds one. Splitting such a test into helpers hides the table, which is the
+    # part worth reading, so the complexity linters are turned off for tests and
+    # the production code carries the constraint instead.
+    rules:
+      - path: _test\.go
+        linters:
+          - cyclop
+          - gocognit

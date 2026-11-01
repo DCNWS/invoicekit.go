@@ -407,48 +407,23 @@ func (p *parser) parsePath() (expr, error) {
 }
 
 // parsePathElt parses one path component: a node test or a primary expression,
-// applying any predicates.
+// followed by any predicates. A nil expression with a nil error says the next
+// token does not open one, which is how the callers decide a step has ended.
 func (p *parser) parsePathElt() (expr, error) {
-	var base expr
+	base, err := p.parsePrimary()
+	if err != nil || base == nil {
+		return nil, err
+	}
+	return p.applyPredicates(base)
+}
+
+// parsePrimary parses the node test or primary expression that opens a path
+// component, before its predicates.
+func (p *parser) parsePrimary() (expr, error) {
 	tk := p.peek()
 	switch tk.k {
 	case tName:
-		if tk.s == "*" {
-			p.next()
-			base = &nodeTest{axis: "child", wild: true, name: "*"}
-		} else {
-			p.next()
-			if p.isKindTest(tk.s) {
-				nt, err := p.parseKindTest(tk.s)
-				if err != nil {
-					return nil, err
-				}
-				nt.axis = "child"
-				if tk.s == "attribute" {
-					nt.axis = "attribute"
-				}
-				base = nt
-			} else if p.peek().k == tColonColon {
-				p.next()
-				nt, err := p.parseNameOrWild()
-				if err != nil {
-					return nil, err
-				}
-				nt.axis = tk.s
-				base = nt
-			} else if p.peek().k == tLP {
-				base = &funcCall{name: tk.s}
-				if err := p.parseArgsInto(base.(*funcCall)); err != nil {
-					return nil, err
-				}
-			} else {
-				local, ns, err := p.resolve(tk.s)
-				if err != nil {
-					return nil, err
-				}
-				base = &nodeTest{axis: "child", name: local, ns: ns}
-			}
-		}
+		return p.parseNameStep(tk.s)
 	case tAt:
 		p.next()
 		nt, err := p.parseNameOrWild()
@@ -456,92 +431,137 @@ func (p *parser) parsePathElt() (expr, error) {
 			return nil, err
 		}
 		nt.axis = "attribute"
-		base = nt
+		return nt, nil
 	case tDotDot:
 		p.next()
-		base = &nodeTest{axis: "parent"}
+		return &nodeTest{axis: "parent"}, nil
 	case tDot:
 		p.next()
-		base = &ctxItem{}
+		return &ctxItem{}, nil
 	case tLP:
-		p.next()
-		if p.peek().k == tRP {
-			p.next()
-			base = &seqExpr{} // the empty sequence
-			break
-		}
-		var items []expr
-		for {
-			e, err := p.parseExpr()
-			if err != nil {
-				return nil, err
-			}
-			items = append(items, e)
-			if p.peek().k != tComma {
-				break
-			}
-			p.next()
-		}
-		if p.peek().k != tRP {
-			return nil, p.fail("expected ')'")
-		}
-		p.next()
-		if len(items) == 1 {
-			base = items[0]
-		} else {
-			base = &seqExpr{items: items}
-		}
+		return p.parseParenExpr()
 	case tLB:
-		base = &ctxItem{}
+		return &ctxItem{}, nil
 	case tNum:
 		r, ok := new(big.Rat).SetString(tk.num)
 		if !ok {
 			return nil, p.fail("bad number %s", tk.num)
 		}
 		p.next()
-		base = &litNum{r: r}
+		return &litNum{r: r}, nil
 	case tStr:
 		p.next()
-		base = &litStr{s: tk.s}
+		return &litStr{s: tk.s}, nil
 	case tVar:
 		p.next()
-		base = &varExpr{name: tk.s}
+		return &varExpr{name: tk.s}, nil
 	case tOp:
-		switch tk.s {
-		case "if":
-			e, err := p.parseIf()
-			if err != nil {
-				return nil, err
-			}
-			base = e
-		case "some", "every":
-			e, err := p.parseQuant(tk.s == "every")
-			if err != nil {
-				return nil, err
-			}
-			base = e
-		case "for", "let":
-			e, err := p.parseFor()
-			if err != nil {
-				return nil, err
-			}
-			base = e
-		case "-":
-			p.next()
-			e, err := p.parsePathElt()
-			if err != nil {
-				return nil, err
-			}
-			base = &unExpr{op: "-", x: e}
-		default:
-			return nil, nil
-		}
-	default:
-		return nil, nil
+		return p.parseOpPrimary(tk.s)
 	}
-	// A step's predicates belong to the step itself, so positional predicates
-	// are evaluated relative to each context node. Anything else becomes a
-	// filter expression with global positional semantics.
+	return nil, nil
+}
+
+// parseNameStep parses the steps that open with a name: a node kind test
+// (node(), text(), attribute()), an explicit axis (ancestor::), a function call
+// or an ordinary element name.
+func (p *parser) parseNameStep(name string) (expr, error) {
+	if name == "*" {
+		p.next()
+		return &nodeTest{axis: "child", wild: true, name: "*"}, nil
+	}
+	p.next()
+	if p.isKindTest(name) {
+		nt, err := p.parseKindTest(name)
+		if err != nil {
+			return nil, err
+		}
+		nt.axis = "child"
+		if name == "attribute" {
+			nt.axis = "attribute"
+		}
+		return nt, nil
+	}
+	if p.peek().k == tColonColon {
+		p.next()
+		nt, err := p.parseNameOrWild()
+		if err != nil {
+			return nil, err
+		}
+		nt.axis = name
+		return nt, nil
+	}
+	if p.peek().k == tLP {
+		call := &funcCall{name: name}
+		if err := p.parseArgsInto(call); err != nil {
+			return nil, err
+		}
+		return call, nil
+	}
+	local, ns, err := p.resolve(name)
+	if err != nil {
+		return nil, err
+	}
+	return &nodeTest{axis: "child", name: local, ns: ns}, nil
+}
+
+// parseParenExpr parses "(" ... ")": the empty sequence, one expression in
+// parentheses, or a parenthesised sequence. The last case matters because
+// Schematron asserts write (a, b) unions and (..) filters.
+func (p *parser) parseParenExpr() (expr, error) {
+	p.next()
+	if p.peek().k == tRP {
+		p.next()
+		return &seqExpr{}, nil // the empty sequence
+	}
+	var items []expr
+	for {
+		e, err := p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, e)
+		if p.peek().k != tComma {
+			break
+		}
+		p.next()
+	}
+	if p.peek().k != tRP {
+		return nil, p.fail("expected ')'")
+	}
+	p.next()
+	if len(items) == 1 {
+		return items[0], nil
+	}
+	return &seqExpr{items: items}, nil
+}
+
+// parseOpPrimary parses the primary expressions that begin with an operator
+// word: the conditional, the quantified expressions, the FLWOR expressions and
+// unary minus.
+func (p *parser) parseOpPrimary(op string) (expr, error) {
+	switch op {
+	case "if":
+		return p.parseIf()
+	case "some", "every":
+		return p.parseQuant(op == "every")
+	case "for", "let":
+		return p.parseFor()
+	case "-":
+		p.next()
+		e, err := p.parsePathElt()
+		if err != nil {
+			return nil, err
+		}
+		return &unExpr{op: "-", x: e}, nil
+	}
+	return nil, nil
+}
+
+// applyPredicates attaches the predicates that follow a primary expression. A
+// step's predicates belong to the step itself, so positional predicates are
+// evaluated relative to each context node. Anything else becomes a filter
+// expression with global positional semantics.
+func (p *parser) applyPredicates(base expr) (expr, error) {
 	for p.peek().k == tLB {
 		p.next()
 		e, err := p.parseExpr()
@@ -554,9 +574,9 @@ func (p *parser) parsePathElt() (expr, error) {
 		p.next()
 		if nt, ok := base.(*nodeTest); ok {
 			nt.pred = append(nt.pred, e)
-		} else {
-			base = &filterExpr{prim: base, pred: []expr{e}}
+			continue
 		}
+		base = &filterExpr{prim: base, pred: []expr{e}}
 	}
 	return base, nil
 }
