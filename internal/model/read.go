@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"strconv"
 	"strings"
@@ -134,9 +135,7 @@ func prefixOf(scope map[string]string, uri string) string {
 
 func cloneScope(s map[string]string) map[string]string {
 	out := make(map[string]string, len(s)+1)
-	for k, v := range s {
-		out[k] = v
-	}
+	maps.Copy(out, s)
 	return out
 }
 

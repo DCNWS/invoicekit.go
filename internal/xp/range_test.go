@@ -6,11 +6,7 @@ import "testing"
 // build their digit lists with it, together with reverse() and positional
 // access into the resulting sequence.
 func TestRange(t *testing.T) {
-	d := doc(t)
-	for _, c := range []struct {
-		src  string
-		want bool
-	}{
+	runBoolCases(t, tns, []boolCase{
 		{`count((1 to 3)) = 3`, true},
 		{`string-join((1 to 3), ',') = '1,2,3'`, true},
 		{`string-join((0 to 0), ',') = '0'`, true},
@@ -23,19 +19,7 @@ func TestRange(t *testing.T) {
 		// The shape of u:gln: digits of a number, reversed, weighted.
 		{`string-join(reverse(for $i in string-to-codepoints('123') return $i - 48), ',') = '3,2,1'`, true},
 		{`sum(for $i in (0 to 2) return (1 to 3)[$i + 1] * (1 + (($i + 1) mod 2) * 2)) = 14`, true},
-	} {
-		e, err := Compile(c.src, tns)
-		if err != nil {
-			t.Fatalf("compile %s: %v", c.src, err)
-		}
-		v, err := e.Eval(d, d.Root)
-		if err != nil {
-			t.Fatalf("eval %s: %v", c.src, err)
-		}
-		if got := boolean(v); got != c.want {
-			t.Errorf("%s = %v, want %v", c.src, got, c.want)
-		}
-	}
+	})
 }
 
 // TestRangeBadBounds pins the behaviour of non-integer bounds: a range over

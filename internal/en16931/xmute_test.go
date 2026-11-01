@@ -118,7 +118,7 @@ func parseXmute(pi string) (xmuteInst, error) {
 		}
 		// Upstream lists one value per run and separates them with separator;
 		// surrounding whitespace is not part of a value.
-		for _, v := range strings.Split(a["values"], sep) {
+		for v := range strings.SplitSeq(a["values"], sep) {
 			x.values = append(x.values, strings.TrimSpace(v))
 		}
 	default:
@@ -145,17 +145,17 @@ func xmuteRefs(raw string) ([]string, error) {
 	for _, tok := range strings.FieldsFunc(raw, func(r rune) bool {
 		return r == ',' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
 	}) {
-		prefix := tok
-		if i := strings.IndexByte(tok, ':'); i >= 0 {
-			prefix, tok = tok[:i], tok[i+1:]
+		prefix, id, found := strings.Cut(tok, ":")
+		if !found {
+			prefix, id = tok, tok
 		}
 		if _, ok := xmuteSyntax[prefix]; !ok {
 			return nil, fmt.Errorf("unknown rule prefix %q", prefix)
 		}
-		if tok == "" {
+		if id == "" {
 			return nil, fmt.Errorf("empty rule id in %q", raw)
 		}
-		out = append(out, tok)
+		out = append(out, id)
 	}
 	return out, nil
 }

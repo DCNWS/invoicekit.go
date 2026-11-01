@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"time"
@@ -120,7 +121,7 @@ Exit status: 0 all documents valid, 1 at least one invalid, 2 usage or I/O error
 // cannot drift apart into two different meanings of the same flag.
 func ruleSetOf(phases, cius, prof string) (einvoice.Options, error) {
 	opt := einvoice.Options{}
-	for _, p := range strings.Split(phases, ",") {
+	for p := range strings.SplitSeq(phases, ",") {
 		if p = strings.TrimSpace(p); p != "" {
 			opt.Phases = append(opt.Phases, p)
 		}
@@ -511,68 +512,75 @@ func ruleLine(r einvoice.Rule) string {
 
 // hasPhaseID reports whether a rule belongs to a phase.
 func hasPhaseID(phases []string, id string) bool {
-	for _, p := range phases {
-		if p == id {
-			return true
+	return slices.Contains(phases, id)
+}
+
+// ruleSet is one family of named rule sets behind the list commands: the
+// country and network profiles (cius) and the published bundles (profile)
+// differ only in which library accessor they call, so the listing is shared.
+type ruleSet struct {
+	// noun names the family in the error for an unrecognised name.
+	noun string
+	// names lists the names the family carries.
+	names func() []string
+	// version reports the specification release a name implements, or "".
+	version func(name string) string
+	// phases lists the phase ids a name applies for one syntax.
+	phases func(name string, sx einvoice.Syntax) ([]string, error)
+}
+
+// listRuleSet prints either a whole rule-set family or one name's phases.
+// Names are what validate -cius and validate -profile take.
+func listRuleSet(rs ruleSet, args []string) error {
+	if len(args) == 0 {
+		for _, n := range rs.names() {
+			fmt.Printf("%s\t%s\n", n, rs.version(n))
+		}
+		return nil
+	}
+	name := strings.ToLower(strings.TrimSpace(args[0]))
+	v := rs.version(name)
+	if v == "" {
+		return fmt.Errorf("unknown %s %q (available: %s)", rs.noun, name, strings.Join(rs.names(), ", "))
+	}
+	fmt.Printf("%s (%s)\n", name, v)
+	for _, sx := range []einvoice.Syntax{einvoice.SyntaxCII, einvoice.SyntaxUBL} {
+		ids, err := rs.phases(name, sx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf(" %s\n", sx)
+		for _, id := range ids {
+			fmt.Println("   ", id)
 		}
 	}
-	return false
+	return nil
 }
 
 // runCius lists the profile rule sets the library carries, or the phases of
-// one of them. Names are what validate -cius takes.
+// one of them.
 func runCius(args []string) error {
-	if len(args) == 0 {
-		for _, n := range einvoice.CiusNames() {
-			fmt.Printf("%s\t%s\n", n, einvoice.CiusVersion(einvoice.CIUS(n)))
-		}
-		return nil
-	}
-	c := einvoice.CIUS(strings.ToLower(strings.TrimSpace(args[0])))
-	v := einvoice.CiusVersion(c)
-	if v == "" {
-		return fmt.Errorf("unknown profile %q (available: %s)", c, strings.Join(einvoice.CiusNames(), ", "))
-	}
-	fmt.Printf("%s (%s)\n", c, v)
-	for _, sx := range []einvoice.Syntax{einvoice.SyntaxCII, einvoice.SyntaxUBL} {
-		ids, err := einvoice.CiusPhases(c, sx)
-		if err != nil {
-			return err
-		}
-		fmt.Printf(" %s\n", sx)
-		for _, id := range ids {
-			fmt.Println("   ", id)
-		}
-	}
-	return nil
+	return listRuleSet(ruleSet{
+		noun:    "profile",
+		names:   einvoice.CiusNames,
+		version: func(n string) string { return einvoice.CiusVersion(einvoice.CIUS(n)) },
+		phases: func(n string, sx einvoice.Syntax) ([]string, error) {
+			return einvoice.CiusPhases(einvoice.CIUS(n), sx)
+		},
+	}, args)
 }
 
 // runProfile lists the published rule-set bundles the library carries, or the
-// phases of one of them. Names are what validate -profile takes.
+// phases of one of them.
 func runProfile(args []string) error {
-	if len(args) == 0 {
-		for _, n := range einvoice.ProfileNames() {
-			fmt.Printf("%s\t%s\n", n, einvoice.ProfileVersion(einvoice.Profile(n)))
-		}
-		return nil
-	}
-	p := einvoice.Profile(strings.ToLower(strings.TrimSpace(args[0])))
-	v := einvoice.ProfileVersion(p)
-	if v == "" {
-		return fmt.Errorf("unknown rule-set bundle %q (available: %s)", p, strings.Join(einvoice.ProfileNames(), ", "))
-	}
-	fmt.Printf("%s (%s)\n", p, v)
-	for _, sx := range []einvoice.Syntax{einvoice.SyntaxCII, einvoice.SyntaxUBL} {
-		ids, err := einvoice.ProfilePhases(p, sx)
-		if err != nil {
-			return err
-		}
-		fmt.Printf(" %s\n", sx)
-		for _, id := range ids {
-			fmt.Println("   ", id)
-		}
-	}
-	return nil
+	return listRuleSet(ruleSet{
+		noun:    "rule-set bundle",
+		names:   einvoice.ProfileNames,
+		version: func(n string) string { return einvoice.ProfileVersion(einvoice.Profile(n)) },
+		phases: func(n string, sx einvoice.Syntax) ([]string, error) {
+			return einvoice.ProfilePhases(einvoice.Profile(n), sx)
+		},
+	}, args)
 }
 
 // runEmbed adds the PDF/A-3 and Factur-X envelope to an ordinary PDF. The
@@ -718,6 +726,13 @@ func runExtract(args []string) error {
 	return os.WriteFile(*out, doc.XML, 0o644)
 }
 
+// checkFailed is the report line for a document that never reached the
+// checks: the envelope carries the reason, and no rule verdict exists.
+func checkFailed(path string, err error) hybrid.Result {
+	report := facturx.CheckResult{Name: path, Error: err.Error()}
+	return hybrid.Result{CheckResult: report}
+}
+
 // runCheck audits hybrid PDFs the way a recipient's validator would, without
 // touching them.
 func runCheck(args []string) error {
@@ -750,13 +765,13 @@ func runCheck(args []string) error {
 	for _, path := range paths {
 		data, err := readInput(path)
 		if err != nil {
-			all = append(all, hybrid.Result{CheckResult: facturx.CheckResult{Name: path, Error: err.Error()}})
+			all = append(all, checkFailed(path, err))
 			anyErr = true
 			continue
 		}
 		e, err := hybrid.Check(data, opt)
 		if err != nil {
-			all = append(all, hybrid.Result{CheckResult: facturx.CheckResult{Name: path, Error: err.Error()}})
+			all = append(all, checkFailed(path, err))
 			anyErr = true
 			continue
 		}

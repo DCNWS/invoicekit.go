@@ -52,7 +52,7 @@ func (r *scanner) keyword(word string) bool {
 	if r.pos+len(word) > len(r.data) {
 		return false
 	}
-	for i := 0; i < len(word); i++ {
+	for i := range len(word) {
 		if r.data[r.pos+i] != word[i] {
 			return false
 		}
@@ -113,7 +113,7 @@ func parseNumberToken(tok string, at int) (Object, error) {
 }
 
 func hasDot(s string) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '.' {
 			return true
 		}
@@ -371,7 +371,7 @@ func (r *scanner) hexString() (Object, error) {
 				nib = append(nib, '0')
 			}
 			b := make([]byte, len(nib)/2)
-			for i := 0; i < len(b); i++ {
+			for i := range len(b) {
 				hi, _ := hexValue(nib[2*i])
 				lo, _ := hexValue(nib[2*i+1])
 				b[i] = hi<<4 | lo

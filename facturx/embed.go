@@ -320,7 +320,7 @@ func addFile(f *pdf.File, a Attachment, now time.Time) (int, error) {
 // anything else becomes UTF-16 with a byte order mark so it survives readers
 // that assume the local code page.
 func textString(s string) pdf.Object {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] > 0x7f {
 			return pdf.TextUTF16(s)
 		}

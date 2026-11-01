@@ -342,7 +342,6 @@ func afFilespecs(f *pdf.File, root *pdf.Dict) []pdf.Object {
 // unembeddedFonts names the fonts a page draws with that do not travel inside
 // the file. pageTree is the root of the page tree, not the catalogue.
 func unembeddedFonts(f *pdf.File, pageTree *pdf.Dict) []string {
-	var out []string
 	seen := map[string]bool{}
 	for _, page := range pages(f, pageTree, 0) {
 		res := page.DictValue("Resources", f)
@@ -355,28 +354,37 @@ func unembeddedFonts(f *pdf.File, pageTree *pdf.Dict) []string {
 		}
 		for _, key := range fonts.Keys() {
 			fd, base := fontDescriptor(f, fonts.Get(key), 0)
-			label := key
-			if base != "" {
-				label = base
-			}
-			if fd == nil {
-				if !seen[label] {
-					seen[label] = true
-					out = append(out, label)
-				}
+			if embedded(fd) {
 				continue
 			}
-			if fd.Has("FontFile") || fd.Has("FontFile2") || fd.Has("FontFile3") {
-				continue
-			}
-			if !seen[label] {
-				seen[label] = true
-				out = append(out, label)
-			}
+			seen[fontLabel(key, base)] = true
 		}
+	}
+	out := make([]string, 0, len(seen))
+	for label := range seen {
+		out = append(out, label)
 	}
 	sort.Strings(out)
 	return out
+}
+
+// embedded reports whether a font descriptor carries a copy of the font file.
+// A nil descriptor carries nothing; the placeholder descriptor a Type 3 font
+// gets never does either.
+func embedded(fd *pdf.Dict) bool {
+	if fd == nil {
+		return false
+	}
+	return fd.Has("FontFile") || fd.Has("FontFile2") || fd.Has("FontFile3")
+}
+
+// fontLabel is the name a font is reported under: its PostScript name when the
+// font dictionary carries one, otherwise the resource dictionary key.
+func fontLabel(key, base string) string {
+	if base != "" {
+		return base
+	}
+	return key
 }
 
 // fontDescriptor resolves a font value to its descriptor and its PostScript

@@ -11,6 +11,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/dcnws/invoicekit.go/internal/xp"
@@ -726,8 +727,8 @@ func (s *Schema) xslChoose(dec *xml.Decoder, f *funcSrc) (string, error) {
 		switch t := tk.(type) {
 		case xml.EndElement:
 			expr := other
-			for i := len(when) - 1; i >= 0; i-- {
-				expr = when[i] + " else " + expr
+			for _, w := range slices.Backward(when) {
+				expr = w + " else " + expr
 			}
 			return expr, nil
 		case xml.StartElement:
@@ -1005,7 +1006,7 @@ func (s *Schema) PhaseIDs() []string {
 func anchorContext(ctx string) string {
 	var parts []string
 	depth, start := 0, 0
-	for i := 0; i < len(ctx); i++ {
+	for i := range len(ctx) {
 		switch ctx[i] {
 		case '[', '(':
 			depth++

@@ -212,8 +212,8 @@ var flavourAliases = []struct {
 // splitFlavour peels a leading flavour spelling off a profile string.
 func splitFlavour(t string) (Flavour, string, bool) {
 	for _, a := range flavourAliases {
-		if strings.HasPrefix(t, a.spelling) {
-			return a.flavour, strings.TrimSpace(strings.TrimPrefix(t, a.spelling)), true
+		if rest, ok := strings.CutPrefix(t, a.spelling); ok {
+			return a.flavour, strings.TrimSpace(rest), true
 		}
 	}
 	return "", "", false

@@ -288,3 +288,64 @@ func TestAtomicContextItem(t *testing.T) {
 		}
 	}
 }
+
+// boolCase is one expression and the effective boolean value it must produce.
+type boolCase struct {
+	src  string
+	want bool
+}
+
+// runBoolCases compiles and evaluates each expression against the test
+// document and requires the expected effective boolean value. The tests for
+// individual language features share this harness.
+func runBoolCases(t *testing.T, ns map[string]string, cases []boolCase) {
+	t.Helper()
+	d := doc(t)
+	for _, c := range cases {
+		e, err := Compile(c.src, ns)
+		if err != nil {
+			t.Fatalf("compile %s: %v", c.src, err)
+		}
+		v, err := e.Eval(d, d.Root)
+		if err != nil {
+			t.Fatalf("eval %s: %v", c.src, err)
+		}
+		if got := boolean(v); got != c.want {
+			t.Errorf("%s = %v, want %v", c.src, got, c.want)
+		}
+	}
+}
+
+// seqCase is one expression and the sequence it must produce, compared item by
+// item on the atomic string value.
+type seqCase struct {
+	src  string
+	want any
+}
+
+// runSeqCases compiles and evaluates each expression against the test document
+// and requires the expected sequence.
+func runSeqCases(t *testing.T, cases []seqCase) {
+	t.Helper()
+	d := doc(t)
+	for _, c := range cases {
+		e, err := Compile(c.src, tns)
+		if err != nil {
+			t.Fatalf("compile %s: %v", c.src, err)
+		}
+		got, err := e.Eval(d, d.Root)
+		if err != nil {
+			t.Fatalf("eval %s: %v", c.src, err)
+		}
+		want := seqOf(c.want)
+		if len(seqOf(got)) != len(want) {
+			t.Errorf("%s = %v, want %v", c.src, got, c.want)
+			continue
+		}
+		for i, it := range seqOf(got) {
+			if stringOf(it) != stringOf(want[i]) {
+				t.Errorf("%s item %d = %q, want %q", c.src, i, stringOf(it), stringOf(want[i]))
+			}
+		}
+	}
+}

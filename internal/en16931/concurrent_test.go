@@ -36,7 +36,7 @@ func TestSchemaModelConcurrency(t *testing.T) {
 	done := make(chan int, 8)
 	for i := range got {
 		go func(i int) {
-			for j := 0; j < runs; j++ {
+			for range runs {
 				got[i] = m.Validate(doc)
 			}
 			done <- i

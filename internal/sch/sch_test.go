@@ -57,13 +57,6 @@ func TestCompileRealSchemas(t *testing.T) {
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // TestUnphasedPatternAndRelativeContext pins the two Schematron semantics that
 // the EN 16931 rule sets depend on and that are easy to get wrong: with no
 // phase selected every pattern is active (including patterns no <phase>

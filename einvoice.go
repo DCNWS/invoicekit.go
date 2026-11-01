@@ -174,14 +174,11 @@ var modelHints = map[string]string{
 func modelDecodeError(err error) error {
 	const unknown = `unknown field "`
 	msg := err.Error()
-	i := strings.Index(msg, unknown)
-	if i < 0 {
+	_, after, found := strings.Cut(msg, unknown)
+	if !found {
 		return fmt.Errorf("einvoice: invoice model: %w", err)
 	}
-	key := msg[i+len(unknown):]
-	if j := strings.Index(key, `"`); j >= 0 {
-		key = key[:j]
-	}
+	key, _, _ := strings.Cut(after, `"`)
 	hint, ok := modelHints[key]
 	if !ok {
 		hint = "the model has no such field, so nothing would be rendered from it"

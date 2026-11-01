@@ -76,7 +76,7 @@ func parmList(v Object, n int) []*Dict {
 		return out
 	}
 	if a, ok := v.(Array); ok {
-		for i := 0; i < n && i < len(a); i++ {
+		for i := range min(n, len(a)) {
 			if d, ok := a[i].(*Dict); ok {
 				out[i] = d
 			}
@@ -146,7 +146,7 @@ func ascii85Decode(data []byte) ([]byte, error) {
 	if i+1 < len(data) && data[i] == '<' && data[i+1] == '~' {
 		data = data[i+2:]
 	}
-	for i := 0; i < len(data); i++ {
+	for i := range len(data) {
 		c := data[i]
 		if isSpaceByte(c) {
 			continue
@@ -172,10 +172,10 @@ func ascii85Decode(data []byte) ([]byte, error) {
 		}
 	}
 	if n > 1 {
-		for i := 0; i < 5-n; i++ {
+		for range 5 - n {
 			acc *= 85
 		}
-		for i := 0; i < n-1; i++ {
+		for i := range n - 1 {
 			out = append(out, byte(acc>>uint(24-8*i)))
 		}
 	}
@@ -251,14 +251,14 @@ func applyPredictor(data []byte, p *Dict) ([]byte, error) {
 					row[i] += row[i-bpp]
 				}
 			case 2:
-				for i := 0; i < rowBytes; i++ {
+				for i := range rowBytes {
 					if i < len(prev) {
 						row[i] += prev[i]
 					}
 				}
 			case 3:
 				bpp := (comps*bpc + 7) / 8
-				for i := 0; i < rowBytes; i++ {
+				for i := range rowBytes {
 					a := 0
 					if i >= bpp {
 						a = int(row[i-bpp])
@@ -271,7 +271,7 @@ func applyPredictor(data []byte, p *Dict) ([]byte, error) {
 				}
 			case 4:
 				bpp := (comps*bpc + 7) / 8
-				for i := 0; i < rowBytes; i++ {
+				for i := range rowBytes {
 					a, b, c := 0, 0, 0
 					if i >= bpp {
 						a = int(row[i-bpp])
@@ -305,10 +305,7 @@ func applyPredictor(data []byte, p *Dict) ([]byte, error) {
 		}
 		out := make([]byte, len(data))
 		for pos := 0; pos < len(data); pos += rowBytes {
-			end := pos + rowBytes
-			if end > len(data) {
-				end = len(data)
-			}
+			end := min(pos+rowBytes, len(data))
 			bpp := (comps*8 + 7) / 8
 			for i := pos; i < end; i++ {
 				if i-bpp >= pos {

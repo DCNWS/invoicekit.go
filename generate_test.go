@@ -8,8 +8,6 @@ import (
 	"github.com/dcnws/invoicekit.go"
 )
 
-func pct(v float64) *float64 { return &v }
-
 // smallInvoice is a complete, ordinary invoice: both parties identified, one
 // standard rated line, a document allowance and a charge, and totals left to be
 // computed by the generator.
@@ -38,8 +36,8 @@ func smallInvoice() einvoice.Invoice {
 		SellerAccount: &einvoice.FinancialAcct{IBAN: "GB29HABB12345678901234", BIC: "HABBGB2L"},
 		References:    []einvoice.Reference{{Type: "purchase", ID: "PO-5512"}},
 		Terms:         []string{"Payment due within 30 days of invoice date."},
-		Allowances:    []einvoice.AllowanceCharge{{Percent: pct(5), Reason: "Volume discount", ReasonCode: "95", TaxCategory: "S", TaxRate: pct(20)}},
-		Charges:       []einvoice.AllowanceCharge{{Amount: 12.5, Reason: "Handling", ReasonCode: "AA", TaxCategory: "S", TaxRate: pct(20)}},
+		Allowances:    []einvoice.AllowanceCharge{{Percent: new(5.0), Reason: "Volume discount", ReasonCode: "95", TaxCategory: "S", TaxRate: new(20.0)}},
+		Charges:       []einvoice.AllowanceCharge{{Amount: 12.5, Reason: "Handling", ReasonCode: "AA", TaxCategory: "S", TaxRate: new(20.0)}},
 		Lines: []einvoice.Line{{
 			ID: "1", Quantity: 10, UnitCode: "C62", NetPrice: 24,
 			TaxCategory: "S", TaxRate: 20,

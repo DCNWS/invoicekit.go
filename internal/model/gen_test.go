@@ -11,8 +11,6 @@ import (
 	"github.com/dcnws/invoicekit.go/internal/en16931"
 )
 
-func fp(v float64) *float64 { return &v }
-
 // base is the smallest invoice that is fully conformant: both parties carry a
 // name, a complete postal address and a VAT identifier, a payment means is
 // present and there is a single standard-rated line.
@@ -75,10 +73,10 @@ func full() Invoice {
 	}
 	in.Period = &Period{Start: "2024-02-01", End: "2024-02-29", Text: "February 2024"}
 	in.Terms = []string{"Payment due within 30 days of invoice date."}
-	in.Allowances = []AllowanceCharge{{Percent: fp(5), Reason: "Volume discount", ReasonCode: "95", TaxCategory: "S", TaxRate: fp(20)}}
-	in.Charges = []AllowanceCharge{{Amount: 12.5, Reason: "Handling", ReasonCode: "AA", TaxCategory: "S", TaxRate: fp(20)}}
-	in.Prepaid = fp(100)
-	in.Rounding = fp(0.01)
+	in.Allowances = []AllowanceCharge{{Percent: new(5.0), Reason: "Volume discount", ReasonCode: "95", TaxCategory: "S", TaxRate: new(20.0)}}
+	in.Charges = []AllowanceCharge{{Amount: 12.5, Reason: "Handling", ReasonCode: "AA", TaxCategory: "S", TaxRate: new(20.0)}}
+	in.Prepaid = new(100.0)
+	in.Rounding = new(0.01)
 	in.Lines = []Line{
 		{
 			ID: "1", Note: "Includes fitting", Quantity: 10, UnitCode: "C62",
@@ -86,16 +84,16 @@ func full() Invoice {
 			Item: Item{Name: "Widget", Description: "Large blue widget", SellerID: "W-100", CustomerID: "C-9",
 				StandardID: "4000000000001", StdScheme: "0088", ClassIDs: []string{"62149502"}, ClassScheme: "ST",
 				Origin: "GB", Units: "C62",
-				Price:      &ItemPrice{BaseQty: 1, BaseUnit: "C62", Allowance: fp(6)},
+				Price:      &ItemPrice{BaseQty: 1, BaseUnit: "C62", Allowance: new(6.0)},
 				Attributes: []Attribute{{Name: "Colour", Value: "Blue"}}},
-			Allowances: []AllowanceCharge{{Percent: fp(10), Reason: "Loyalty", ReasonCode: "95", TaxCategory: "S", TaxRate: fp(20)}},
+			Allowances: []AllowanceCharge{{Percent: new(10.0), Reason: "Loyalty", ReasonCode: "95", TaxCategory: "S", TaxRate: new(20.0)}},
 			Period:     &Period{Start: "2024-02-01", End: "2024-02-15"},
 			Account:    &Account{ID: "CC-100"},
 		},
 		{
 			ID: "2", Quantity: 3, UnitCode: "C62", NetPrice: 120, TaxCategory: "S", TaxRate: 20,
 			Item:    Item{Name: "Gadget", Attributes: []Attribute{{Name: "Weight", Value: "2 kg"}}},
-			Charges: []AllowanceCharge{{Amount: 5, Reason: "Express build", ReasonCode: "AA", TaxCategory: "S", TaxRate: fp(20)}},
+			Charges: []AllowanceCharge{{Amount: 5, Reason: "Express build", ReasonCode: "AA", TaxCategory: "S", TaxRate: new(20.0)}},
 		},
 		{
 			ID: "3", Quantity: 1, UnitCode: "C62", NetPrice: 40, TaxCategory: "Z", TaxRate: 0,
@@ -146,68 +144,74 @@ var ciiAdvisories = map[string][]string{
 	},
 }
 
+// renderCheck renders one case, validates it against the EN 16931 artefacts and
+// reports anything the conformance bar does not allow. render is the syntax
+// under test, tag names that syntax in the path of the document written out
+// when a case fails, and advisories pins the advisory rules that syntax is
+// expected to attract for the case.
+func renderCheck(t *testing.T, name string, inv Invoice, render func(Invoice) ([]byte, error), advisories map[string][]string, tag string) {
+	t.Helper()
+	before := inv.ID
+	data, err := render(inv)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if inv.ID != before {
+		t.Errorf("render mutated the caller's invoice")
+	}
+	rep, err := en16931.Validate(data, en16931.Options{})
+	if err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	// Schematron answers business questions and assumes a structurally
+	// valid tree, so schema validity is asserted separately: a renderer
+	// that puts an element where its schema does not allow it can pass
+	// every business rule and still be unreadable by a real receiver.
+	for _, f := range rep.Schema {
+		t.Errorf("schema: %s", f)
+	}
+	// The rule sets also carry advisory rules - "element X should not be
+	// present" - flagged as warnings. They are guidance about how a syntax
+	// is usually written, not part of the EN 16931 conformance bar: the
+	// official validator reports them and passes the document anyway. The
+	// set is pinned per case, so taking on a new advisory is a decision
+	// made in this test rather than a surprise in a customer's log.
+	n, ids := 0, []string{}
+	seen := []string{}
+	for _, f := range rep.Findings {
+		if f.Flag == "warning" {
+			t.Logf("advisory: %s %s", f.ID, f.Message)
+			seen = append(seen, f.ID)
+			continue
+		}
+		n++
+		ids = append(ids, f.ID)
+	}
+	sort.Strings(seen)
+	if want := advisories[name]; !slices.Equal(seen, want) {
+		t.Errorf("advisories = %v, want %v", seen, want)
+	}
+	if n == 0 {
+		return
+	}
+	path := fmt.Sprintf("/tmp/%s-%s.xml", tag, name)
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Error(err)
+	}
+	t.Errorf("%d findings, document at %s, ids=%v", n, path, ids)
+	for _, f := range rep.Findings {
+		if f.Flag == "warning" {
+			continue
+		}
+		t.Errorf("  %s [%s] %s ctx=%s err=%v", f.ID, f.Flag, f.Message, f.Context, f.Err)
+	}
+}
+
 func TestRenderCII(t *testing.T) {
 	for name, inv := range cases() {
 		t.Run(name, func(t *testing.T) {
-			before := inv.ID
-			data, err := RenderCII(inv)
-			if err != nil {
-				t.Fatalf("render: %v", err)
-			}
-			if inv.ID != before {
-				t.Errorf("render mutated the caller's invoice")
-			}
-			rep, err := en16931.Validate(data, en16931.Options{})
-			if err != nil {
-				t.Fatalf("validate: %v", err)
-			}
-
-			// Schematron answers business questions and assumes a structurally
-			// valid tree, so schema validity is asserted separately: a renderer
-			// that puts an element where its schema does not allow it can pass
-			// every business rule and still be unreadable by a real receiver.
-			for _, f := range rep.Schema {
-				t.Errorf("schema: %s", f)
-			}
-			// The CII schematron also carries advisory rules - "element X
-			// should not be present" - flagged as warnings. They are guidance
-			// about how CII documents are usually written, not part of the
-			// EN 16931 conformance bar: the official validator reports them
-			// and passes the document anyway. Every one of them fires on data
-			// that EN 16931 does not define and CII has an element for, which
-			// is why the renderer keeps writing that data rather than losing
-			// it (see the note on RenderCII). The set is still pinned per
-			// case below, so taking on a new advisory is a decision made in
-			// this test rather than a surprise in a customer's log.
-			n, ids := 0, []string{}
-			seen := []string{}
-			for _, f := range rep.Findings {
-				if f.Flag == "warning" {
-					t.Logf("advisory: %s %s", f.ID, f.Message)
-					seen = append(seen, f.ID)
-					continue
-				}
-				n++
-				ids = append(ids, f.ID)
-			}
-			sort.Strings(seen)
-			if want := ciiAdvisories[name]; !slices.Equal(seen, want) {
-				t.Errorf("advisories = %v, want %v", seen, want)
-			}
-			if n == 0 {
-				return
-			}
-			path := fmt.Sprintf("/tmp/cii-%s.xml", name)
-			if err := os.WriteFile(path, data, 0o644); err != nil {
-				t.Error(err)
-			}
-			t.Errorf("%d findings, document at %s, ids=%v", n, path, ids)
-			for _, f := range rep.Findings {
-				if f.Flag == "warning" {
-					continue
-				}
-				t.Errorf("  %s [%s] %s ctx=%s err=%v", f.ID, f.Flag, f.Message, f.Context, f.Err)
-			}
+			renderCheck(t, name, inv, RenderCII, ciiAdvisories, "cii")
 		})
 	}
 }
@@ -261,55 +265,7 @@ var ublAdvisories = map[string][]string{}
 func TestRenderUBL(t *testing.T) {
 	for name, inv := range cases() {
 		t.Run(name, func(t *testing.T) {
-			before := inv.ID
-			data, err := RenderUBL(inv)
-			if err != nil {
-				t.Fatalf("render: %v", err)
-			}
-			if inv.ID != before {
-				t.Errorf("render mutated the caller's invoice")
-			}
-			rep, err := en16931.Validate(data, en16931.Options{})
-			if err != nil {
-				t.Fatalf("validate: %v", err)
-			}
-
-			// Schematron answers business questions and assumes a structurally
-			// valid tree, so schema validity is asserted separately: a renderer
-			// that puts an element where its schema does not allow it can pass
-			// every business rule and still be unreadable by a real receiver.
-			for _, f := range rep.Schema {
-				t.Errorf("schema: %s", f)
-			}
-			n, ids := 0, []string{}
-			seen := []string{}
-			for _, f := range rep.Findings {
-				if f.Flag == "warning" {
-					t.Logf("advisory: %s %s", f.ID, f.Message)
-					seen = append(seen, f.ID)
-					continue
-				}
-				n++
-				ids = append(ids, f.ID)
-			}
-			sort.Strings(seen)
-			if want := ublAdvisories[name]; !slices.Equal(seen, want) {
-				t.Errorf("advisories = %v, want %v", seen, want)
-			}
-			if n == 0 {
-				return
-			}
-			path := fmt.Sprintf("/tmp/ubl-%s.xml", name)
-			if err := os.WriteFile(path, data, 0o644); err != nil {
-				t.Error(err)
-			}
-			t.Errorf("%d findings, document at %s, ids=%v", n, path, ids)
-			for _, f := range rep.Findings {
-				if f.Flag == "warning" {
-					continue
-				}
-				t.Errorf("  %s [%s] %s ctx=%s err=%v", f.ID, f.Flag, f.Message, f.Context, f.Err)
-			}
+			renderCheck(t, name, inv, RenderUBL, ublAdvisories, "ubl")
 		})
 	}
 }
@@ -438,7 +394,7 @@ func TestRenderPriceDerived(t *testing.T) {
 	}
 
 	bad := full()
-	bad.Lines[0].Item.Price.Allowance = fp(10)
+	bad.Lines[0].Item.Price.Allowance = new(10.0)
 	for name, render := range map[string]func(Invoice) ([]byte, error){"cii": RenderCII, "ubl": RenderUBL} {
 		if _, err := render(bad); err == nil {
 			t.Errorf("%s: a price that does not add up rendered without an error", name)

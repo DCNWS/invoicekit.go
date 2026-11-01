@@ -112,7 +112,7 @@ func options(v js.Value) einvoice.Options {
 	}
 	if p := v.Get("phases"); p.Type() == js.TypeObject && p.Get("length").Type() == js.TypeNumber {
 		n := p.Get("length").Int()
-		for i := 0; i < n; i++ {
+		for i := range n {
 			if e := p.Index(i); e.Type() == js.TypeString {
 				opt.Phases = append(opt.Phases, e.String())
 			}

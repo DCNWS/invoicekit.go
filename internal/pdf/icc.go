@@ -35,8 +35,8 @@ func sRGBProfile() []byte {
 	// Solve for the scaling that maps the white point to (Xw, 1, Zw).
 	white := [3]float64{wx / wy, 1, (1 - wx - wy) / wy}
 	z := solve3(cols, white)
-	for c := 0; c < 3; c++ {
-		for r := 0; r < 3; r++ {
+	for c := range 3 {
+		for r := range 3 {
 			cols[c][r] *= z[c]
 		}
 	}
@@ -50,8 +50,8 @@ func sRGBProfile() []byte {
 	wd50 := [3]float64{0.9642, 1.0000, 0.8249} // D50 PCS illuminant
 	a := adapt(bradford, wd65, wd50)
 	var adapted [3][3]float64
-	for c := 0; c < 3; c++ {
-		for r := 0; r < 3; r++ {
+	for c := range 3 {
+		for r := range 3 {
 			adapted[c][r] = a[r][0]*cols[c][0] + a[r][1]*cols[c][1] + a[r][2]*cols[c][2]
 		}
 	}
@@ -60,7 +60,7 @@ func sRGBProfile() []byte {
 	trc := make([]byte, 8+2*trcEntries)
 	copy(trc, "curv")
 	binary.BigEndian.PutUint32(trc[4:], trcEntries)
-	for i := 0; i < trcEntries; i++ {
+	for i := range trcEntries {
 		v := float64(i) / float64(trcEntries-1)
 		l := sRGBLinearize(v)
 		binary.BigEndian.PutUint16(trc[8+2*i:], uint16(math.Round(l*65535)))
@@ -209,19 +209,14 @@ func solve3(m [3][3]float64, v [3]float64) [3]float64 {
 		{m[0][1], m[1][1], m[2][1], v[1]},
 		{m[0][2], m[1][2], m[2][2], v[2]},
 	}
-	for col := 0; col < 3; col++ {
-		piv := col
-		for r := col + 1; r < 3; r++ {
-			if math.Abs(a[r][col]) > math.Abs(a[piv][col]) {
-				piv = r
-			}
-		}
+	for col := range 3 {
+		piv := pivotRow(a, col)
 		a[col], a[piv] = a[piv], a[col]
 		d := a[col][col]
 		if math.Abs(d) < 1e-12 {
 			panic("pdf: singular matrix in ICC generation")
 		}
-		for r := 0; r < 3; r++ {
+		for r := range 3 {
 			if r == col {
 				continue
 			}
@@ -232,6 +227,18 @@ func solve3(m [3][3]float64, v [3]float64) [3]float64 {
 		}
 	}
 	return [3]float64{a[0][3] / a[0][0], a[1][3] / a[1][1], a[2][3] / a[2][2]}
+}
+
+// pivotRow returns the row at or below col whose entry in column col has the
+// largest magnitude, for partial pivoting.
+func pivotRow(a [3][4]float64, col int) int {
+	piv := col
+	for r := col + 1; r < 3; r++ {
+		if math.Abs(a[r][col]) > math.Abs(a[piv][col]) {
+			piv = r
+		}
+	}
+	return piv
 }
 
 // adapt returns the diagonal-scaled Bradford matrix adapting white from to.
@@ -249,8 +256,8 @@ func adapt(b [3][3]float64, from, to [3]float64) [3][3]float64 {
 
 func matMul(a, b2 [3][3]float64) [3][3]float64 {
 	var c [3][3]float64
-	for r := 0; r < 3; r++ {
-		for k := 0; k < 3; k++ {
+	for r := range 3 {
+		for k := range 3 {
 			c[r][k] = a[r][0]*b2[0][k] + a[r][1]*b2[1][k] + a[r][2]*b2[2][k]
 		}
 	}

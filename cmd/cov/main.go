@@ -18,6 +18,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -85,7 +86,7 @@ func spans(b []byte) []*span {
 			out = append(out, sp)
 		case xml.EndElement:
 			off := int(dec.InputOffset())
-			for i := len(stack) - 1; i >= 0; i-- {
+			for i := range slices.Backward(stack) {
 				if stack[i].name == t.Name.Local {
 					stack[i].end = off
 					if stack[i].end > stack[i].startEnd {
@@ -200,19 +201,18 @@ func mutate(b []byte, root string) []mutant {
 		}
 
 		for _, a := range s.attrs {
-			aa := a
-			add(s.name+"/attr-"+aa.name+"/junk", func(sb *strings.Builder) {
-				sb.Write(b[:aa.valueStart])
+			add(s.name+"/attr-"+a.name+"/junk", func(sb *strings.Builder) {
+				sb.Write(b[:a.valueStart])
 				sb.WriteString("zz")
-				sb.Write(b[aa.valueEnd:])
+				sb.Write(b[a.valueEnd:])
 			})
-			add(s.name+"/attr-"+aa.name+"/del", func(sb *strings.Builder) {
-				start := aa.tagStart
+			add(s.name+"/attr-"+a.name+"/del", func(sb *strings.Builder) {
+				start := a.tagStart
 				for start > s.tagStart && b[start-1] != ' ' && b[start-1] != '\n' && b[start-1] != '\t' && b[start-1] != '\r' {
 					start--
 				}
 				sb.Write(b[:start])
-				sb.Write(b[aa.tagEnd:])
+				sb.Write(b[a.tagEnd:])
 			})
 		}
 
@@ -557,15 +557,13 @@ func main() {
 	in := make(chan job)
 	out := make(chan outcome, 64)
 	var wg sync.WaitGroup
-	for i := 0; i < n; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range n {
+		wg.Go(func() {
 			for j := range in {
 				res, err := en16931.Validate(j.m.data, en16931.Options{Syntax: j.sy})
 				out <- outcome{j, res, err}
 			}
-		}()
+		})
 	}
 	go func() {
 		for _, j := range work {

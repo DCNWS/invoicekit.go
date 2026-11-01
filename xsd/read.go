@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path"
 	"sort"
@@ -90,13 +91,9 @@ func (r *reader) file(p string, src []byte, l Loader, outer map[string]string) e
 	if err != nil {
 		return fmt.Errorf("%s: %w", key, err)
 	}
-	scope := map[string]string{}
-	for k, v := range outer {
-		scope[k] = v
-	}
-	for k, v := range root.xmlns {
-		scope[k] = v
-	}
+	scope := make(map[string]string, len(outer)+len(root.xmlns))
+	maps.Copy(scope, outer)
+	maps.Copy(scope, root.xmlns)
 	switch root.name {
 	case xs("schemas"):
 		for _, k := range root.kids {

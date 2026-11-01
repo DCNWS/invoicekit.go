@@ -2,6 +2,7 @@ package xp
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 )
 
@@ -62,15 +63,15 @@ func (c *Compiler) NS() map[string]string { return c.ns }
 // name without a prefix, or with an undeclared prefix, is not an extension
 // function name and reports false.
 func (c *Compiler) extKey(name string) (string, bool) {
-	i := strings.IndexByte(name, ':')
-	if i < 0 {
+	pre, local, found := strings.Cut(name, ":")
+	if !found {
 		return "", false
 	}
-	uri, ok := c.ns[name[:i]]
+	uri, ok := c.ns[pre]
 	if !ok {
 		return "", false
 	}
-	return uri + "}" + name[i+1:], true
+	return uri + "}" + local, true
 }
 
 // Declare registers an extension function whose name must sit in a declared
@@ -123,9 +124,7 @@ func callFunc(fn *FuncDecl, args []any, c ctx) (any, error) {
 		return nil, errf("extension function %s has no body", fn.Name)
 	}
 	vars := make(map[string]any, len(c.env.globals)+len(fn.Params)+len(fn.Vars))
-	for k, v := range c.env.globals {
-		vars[k] = v
-	}
+	maps.Copy(vars, c.env.globals)
 	for i, p := range fn.Params {
 		vars[p] = args[i]
 	}

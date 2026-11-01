@@ -2,9 +2,11 @@ package xp
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"math/big"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -643,9 +645,7 @@ func eval(e expr, c ctx) (any, error) {
 // enclosing expression, so relative paths still resolve from the original node.
 func withVar(c ctx, name string, v any) ctx {
 	vars := make(map[string]any, len(c.vars)+1)
-	for k, val := range c.vars {
-		vars[k] = val
-	}
+	maps.Copy(vars, c.vars)
 	vars[name] = v
 	return ctx{doc: c.doc, node: c.node, pos: c.pos, size: c.size, vars: vars, env: c.env}
 }
@@ -863,7 +863,9 @@ func evalPath(px *pathExpr, c ctx) (any, error) {
 		cur = []any{c.node}
 	}
 	all := append([]expr{px.first}, px.rest...)
-	for i := 0; i < len(all); i++ {
+	// Not a range loop: the body advances i itself when a child step is
+	// fused into the current one, which a range loop would ignore.
+	for i := 0; i < len(all); i++ { //nolint:modernize // i is advanced in the body
 		st := all[i]
 		switch s := st.(type) {
 		case *nodeTest:
@@ -1355,14 +1357,7 @@ func dedupNodes(s []any) []any {
 
 // holds reports whether u already contains x. Nodes are compared by identity,
 // which is what membership of an XPath node-set means.
-func holds(u []any, x any) bool {
-	for _, y := range u {
-		if y == x {
-			return true
-		}
-	}
-	return false
-}
+func holds(u []any, x any) bool { return slices.Contains(u, x) }
 
 // sortedUnique reports whether s holds distinct nodes in document order, the
 // sequence dedupSort would return unchanged. It is only called when every item

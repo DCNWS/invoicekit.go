@@ -3,6 +3,7 @@ package xp
 import (
 	"math/big"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -27,10 +28,11 @@ func only(v any) any {
 }
 
 func local(name string) string {
-	if i := strings.LastIndexByte(name, ':'); i >= 0 {
-		return name[i+1:]
+	_, rest, found := strings.CutLast(name, ":")
+	if !found {
+		return name
 	}
-	return name
+	return rest
 }
 
 func isXSCast(name string) bool {
@@ -167,14 +169,14 @@ func evalFunc(f *funcCall, c ctx) (any, error) {
 		return strings.HasSuffix(str(arg(0)), str(arg(1))), nil
 	case "substring-after":
 		a, b := str(arg(0)), str(arg(1))
-		if i := strings.Index(a, b); i >= 0 {
-			return a[i+len(b):], nil
+		if _, rest, found := strings.Cut(a, b); found {
+			return rest, nil
 		}
 		return "", nil
 	case "substring-before":
 		a, b := str(arg(0)), str(arg(1))
-		if i := strings.Index(a, b); i >= 0 {
-			return a[:i], nil
+		if before, _, found := strings.Cut(a, b); found {
+			return before, nil
 		}
 		return "", nil
 	case "substring":
@@ -259,8 +261,8 @@ func evalFunc(f *funcCall, c ctx) (any, error) {
 	case "reverse":
 		sq := seqOf(arg(0))
 		out := make([]any, 0, len(sq))
-		for i := len(sq) - 1; i >= 0; i-- {
-			out = append(out, sq[i])
+		for _, v := range slices.Backward(sq) {
+			out = append(out, v)
 		}
 		return out, nil
 	case "string-join":
@@ -519,7 +521,7 @@ func xpPattern(pat, flags string) (string, error) {
 	// replace($x, '([\s])', ''). The classes stay ASCII-only as in RE2, unlike
 	// the Unicode-aware classes of XPath, which no CIUS rule relies on.
 	var fl []byte
-	for i := 0; i < len(flags); i++ {
+	for i := range len(flags) {
 		switch flags[i] {
 		case 'i', 'm', 's', 'x':
 			fl = append(fl, flags[i])

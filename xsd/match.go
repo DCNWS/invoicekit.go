@@ -2,6 +2,7 @@ package xsd
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/dcnws/invoicekit.go/internal/xp"
@@ -191,7 +192,7 @@ func wireOcc(s, e *st, p *Term, one func(a, b *st)) {
 		s.eps = append(s.eps, e)
 	}
 	cur, lastA, lastB := s, (*st)(nil), (*st)(nil)
-	for i := 0; i < hi; i++ {
+	for i := range hi {
 		a, b := &st{}, &st{}
 		one(a, b)
 		cur.eps = append(cur.eps, a)
@@ -378,12 +379,7 @@ func closureMap(in []*st) []*st {
 }
 
 func contains(set []*st, want *st) bool {
-	for _, s := range set {
-		if s == want {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(set, want)
 }
 
 // expectList turns a state set into the names it can still accept, which makes

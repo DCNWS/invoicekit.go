@@ -9,10 +9,7 @@ import "testing"
 // "[ \t\n\r]" silently turns [\s] into a class of brackets and blanks and stops
 // matching anything. RE2 understands the escapes itself, nested or not.
 func TestRegexClasses(t *testing.T) {
-	for _, c := range []struct {
-		src  string
-		want any
-	}{
+	runSeqCases(t, []seqCase{
 		{`replace('a b c', '\s', '-')`, "a-b-c"},
 		{`replace('a b c', '([\s])', '')`, "abc"},
 		{`replace('a1b2', '[\d]', '')`, "ab"},
@@ -20,25 +17,7 @@ func TestRegexClasses(t *testing.T) {
 		{`matches('aXb', 'a[\w]b')`, true},
 		{`matches('a b', 'a[^\s]b')`, false},
 		{`tokenize('a, b', ',\s')`, []any{"a", "b"}},
-	} {
-		e, err := Compile(c.src, tns)
-		if err != nil {
-			t.Fatalf("compile %s: %v", c.src, err)
-		}
-		got, err := e.Eval(doc(t), doc(t).Root)
-		if err != nil {
-			t.Fatalf("eval %s: %v", c.src, err)
-		}
-		if len(seqOf(got)) != len(seqOf(c.want)) {
-			t.Errorf("%s = %v, want %v", c.src, got, c.want)
-			continue
-		}
-		for i, it := range seqOf(got) {
-			if stringOf(it) != stringOf(seqOf(c.want)[i]) {
-				t.Errorf("%s item %d = %q, want %q", c.src, i, stringOf(it), stringOf(seqOf(c.want)[i]))
-			}
-		}
-	}
+	})
 }
 
 // TestDotMatchesLineBreaks pins the default dot semantics of XPath regular
@@ -47,10 +26,7 @@ func TestRegexClasses(t *testing.T) {
 // split BR-DE-18's Skonto note in the wrong place, because its "#.+#" pattern
 // then swallows the line breaks between the entries.
 func TestDotMatchesLineBreaks(t *testing.T) {
-	for _, c := range []struct {
-		src  string
-		want any
-	}{
+	runSeqCases(t, []seqCase{
 		{"tokenize(\"a\nb\", \".\")", []any{"", "\n", ""}},
 		{"matches(\"a\nb\", \"a.b\")", false},
 		// fn:matches searches rather than matching the whole string, so an
@@ -60,23 +36,5 @@ func TestDotMatchesLineBreaks(t *testing.T) {
 		{`matches("abc", "b")`, true},
 		{"matches(\"a\nb\", \"a.b\", \"s\")", true},
 		{"count(tokenize(\"#a#\n#b#\n\", \"#.+#\"))", "3"},
-	} {
-		e, err := Compile(c.src, tns)
-		if err != nil {
-			t.Fatalf("compile %s: %v", c.src, err)
-		}
-		got, err := e.Eval(doc(t), doc(t).Root)
-		if err != nil {
-			t.Fatalf("eval %s: %v", c.src, err)
-		}
-		if len(seqOf(got)) != len(seqOf(c.want)) {
-			t.Errorf("%s = %v, want %v", c.src, got, c.want)
-			continue
-		}
-		for i, it := range seqOf(got) {
-			if stringOf(it) != stringOf(seqOf(c.want)[i]) {
-				t.Errorf("%s item %d = %q, want %q", c.src, i, stringOf(it), stringOf(seqOf(c.want)[i]))
-			}
-		}
-	}
+	})
 }

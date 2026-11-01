@@ -3,6 +3,7 @@ package xsd
 import (
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -71,10 +72,8 @@ func refsDecl(t *Term, id string) bool {
 		if p.DeclRef == id {
 			return true
 		}
-		for _, q := range p.Parts {
-			if visit(q) {
-				return true
-			}
+		if slices.ContainsFunc(p.Parts, visit) {
+			return true
 		}
 		if p.Type != nil {
 			return visit(p.Type.Term)

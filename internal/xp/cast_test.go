@@ -6,14 +6,10 @@ import "testing"
 // test an identifier's lexical form without raising an error. Castable never
 // fails: it answers false where the corresponding cast would.
 func TestCastable(t *testing.T) {
-	d := doc(t)
 	// The test document's prefixes are rsm/ram/udt, so the schema namespace has
 	// to be declared explicitly for the atomic type names.
 	ns := map[string]string{"xs": "http://www.w3.org/2001/XMLSchema"}
-	for _, c := range []struct {
-		src  string
-		want bool
-	}{
+	runBoolCases(t, ns, []boolCase{
 		{`'12' castable as xs:integer`, true},
 		{`'12.5' castable as xs:integer`, false},
 		{`'' castable as xs:integer`, false},
@@ -25,17 +21,5 @@ func TestCastable(t *testing.T) {
 		{`'anything' castable as xs:string`, true},
 		{`() castable as xs:integer`, true}, // empty sequence casts to the empty sequence
 		{`number(3) castable as xs:integer`, true},
-	} {
-		e, err := Compile(c.src, ns)
-		if err != nil {
-			t.Fatalf("compile %s: %v", c.src, err)
-		}
-		v, err := e.Eval(d, d.Root)
-		if err != nil {
-			t.Fatalf("eval %s: %v", c.src, err)
-		}
-		if got := boolean(v); got != c.want {
-			t.Errorf("%s = %v, want %v", c.src, got, c.want)
-		}
-	}
+	})
 }

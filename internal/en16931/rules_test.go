@@ -1,6 +1,7 @@
 package en16931
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -111,10 +112,5 @@ func findRule(t *testing.T, rs []Rule, id string) *Rule {
 }
 
 func hasPhase(r *Rule, id string) bool {
-	for _, p := range r.Phases {
-		if p == id {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(r.Phases, id)
 }

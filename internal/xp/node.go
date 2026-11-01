@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"maps"
 	"strings"
 )
 
@@ -172,10 +173,7 @@ Loop:
 				return nil, fmt.Errorf("xml: undefined namespace prefix %q on <%s>", space, local)
 			}
 			n := &Node{Name: local, NS: ns, Prefix: prefixOf(cur0, ns)}
-			cur := map[string]string{}
-			for k, v := range nsstack[len(nsstack)-1] {
-				cur[k] = v
-			}
+			cur := maps.Clone(nsstack[len(nsstack)-1])
 			var real []Attr
 			for _, a := range tk.Attr {
 				an, as := a.Name.Local, a.Name.Space

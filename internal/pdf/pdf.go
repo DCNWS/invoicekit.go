@@ -20,7 +20,7 @@ import (
 )
 
 // Object is any PDF value.
-type Object interface{}
+type Object any
 
 // Null is the PDF null object.
 type Null struct{}
@@ -237,7 +237,7 @@ func (d *Dict) streamValue(key string, f *File) *Stream {
 // formatName renders a PDF name, escaping what cannot appear literally.
 func formatName(s string) string {
 	var b []byte
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		c := s[i]
 		if c <= 0x20 || c >= 0x7f || c == '#' || c == '(' || c == ')' || c == '<' || c == '>' ||
 			c == '[' || c == ']' || c == '{' || c == '}' || c == '/' || c == '%' {
@@ -255,7 +255,7 @@ const hexDigits = "0123456789abcdef"
 // formatString renders a byte string, choosing a literal or hexadecimal form.
 func formatString(s string) string {
 	printable := true
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] < 0x20 || s[i] > 0x7e {
 			printable = false
 			break
@@ -263,7 +263,7 @@ func formatString(s string) string {
 	}
 	if printable {
 		var b []byte
-		for i := 0; i < len(s); i++ {
+		for i := range len(s) {
 			switch c := s[i]; c {
 			case '(', ')', '\\':
 				b = append(b, '\\', c)
@@ -275,7 +275,7 @@ func formatString(s string) string {
 	}
 	b := make([]byte, 0, 2+2*len(s))
 	b = append(b, '<')
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		b = append(b, hexDigits[s[i]>>4], hexDigits[s[i]&0xf])
 	}
 	b = append(b, '>')

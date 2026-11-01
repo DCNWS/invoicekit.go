@@ -10,3 +10,6 @@
 
 # wasm build output
 /wasm/
+
+# coverage output
+/cov

@@ -130,10 +130,7 @@ func Parse(data []byte) (*File, error) {
 // findStartXref locates the startxref keyword nearest the end of file and
 // returns the offset it names.
 func findStartXref(data []byte) (int, error) {
-	tail := len(data) - 1024
-	if tail < 0 {
-		tail = 0
-	}
+	tail := max(len(data)-1024, 0)
 	i := bytes.LastIndex(data[tail:], []byte("startxref"))
 	if i < 0 {
 		return 0, fmt.Errorf("pdf: no startxref keyword")
@@ -249,7 +246,7 @@ func (f *File) readClassicXref(data []byte, r *scanner) (int, error) {
 			return -1, fmt.Errorf("pdf: cross-reference subsection %d %d out of range", startObj64, count64)
 		}
 		startObj, count := int(startObj64), int(count64)
-		for i := 0; i < count; i++ {
+		for i := range count {
 			// Entries are fixed-width in a conforming file, but tolerate
 			// anything whitespace-separated.
 			e, err := r.xrefEntryText()
@@ -335,7 +332,7 @@ func (f *File) readXrefStreamEntries(s *Stream) error {
 	pos := 0
 	for k := 0; k+1 < len(idx); k += 2 {
 		first, count := idx[k], idx[k+1]
-		for i := 0; i < count; i++ {
+		for i := range count {
 			if pos+row > len(raw) {
 				return fmt.Errorf("pdf: XRef stream truncated")
 			}
@@ -413,7 +410,7 @@ func (f *File) loadObjects(data []byte) error {
 		}
 		pairs := make([]int64, 0, 2*n)
 		r := &scanner{data: body}
-		for i := int64(0); i < n; i++ {
+		for range n {
 			a, err := r.intNumber()
 			if err != nil {
 				return fmt.Errorf("pdf: object stream %d header: %w", p.e.stm, err)

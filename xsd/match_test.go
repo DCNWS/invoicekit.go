@@ -64,7 +64,7 @@ func TestClosureMatchesMapOrder(t *testing.T) {
 
 	// A machine wider than the bitset must fall back and agree with closureMap.
 	wide := &st{}
-	for i := 0; i < closureStateMax+7; i++ {
+	for i := range closureStateMax + 7 {
 		wide.eps = append(wide.eps, leaf(name(i)))
 	}
 	f2 := &frag{start: wide, end: wide.eps[0]}

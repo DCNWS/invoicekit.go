@@ -76,7 +76,7 @@ type Invoice struct {
 	Lines      []Line            `json:"lines"`                // BG-25
 
 	// Derived amounts. Empty means "compute me".
-	Totals       Totals    `json:"totals,omitempty"`
+	Totals       Totals    `json:"totals"`
 	VATBreakdown []VATRate `json:"vatBreakdown,omitempty"` // BG-23; empty means derive from lines
 	Prepaid      *float64  `json:"prepaid,omitempty"`      // BT-113 paid amount
 	Rounding     *float64  `json:"rounding,omitempty"`     // BT-114 rounding amount
@@ -198,7 +198,7 @@ type Mandate struct {
 type Delivery struct {
 	Name       string  `json:"name,omitempty"`       // BT-70 deliver to party name
 	ReceiverID string  `json:"receiverId,omitempty"` // BT-71 deliver to location id
-	Address    Address `json:"address,omitempty"`
+	Address    Address `json:"address"`
 	Period     *Period `json:"period,omitempty"` // CII only, see ArrivalDate
 	// ShipTrade is an incoterm code and ShipPlace the place of delivery.
 	// Neither is an EN 16931 business term: CII gives the pair one slot and
@@ -371,7 +371,7 @@ func halfRat() *big.Rat { return new(big.Rat).SetFrac64(1, 2) }
 
 func pow10(n int) *big.Rat {
 	d := big.NewInt(1)
-	for i := 0; i < n; i++ {
+	for range n {
 		d.Mul(d, big.NewInt(10))
 	}
 	return new(big.Rat).SetInt(d)

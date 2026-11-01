@@ -164,8 +164,8 @@ func (p *parser) fail(f string, a ...any) error {
 
 // resolve maps "ram:Foo" to local name + namespace URI.
 func (p *parser) resolve(n string) (string, string, error) {
-	if i := strings.Index(n, ":"); i >= 0 {
-		pre, local := n[:i], n[i+1:]
+	pre, local, found := strings.Cut(n, ":")
+	if found {
 		uri, ok := p.ns[pre]
 		if !ok {
 			return "", "", fmt.Errorf("xp: undefined prefix %q", pre)
