@@ -19,8 +19,28 @@ Open). They are not the schema documents themselves - cmd/xsdgen keeps only the
 components reachable from the invoice and credit note roots and writes that
 subset out as one self-contained schema, gzipped: 3 MB of schema becomes 29 KB.
 Element names, namespaces, cardinalities and order are carried across verbatim,
-so what the official schemas accept, this accepts. See schemas-src/README.md for
-the source files and the exact regeneration commands.
+so what the official schemas accept, this accepts.
+
+The source schema documents are not vendored here - they are 3 MB of mostly
+documentation, and the model above is what the library reads. To regenerate
+them from scratch, unpack the two sets and run cmd/xsdgen:
+
+  # UN/CEFACT CII: "D16B SCRDM (Subset)/uncoupled clm/CII/uncefact/data/standard/"
+  # from https://github.com/ConnectingEurope/eInvoicing-EN16931 (EUPL 1.2)
+  go run ./cmd/xsdgen -dir <cii directory> \
+      -schema CrossIndustryInvoice_100pD16B.xsd \
+      -root '{urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100}CrossIndustryInvoice' \
+      -out internal/en16931/schemas/cii-xsd.xml.gz
+
+  # OASIS UBL 2.1: http://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.zip
+  go run ./cmd/xsdgen -dir <ubl directory> \
+      -schema UBL-Invoice-2.1.xsd \
+      -schema UBL-CreditNote-2.1.xsd \
+      -root '{urn:oasis:names:specification:ubl:schema:xsd:Invoice-2}Invoice' \
+      -root '{urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2}CreditNote' \
+      -out internal/en16931/schemas/ubl-xsd.xml.gz
+
+Both are reproducible: re-running them writes the checked-in bytes.
 
 The four .sch.gz files under schemas/peppol/ are OpenPEPPOL's Peppol BIS Billing
 3.0 rule sets (release 3.0.21, May 2026), taken from
