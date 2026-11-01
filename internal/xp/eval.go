@@ -1071,159 +1071,208 @@ func stepDescChild(cur []any, nt *nodeTest, c ctx) ([]any, error) {
 	return dedupSort(out), nil
 }
 
+// axisStep appends to out every node that the step's axis yields from one
+// context node. The axes are a fixed, small universe, so they map onto
+// handlers instead of piling up in one switch: adding an axis means adding
+// an entry, not reading 150 lines to find the right place.
+type axisStep func(nt *nodeTest, n any, out []any) []any
+
+var axisSteps = map[string]axisStep{
+	"child":              stepChild,
+	"attribute":          stepAttribute,
+	"self":               stepSelf,
+	"parent":             stepParent,
+	"descendant":         stepDescendant,
+	"descendant-or-self": stepDescendant,
+	"ancestor":           stepAncestor,
+	"ancestor-or-self":   stepAncestor,
+	"following-sibling":  stepSiblings,
+	"preceding-sibling":  stepSiblings,
+	"following":          stepFollowing,
+	"preceding":          stepFollowing,
+}
+
+// step applies one path step: the axis expands each context node to a node
+// set, then the step's predicates filter what the axis produced for that node
+// alone, which is why the predicate runs per context node and not over the
+// merged result.
 func step(cur []any, nt *nodeTest, c ctx) ([]any, error) {
+	h, ok := axisSteps[nt.axis]
+	if !ok {
+		return nil, errf("unsupported axis %q", nt.axis)
+	}
 	var out []any
 	for _, n := range cur {
 		start := len(out)
-		switch nt.axis {
-		case "child":
-			el, ok := n.(*Node)
-			if !ok {
-				continue
-			}
-			if nt.kind == "text" {
-				if el.Text != "" {
-					out = append(out, &textNode{parent: el, data: el.Text})
-				}
-			} else if nt.kind != "comment" && nt.kind != "processing-instruction" {
-				// comments and processing instructions are dropped by the
-				// parser, so those steps can only be empty
-				for _, ch := range el.Children {
-					if matchTest(nt, ch) {
-						out = append(out, ch)
-					}
-				}
-			}
-		case "attribute":
-			el, ok := n.(*Node)
-			if !ok {
-				continue
-			}
-			for i, a := range el.Attrs {
-				an := &attrNode{parent: el, idx: i, a: a}
-				if matchAttr(nt, a) {
-					out = append(out, an)
-				}
-			}
-		case "self":
-			if matchAny(nt, n) {
-				out = append(out, n)
-			}
-		case "parent":
-			el := elementOf(n)
-			if el == nil {
-				continue
-			}
-			if el != nil && el.Parent != nil && !el.Parent.IsDoc {
-				if nt.wild || nt.name == "" {
-					out = append(out, el.Parent)
-				} else if matchTest(nt, el.Parent) {
-					out = append(out, el.Parent)
-				}
-			}
-		case "descendant", "descendant-or-self":
-			el, ok := n.(*Node)
-			if !ok {
-				continue
-			}
-			if nt.axis == "descendant-or-self" && matchAny(nt, n) {
-				out = append(out, n)
-			}
-			var walk func(*Node)
-			walk = func(x *Node) {
-				for _, ch := range x.Children {
-					if nt.kind == "text" {
-						if ch.Text != "" {
-							out = append(out, &textNode{parent: ch, data: ch.Text})
-						}
-					} else if matchTest(nt, ch) {
-						out = append(out, ch)
-					}
-					walk(ch)
-				}
-			}
-			walk(el)
-		case "ancestor", "ancestor-or-self":
-			el := elementOf(n)
-			if el == nil {
-				continue
-			}
-			if nt.axis == "ancestor-or-self" && matchAny(nt, n) {
-				out = append(out, n)
-			}
-			for p := el.Parent; p != nil && !p.IsDoc; p = p.Parent {
-				if matchTest(nt, p) {
-					out = append(out, p)
-				}
-			}
-		case "following-sibling", "preceding-sibling":
-			el, ok := n.(*Node)
-			if !ok || el.Parent == nil {
-				continue
-			}
-			for i, sib := range el.Parent.Children {
-				if sib == el {
-					continue
-				}
-				if (nt.axis == "following-sibling" && i > el.Index) ||
-					(nt.axis == "preceding-sibling" && i < el.Index) {
-					if matchTest(nt, sib) {
-						out = append(out, sib)
-					}
-				}
-			}
-		case "following", "preceding":
-			el, ok := n.(*Node)
-			if !ok {
-				continue // attribute nodes have no preceding/following axis here
-			}
-			anc := map[*Node]bool{}
-			root := el
-			for root.Parent != nil {
-				anc[root.Parent] = true
-				root = root.Parent
-			}
-			// XPath excludes attribute and namespace nodes from both axes, and
-			// ancestors from "preceding" and descendants from "following".
-			passed := nt.axis != "following"
-			abort := false
-			var walk func(x *Node)
-			walk = func(x *Node) {
-				if abort {
-					return
-				}
-				if x == el {
-					if nt.axis == "preceding" {
-						abort = true
-					} else {
-						passed = true // skip the subtree of the context node
-					}
-					return
-				}
-				if passed && !anc[x] && matchTest(nt, x) {
-					out = append(out, x)
-				}
-				for _, ch := range x.Children {
-					if abort {
-						break
-					}
-					walk(ch)
-				}
-			}
-			walk(root)
-		default:
-			return nil, errf("unsupported axis %q", nt.axis)
+		out = h(nt, n, out)
+		if len(nt.pred) == 0 {
+			continue
 		}
-		if len(nt.pred) > 0 {
-			kept, err := applyPreds(out[start:], nt.pred, c)
-			if err != nil {
-				return nil, err
-			}
-			k, _ := kept.([]any)
-			out = append(out[:start], k...)
+		kept, err := applyPreds(out[start:], nt.pred, c)
+		if err != nil {
+			return nil, err
 		}
+		k, _ := kept.([]any)
+		out = append(out[:start], k...)
 	}
 	return dedupSort(out), nil
+}
+
+func stepChild(nt *nodeTest, n any, out []any) []any {
+	el, ok := n.(*Node)
+	if !ok {
+		return out
+	}
+	if nt.kind == "text" {
+		if el.Text != "" {
+			out = append(out, &textNode{parent: el, data: el.Text})
+		}
+		return out
+	}
+	// comments and processing instructions are dropped by the parser, so
+	// those steps can only be empty
+	if nt.kind == "comment" || nt.kind == "processing-instruction" {
+		return out
+	}
+	for _, ch := range el.Children {
+		if matchTest(nt, ch) {
+			out = append(out, ch)
+		}
+	}
+	return out
+}
+
+func stepAttribute(nt *nodeTest, n any, out []any) []any {
+	el, ok := n.(*Node)
+	if !ok {
+		return out
+	}
+	for i, a := range el.Attrs {
+		if matchAttr(nt, a) {
+			out = append(out, &attrNode{parent: el, idx: i, a: a})
+		}
+	}
+	return out
+}
+
+func stepSelf(nt *nodeTest, n any, out []any) []any {
+	if matchAny(nt, n) {
+		out = append(out, n)
+	}
+	return out
+}
+
+func stepParent(nt *nodeTest, n any, out []any) []any {
+	el := elementOf(n)
+	if el == nil || el.Parent == nil || el.Parent.IsDoc {
+		return out
+	}
+	if nt.wild || nt.name == "" || matchTest(nt, el.Parent) {
+		out = append(out, el.Parent)
+	}
+	return out
+}
+
+func stepDescendant(nt *nodeTest, n any, out []any) []any {
+	el, ok := n.(*Node)
+	if !ok {
+		return out
+	}
+	if nt.axis == "descendant-or-self" && matchAny(nt, n) {
+		out = append(out, n)
+	}
+	var walk func(*Node)
+	walk = func(x *Node) {
+		for _, ch := range x.Children {
+			if nt.kind == "text" {
+				if ch.Text != "" {
+					out = append(out, &textNode{parent: ch, data: ch.Text})
+				}
+			} else if matchTest(nt, ch) {
+				out = append(out, ch)
+			}
+			walk(ch)
+		}
+	}
+	walk(el)
+	return out
+}
+
+func stepAncestor(nt *nodeTest, n any, out []any) []any {
+	el := elementOf(n)
+	if el == nil {
+		return out
+	}
+	if nt.axis == "ancestor-or-self" && matchAny(nt, n) {
+		out = append(out, n)
+	}
+	for p := el.Parent; p != nil && !p.IsDoc; p = p.Parent {
+		if matchTest(nt, p) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func stepSiblings(nt *nodeTest, n any, out []any) []any {
+	el, ok := n.(*Node)
+	if !ok || el.Parent == nil {
+		return out
+	}
+	following := nt.axis == "following-sibling"
+	for i, sib := range el.Parent.Children {
+		if sib == el {
+			continue
+		}
+		if (following && i > el.Index) || (!following && i < el.Index) {
+			if matchTest(nt, sib) {
+				out = append(out, sib)
+			}
+		}
+	}
+	return out
+}
+
+func stepFollowing(nt *nodeTest, n any, out []any) []any {
+	el, ok := n.(*Node)
+	if !ok {
+		return out // attribute nodes have no preceding/following axis here
+	}
+	anc := map[*Node]bool{}
+	root := el
+	for root.Parent != nil {
+		anc[root.Parent] = true
+		root = root.Parent
+	}
+	// XPath excludes attribute and namespace nodes from both axes, and
+	// ancestors from "preceding" and descendants from "following".
+	passed := nt.axis != "following"
+	abort := false
+	var walk func(x *Node)
+	walk = func(x *Node) {
+		if abort {
+			return
+		}
+		if x == el {
+			if nt.axis == "preceding" {
+				abort = true
+			} else {
+				passed = true // skip the subtree of the context node
+			}
+			return
+		}
+		if passed && !anc[x] && matchTest(nt, x) {
+			out = append(out, x)
+		}
+		for _, ch := range x.Children {
+			if abort {
+				break
+			}
+			walk(ch)
+		}
+	}
+	walk(root)
+	return out
 }
 
 // elementOf returns the element a value hangs from: the element itself for an
