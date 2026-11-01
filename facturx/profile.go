@@ -301,8 +301,8 @@ var syntaxes = map[string]Flavour{
 }
 
 // DetectProfile reads the XML and reports the profile it declares. The
-// authoritative marker is the context parameter: the guideline identifer for
-// CII (BT-24), the profile or customisation identifer for UBL. When the
+// authoritative marker is the context parameter: the guideline identifier for
+// CII (BT-24), the profile or customisation identifier for UBL. When the
 // document does not state one, the root element still fixes the flavour, and
 // the level comes back empty.
 //
@@ -333,23 +333,15 @@ func DetectProfile(data []byte) (Profile, error) {
 			if len(stack) >= 2 {
 				parent = stack[len(stack)-2]
 			}
-			name := t.Name.Local
-			// The authoritative marker is the identifier inside
-			// GuidelineSpecifiedDocumentContextParameter (BT-24) for CII, and
-			// ProfileID or CustomizationID for UBL. Other context parameters
-			// exist too -- the business process in particular is written as a
-			// URN by some senders -- so they are kept only as a fallback.
-			strong := name == "ProfileID" || name == "CustomizationID" ||
-				(name == "ID" && strings.Contains(parent, "Guideline"))
-			weak := !strong && name == "ID" && strings.Contains(parent, "ContextParameter")
-			if strong || weak {
+			kind, isID := contextID(t.Name.Local, parent)
+			if isID {
 				txt, err := elemText(dec)
 				if err == nil {
 					txt = strings.TrimSpace(txt)
 					if strings.HasPrefix(txt, "urn:") {
-						if strong && guideline == "" {
+						if kind == strongID && guideline == "" {
 							guideline = txt
-						} else if weak && other == "" {
+						} else if kind == weakID && other == "" {
 							other = txt
 						}
 					}
@@ -376,16 +368,47 @@ func DetectProfile(data []byte) (Profile, error) {
 		guideline = other
 	}
 	if guideline != "" {
-		if p, ok := guidelineIDs[guideline]; ok {
-			return p, nil
-		}
-		// National and sector customisations extend a base identifer with a #
-		// suffix; the part in front of it still fixes the base profile.
-		if p, ok := guidelineIDs[strings.SplitN(guideline, "#", 2)[0]]; ok {
+		if p, ok := resolveProfile(guideline); ok {
 			return p, nil
 		}
 	}
 	return Profile{Flavor: f}, nil
+}
+
+// idKind says how much weight an element's text carries as a profile marker.
+type idKind int
+
+const (
+	weakID idKind = iota
+	strongID
+)
+
+// contextID classifies an element that may hold a profile identifier. The
+// authoritative marker is the identifier inside
+// GuidelineSpecifiedDocumentContextParameter (BT-24) for CII, and ProfileID or
+// CustomizationID for UBL. Other context parameters exist too -- the business
+// process in particular is written as a URN by some senders -- so they count
+// only as a fallback.
+func contextID(name, parent string) (idKind, bool) {
+	switch {
+	case name == "ProfileID" || name == "CustomizationID" ||
+		(name == "ID" && strings.Contains(parent, "Guideline")):
+		return strongID, true
+	case name == "ID" && strings.Contains(parent, "ContextParameter"):
+		return weakID, true
+	}
+	return 0, false
+}
+
+// resolveProfile maps an identifier URN to a profile. National and sector
+// customisations extend a base identifier with a # suffix; the part in front of
+// it still fixes the base profile.
+func resolveProfile(id string) (Profile, bool) {
+	if p, ok := guidelineIDs[id]; ok {
+		return p, true
+	}
+	p, ok := guidelineIDs[strings.SplitN(id, "#", 2)[0]]
+	return p, ok
 }
 
 // elemText reads the character data of the element whose start tag has just

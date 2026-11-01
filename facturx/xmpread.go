@@ -14,7 +14,40 @@ const (
 	nsXMPPacket     = "adobe:ns:meta/"
 	nsPDFaExtension = "http://www.aiim.org/pdfa/ns/extension/"
 	nsPDFaSchema    = "http://www.aiim.org/pdfa/ns/schema#"
+	nsPDFaID        = "http://www.aiim.org/pdfa/ns/id/"
+	nsDC            = "http://purl.org/dc/elements/1.1/"
+	nsPDF           = "http://ns.adobe.com/pdf/1.3/"
+	nsXAP           = "http://ns.adobe.com/xap/1.0/"
 )
+
+// setter writes one packet property into the field it belongs to.
+type setter func(*xmpInfo, string)
+
+// xmpProps maps "namespace|local name" to the field a property fills. The keys
+// are spelled out so a wrong namespace shows up as an unmatched property rather
+// than as a title that silently came back empty.
+var xmpProps = map[string]setter{
+	nsPDFaID + "|part":        func(i *xmpInfo, v string) { i.Part, _ = atoi(v) },
+	nsPDFaID + "|conformance": func(i *xmpInfo, v string) { i.Conf = v },
+	nsDC + "|title":           func(i *xmpInfo, v string) { i.Title = v },
+	nsDC + "|creator":         func(i *xmpInfo, v string) { i.Creator = v },
+	nsDC + "|description":     func(i *xmpInfo, v string) { i.Description = v },
+	nsPDF + "|Producer":       func(i *xmpInfo, v string) { i.Producer = v },
+	nsPDF + "|Keywords":       func(i *xmpInfo, v string) { i.Keywords = v },
+	nsXAP + "|CreatorTool":    func(i *xmpInfo, v string) { i.CreatorTool = v },
+	nsXAP + "|CreateDate":     func(i *xmpInfo, v string) { i.Created = v },
+	nsXAP + "|ModifyDate":     func(i *xmpInfo, v string) { i.Modified = v },
+}
+
+// flavourProps holds the four hybrid-document properties. They share one
+// namespace per flavour, so they are matched by local name once the namespace
+// is known to be one of them.
+var flavourProps = map[string]setter{
+	"DocumentType":     func(i *xmpInfo, v string) { i.DocType = v },
+	"DocumentFileName": func(i *xmpInfo, v string) { i.FileName = v },
+	"Version":          func(i *xmpInfo, v string) { i.Version = v },
+	"ConformanceLevel": func(i *xmpInfo, v string) { i.Level = v },
+}
 
 // isStructural reports whether an element only holds other elements: the RDF
 // wrappers, the packet wrapper, and the containers of the extension schema
@@ -113,46 +146,23 @@ func readXMP(packet []byte) (*xmpInfo, error) {
 		if !ok {
 			continue
 		}
-		switch start.Name.Space + "|" + start.Name.Local {
-		case "http://www.aiim.org/pdfa/ns/id/|part":
-			out.Part, _ = atoi(text)
-		case "http://www.aiim.org/pdfa/ns/id/|conformance":
-			out.Conf = text
-		case "http://purl.org/dc/elements/1.1/|title":
-			out.Title = text
-		case "http://purl.org/dc/elements/1.1/|creator":
-			out.Creator = text
-		case "http://purl.org/dc/elements/1.1/|description":
-			out.Description = text
-		case "http://ns.adobe.com/pdf/1.3/|Producer":
-			out.Producer = text
-		case "http://ns.adobe.com/pdf/1.3/|Keywords":
-			out.Keywords = text
-		case "http://ns.adobe.com/xap/1.0/|CreatorTool":
-			out.CreatorTool = text
-		case "http://ns.adobe.com/xap/1.0/|CreateDate":
-			out.Created = text
-		case "http://ns.adobe.com/xap/1.0/|ModifyDate":
-			out.Modified = text
-		default:
-			// The four hybrid-document properties share one namespace per
-			// flavour, so match on the local name once the namespace is known
-			// to be one of them.
-			if flavourByURN(start.Name.Space) != "" {
-				switch start.Name.Local {
-				case "DocumentType":
-					out.DocType = text
-				case "DocumentFileName":
-					out.FileName = text
-				case "Version":
-					out.Version = text
-				case "ConformanceLevel":
-					out.Level = text
-				}
-			}
-		}
+		out.setProperty(start.Name.Space, start.Name.Local, text)
 	}
 	return out, nil
+}
+
+// setProperty assigns a property's text to the field it belongs to.
+func (i *xmpInfo) setProperty(ns, local, text string) {
+	if set, ok := xmpProps[ns+"|"+local]; ok {
+		set(i, text)
+		return
+	}
+	if flavourByURN(ns) == "" {
+		return
+	}
+	if set, ok := flavourProps[local]; ok {
+		set(i, text)
+	}
 }
 
 // collectText gathers the character data inside an element whose start tag has

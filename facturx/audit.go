@@ -143,132 +143,194 @@ func Audit(data []byte) (*Document, *Report, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	rep := &Report{}
+	a := &audit{f: f, root: root, doc: doc, rep: &Report{},
+		// The attachment declaration is read up front because the PDF/A part
+		// and the presence of attachments have to be judged together: part 1
+		// forbids attachments outright, so a part-1 hybrid is a different
+		// defect from a part-1 document that simply carries its XML beside it.
+		af:    afFilespecs(f, root),
+		names: embeddedFileNames(f, root),
+	}
+	for _, check := range checks {
+		check(a)
+	}
+	return doc, a.rep, nil
+}
 
-	// The attachment declaration is read up front because the PDF/A part and
-	// the presence of attachments have to be judged together: part 1 forbids
-	// attachments outright, so a part-1 hybrid is a different defect from a
-	// part-1 document that simply carries its XML beside it.
-	af := afFilespecs(f, root)
-	names := embeddedFileNames(f, root)
+// audit is one document under inspection: the parsed PDF, the inventory
+// Inspect built, and the report each check writes to.
+type audit struct {
+	f     *pdf.File
+	root  *pdf.Dict
+	doc   *Document
+	rep   *Report
+	af    []pdf.Object
+	names []nameEntry
+}
 
-	// --- PDF/A-3 metadata -------------------------------------------------
-	if !doc.XMP.HasPacket {
-		rep.add(SeverityError, "pdfa.xmp", "no XMP metadata stream: PDF/A requires /Metadata in the catalogue with /Subtype /XML")
-	} else {
-		auditPart(rep, doc.XMP.Part, len(names), doc.XMP.Level != "" || doc.Profile.Flavor != "")
-		if doc.XMP.Conf == "" {
-			rep.add(SeverityWarning, "pdfa.conformance", "XMP declares no pdfaid:conformance level (B, U or A)")
-		}
-		if doc.XMP.Level != "" && !doc.XMP.HasSchema {
-			rep.add(SeverityError, "pdfa.schema", "XMP uses hybrid-document properties without declaring them in a pdfaExtension schema block; validators reject undeclared properties")
-		}
-	}
-	if v := doc.PDFVersion; v != "" && v < "1.7" {
-		rep.add(SeverityWarning, "pdf.version", "header says PDF %s; PDF/A-3 is defined against PDF 1.7", v)
-	}
+// checks are the rules Audit applies, in reporting order. A validator's
+// rejection letter reads in this order too, which is why the metadata comes
+// before the payload and the payload before the niceties.
+var checks = []func(*audit){
+	(*audit).metadata,
+	(*audit).colour,
+	(*audit).payload,
+	(*audit).attachmentDeclaration,
+	(*audit).readerHints,
+	(*audit).structure,
+	(*audit).infoDict,
+	(*audit).fonts,
+}
 
-	// --- colour ------------------------------------------------------------
-	if !hasOutputIntent(f, root) {
-		rep.add(SeverityError, "pdfa.outputintent", "no OutputIntent with an ICC profile: PDF/A requires one so colour survives 50 years")
+// metadata judges the XMP packet and the header against PDF/A-3.
+func (a *audit) metadata() {
+	if !a.doc.XMP.HasPacket {
+		a.rep.add(SeverityError, "pdfa.xmp", "no XMP metadata stream: PDF/A requires /Metadata in the catalogue with /Subtype /XML")
+		return
 	}
+	auditPart(a.rep, a.doc.XMP.Part, len(a.names), a.doc.XMP.Level != "" || a.doc.Profile.Flavor != "")
+	if a.doc.XMP.Conf == "" {
+		a.rep.add(SeverityWarning, "pdfa.conformance", "XMP declares no pdfaid:conformance level (B, U or A)")
+	}
+	if a.doc.XMP.Level != "" && !a.doc.XMP.HasSchema {
+		a.rep.add(SeverityError, "pdfa.schema", "XMP uses hybrid-document properties without declaring them in a pdfaExtension schema block; validators reject undeclared properties")
+	}
+}
 
-	// --- the payload -------------------------------------------------------
-	if len(doc.XML) == 0 {
-		rep.add(SeverityError, "fx.payload", "the PDF carries no invoice XML: it is a PDF, not a hybrid document")
-	} else {
-		if want := doc.Profile.Filename(); want != "" && !strings.EqualFold(doc.XMLFilename, want) {
-			rep.add(SeverityWarning, "fx.filename", "payload is attached as %q, but %s expects the name %q; strict readers may not find it", doc.XMLFilename, doc.Profile, want)
-		}
-		var xmlEntry *FileEntry
-		for i := range doc.Files {
-			if doc.Files[i].IsXML {
-				xmlEntry = &doc.Files[i]
-				break
-			}
-		}
-		if xmlEntry != nil {
-			if xmlEntry.Relationship != "Data" {
-				rep.add(SeverityWarning, "fx.afrelationship", "payload has AFRelationship %q; the invoice XML should be /Data", xmlEntry.Relationship)
-			}
-			switch {
-			case len(xmlEntry.RecordedMD5) == 0:
-				rep.add(SeverityError, "pdfa.fileparams", "embedded file %q has no /CheckSum: PDF/A-3 requires the digest and size of every embedded file", doc.XMLFilename)
-			case !xmlEntry.DigestOK:
-				rep.add(SeverityError, "fx.digest", "embedded file %q does not match its recorded MD5: the payload was altered after the digest was computed", doc.XMLFilename)
-			}
-			if xmlEntry.Size > 0 && xmlEntry.Size != len(doc.XML) {
-				rep.add(SeverityWarning, "pdfa.filesize", "embedded file %q declares %d bytes and holds %d", doc.XMLFilename, xmlEntry.Size, len(doc.XML))
-			}
-		}
-		if doc.Declared.Flavor != "" && doc.Profile.Flavor != "" && doc.Declared.Flavor != doc.Profile.Flavor {
-			rep.add(SeverityError, "fx.flavour", "the PDF declares %s but the XML says %s", doc.Profile.Flavor, doc.Declared.Flavor)
-		}
-		if doc.Declared.Flavor != "" && doc.Declared.Level == "" {
-			rep.add(SeverityWarning, "fx.context", "the XML declares no guideline identifier (BT-24), so its profile cannot be established from the payload")
-		} else if doc.Profile.Level != "" && doc.Declared.Level != "" && doc.Profile.Level != doc.Declared.Level {
-			rep.add(SeverityError, "fx.level", "the PDF declares level %s but the XML declares %s", doc.Profile.Level, doc.Declared.Level)
-		}
+// colour and version: the two envelope properties that are easy to forget and
+// expensive to discover later.
+func (a *audit) colour() {
+	if v := a.doc.PDFVersion; v != "" && v < "1.7" {
+		a.rep.add(SeverityWarning, "pdf.version", "header says PDF %s; PDF/A-3 is defined against PDF 1.7", v)
 	}
+	if !hasOutputIntent(a.f, a.root) {
+		a.rep.add(SeverityError, "pdfa.outputintent", "no OutputIntent with an ICC profile: PDF/A requires one so colour survives 50 years")
+	}
+}
 
-	if n := len(doc.XMLAttachments); n > 1 {
-		rep.add(SeverityWarning, "fx.multipayload", "%d XML attachments are present (%s): a hybrid invoice carries its XML once, and a reader takes whichever it finds first — remove the extras", n, strings.Join(doc.XMLAttachments, ", "))
+// payload compares the attached XML with what the PDF says about it.
+func (a *audit) payload() {
+	if len(a.doc.XML) == 0 {
+		a.rep.add(SeverityError, "fx.payload", "the PDF carries no invoice XML: it is a PDF, not a hybrid document")
+		return
 	}
+	a.payloadEntry()
+	a.payloadProfile()
+	if n := len(a.doc.XMLAttachments); n > 1 {
+		a.rep.add(SeverityWarning, "fx.multipayload", "%d XML attachments are present (%s): a hybrid invoice carries its XML once, and a reader takes whichever it finds first — remove the extras", n, strings.Join(a.doc.XMLAttachments, ", "))
+	}
+}
 
-	// --- attachment declaration -------------------------------------------
-	if len(names) > 0 && len(af) == 0 {
-		rep.add(SeverityError, "pdfa.af", "embedded files are present but the catalogue has no /AF array: PDF/A-3 requires every embedded file to be declared there")
+// payloadEntry checks the file entry of the attachment that holds the invoice.
+func (a *audit) payloadEntry() {
+	if want := a.doc.Profile.Filename(); want != "" && !strings.EqualFold(a.doc.XMLFilename, want) {
+		a.rep.add(SeverityWarning, "fx.filename", "payload is attached as %q, but %s expects the name %q; strict readers may not find it", a.doc.XMLFilename, a.doc.Profile, want)
 	}
-	if len(names) != len(af) && len(af) > 0 {
-		rep.add(SeverityWarning, "pdfa.af", "/AF lists %d file specifications while /EmbeddedFiles lists %d; they should agree", len(af), len(names))
+	e := a.doc.payloadEntry()
+	if e == nil {
+		return
 	}
+	if e.Relationship != "Data" {
+		a.rep.add(SeverityWarning, "fx.afrelationship", "payload has AFRelationship %q; the invoice XML should be /Data", e.Relationship)
+	}
+	switch {
+	case len(e.RecordedMD5) == 0:
+		a.rep.add(SeverityError, "pdfa.fileparams", "embedded file %q has no /CheckSum: PDF/A-3 requires the digest and size of every embedded file", a.doc.XMLFilename)
+	case !e.DigestOK:
+		a.rep.add(SeverityError, "fx.digest", "embedded file %q does not match its recorded MD5: the payload was altered after the digest was computed", a.doc.XMLFilename)
+	}
+	if e.Size > 0 && e.Size != len(a.doc.XML) {
+		a.rep.add(SeverityWarning, "pdfa.filesize", "embedded file %q declares %d bytes and holds %d", a.doc.XMLFilename, e.Size, len(a.doc.XML))
+	}
+}
 
-	// --- language and reader behaviour -------------------------------------
-	if !root.Has("Lang") {
-		rep.add(SeverityWarning, "pdf.lang", "the catalogue has no /Lang, so text cannot be rendered or read aloud correctly")
+// payloadProfile compares the profile declared in the PDF with the one the XML
+// declares for itself.
+func (a *audit) payloadProfile() {
+	declared, profile := a.doc.Declared, a.doc.Profile
+	if declared.Flavor != "" && profile.Flavor != "" && declared.Flavor != profile.Flavor {
+		a.rep.add(SeverityError, "fx.flavour", "the PDF declares %s but the XML says %s", profile.Flavor, declared.Flavor)
 	}
-	if vp := root.DictValue("ViewerPreferences", f); vp == nil || vp.Get("DisplayDocTitle") != pdf.Bool(true) {
-		rep.add(SeverityWarning, "pdf.doctitle", "/ViewerPreferences /DisplayDocTitle is not true, so readers show the file name instead of the invoice title")
+	switch {
+	case declared.Flavor != "" && declared.Level == "":
+		a.rep.add(SeverityWarning, "fx.context", "the XML declares no guideline identifier (BT-24), so its profile cannot be established from the payload")
+	case profile.Level != "" && declared.Level != "" && profile.Level != declared.Level:
+		a.rep.add(SeverityError, "fx.level", "the PDF declares level %s but the XML declares %s", profile.Level, declared.Level)
 	}
-	if root.NameValue("PageMode") != "UseAttachments" && len(doc.XML) > 0 {
-		rep.add(SeverityInfo, "fx.pagemode", "/PageMode is not /UseAttachments: readers will open on the page rather than the attachment panel")
-	}
+}
 
-	// --- structure (level A only) ------------------------------------------
-	if doc.XMP.Conf == "A" {
-		if mi := root.DictValue("MarkInfo", f); mi == nil || mi.Get("Marked") != pdf.Bool(true) {
-			rep.add(SeverityError, "pdfa.tagged", "XMP claims conformance level A but the document is not marked as tagged (/MarkInfo /Marked true)")
+// attachmentDeclaration checks /AF against the embedded files actually present.
+func (a *audit) attachmentDeclaration() {
+	if len(a.names) > 0 && len(a.af) == 0 {
+		a.rep.add(SeverityError, "pdfa.af", "embedded files are present but the catalogue has no /AF array: PDF/A-3 requires every embedded file to be declared there")
+		return
+	}
+	if len(a.names) != len(a.af) && len(a.af) > 0 {
+		a.rep.add(SeverityWarning, "pdfa.af", "/AF lists %d file specifications while /EmbeddedFiles lists %d; they should agree", len(a.af), len(a.names))
+	}
+}
+
+// readerHints are the catalogue entries that decide how a viewer presents the
+// document rather than whether a validator accepts it.
+func (a *audit) readerHints() {
+	if !a.root.Has("Lang") {
+		a.rep.add(SeverityWarning, "pdf.lang", "the catalogue has no /Lang, so text cannot be rendered or read aloud correctly")
+	}
+	if vp := a.root.DictValue("ViewerPreferences", a.f); vp == nil || vp.Get("DisplayDocTitle") != pdf.Bool(true) {
+		a.rep.add(SeverityWarning, "pdf.doctitle", "/ViewerPreferences /DisplayDocTitle is not true, so readers show the file name instead of the invoice title")
+	}
+	if a.root.NameValue("PageMode") != "UseAttachments" && len(a.doc.XML) > 0 {
+		a.rep.add(SeverityInfo, "fx.pagemode", "/PageMode is not /UseAttachments: readers will open on the page rather than the attachment panel")
+	}
+}
+
+// structure covers the tagging tree, which only level A insists on.
+func (a *audit) structure() {
+	tagged := a.root.DictValue("StructTreeRoot", a.f) != nil
+	if a.doc.XMP.Conf != "A" {
+		if !tagged {
+			a.rep.add(SeverityInfo, "pdfa.tagged", "document is not tagged: fine for PDF/A-3b and 3u, but it can never claim level A")
 		}
-		if root.DictValue("StructTreeRoot", f) == nil {
-			rep.add(SeverityError, "pdfa.structtree", "XMP claims level A but there is no /StructTreeRoot")
-		}
-	} else if root.DictValue("StructTreeRoot", f) == nil {
-		rep.add(SeverityInfo, "pdfa.tagged", "document is not tagged: fine for PDF/A-3b and 3u, but it can never claim level A")
+		return
 	}
+	if mi := a.root.DictValue("MarkInfo", a.f); mi == nil || mi.Get("Marked") != pdf.Bool(true) {
+		a.rep.add(SeverityError, "pdfa.tagged", "XMP claims conformance level A but the document is not marked as tagged (/MarkInfo /Marked true)")
+	}
+	if !tagged {
+		a.rep.add(SeverityError, "pdfa.structtree", "XMP claims level A but there is no /StructTreeRoot")
+	}
+}
 
-	// --- information dictionary agreement ----------------------------------
-	if info := f.Trailer.DictValue("Info", f); info != nil && doc.XMP.HasPacket {
-		for _, pair := range []struct{ key, got, want string }{
-			{"Title", decodeText(info.StringValue("Title")), doc.XMP.Title},
-			{"Author", decodeText(info.StringValue("Author")), doc.XMP.Creator},
-			{"Subject", decodeText(info.StringValue("Subject")), doc.XMP.Description},
-			{"Producer", decodeText(info.StringValue("Producer")), doc.XMP.Producer},
-		} {
-			if pair.got != "" && pair.want != "" && pair.got != pair.want {
-				rep.add(SeverityWarning, "pdfa.info", "/Info /%s (%q) disagrees with XMP (%q); PDF/A requires the two to match", pair.key, pair.got, pair.want)
-			}
+// infoDict checks that the information dictionary agrees with the XMP packet,
+// which PDF/A requires even though /Info is legacy.
+func (a *audit) infoDict() {
+	info := a.f.Trailer.DictValue("Info", a.f)
+	if info == nil || !a.doc.XMP.HasPacket {
+		return
+	}
+	for _, pair := range []struct{ key, got, want string }{
+		{"Title", decodeText(info.StringValue("Title")), a.doc.XMP.Title},
+		{"Author", decodeText(info.StringValue("Author")), a.doc.XMP.Creator},
+		{"Subject", decodeText(info.StringValue("Subject")), a.doc.XMP.Description},
+		{"Producer", decodeText(info.StringValue("Producer")), a.doc.XMP.Producer},
+	} {
+		if pair.got != "" && pair.want != "" && pair.got != pair.want {
+			a.rep.add(SeverityWarning, "pdfa.info", "/Info /%s (%q) disagrees with XMP (%q); PDF/A requires the two to match", pair.key, pair.got, pair.want)
 		}
 	}
+}
 
-	// --- fonts --------------------------------------------------------------
-	// The catalogue is not the page tree: asking it for /Kids finds nothing,
-	// which would let an unembedded font through unnoticed.
-	if tree := root.DictValue("Pages", f); tree != nil {
-		for _, name := range unembeddedFonts(f, tree) {
-			rep.add(SeverityError, "pdfa.font", "font %q is not embedded: PDF/A forbids the standard 14 fonts unless a copy travels with the file", name)
-		}
+// fonts are the one content defect checked here. The catalogue is not the page
+// tree: asking it for /Kids finds nothing, which would let an unembedded font
+// through unnoticed.
+func (a *audit) fonts() {
+	tree := a.root.DictValue("Pages", a.f)
+	if tree == nil {
+		return
 	}
-	return doc, rep, nil
+	for _, name := range unembeddedFonts(a.f, tree) {
+		a.rep.add(SeverityError, "pdfa.font", "font %q is not embedded: PDF/A forbids the standard 14 fonts unless a copy travels with the file", name)
+	}
 }
 
 // auditPart judges the PDF/A part a hybrid declares. Factur-X and Order-X are

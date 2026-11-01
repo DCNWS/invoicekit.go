@@ -111,51 +111,9 @@ func Inspect(data []byte) (*Document, error) {
 		if !ok {
 			continue
 		}
-		name := e.name
-		if n := decodeText(spec.StringValue("UF")); n != "" {
-			name = n
+		if err := doc.addEmbeddedFile(f, spec, e.name); err != nil {
+			return nil, err
 		}
-		fe := FileEntry{Filename: name, Relationship: spec.NameValue("AFRelationship")}
-		// A file specification's /EF holds streams, not dictionaries, so
-		// StreamValue (which resolves the reference) is the only accessor that
-		// works here. /UF is the Unicode name's stream and usually identical.
-		ef := spec.DictValue("EF", f)
-		if ef == nil {
-			continue
-		}
-		s := ef.StreamValue("F", f)
-		if s == nil {
-			s = ef.StreamValue("UF", f)
-		}
-		if s == nil {
-			continue
-		}
-		fe.MIME = s.Dict.NameValue("Subtype")
-		if params := s.Dict.DictValue("Params", f); params != nil {
-			if n, ok := params.IntValue("Size"); ok {
-				fe.Size = int(n)
-			}
-			if cs, ok := params.Get("CheckSum").(pdf.String); ok {
-				fe.RecordedMD5 = []byte(cs)
-			}
-		}
-		body, err := f.StreamBytes(s)
-		if err != nil {
-			return nil, fmt.Errorf("facturx: cannot decode embedded file %q: %w", name, err)
-		}
-		if len(fe.RecordedMD5) > 0 {
-			sum := md5.Sum(body)
-			fe.DigestOK = bytes.Equal(sum[:], fe.RecordedMD5)
-		}
-		if fe.MIME == "text/xml" || fe.MIME == "application/xml" || bytes.HasPrefix(bytes.TrimSpace(body), []byte("<?xml")) {
-			doc.XMLAttachments = append(doc.XMLAttachments, name)
-		}
-		if len(doc.XML) == 0 && isPayload(name, doc.XMLFilename) {
-			doc.XML = body
-			doc.XMLFilename = name
-			fe.IsXML = true
-		}
-		doc.Files = append(doc.Files, fe)
 	}
 
 	if len(doc.XML) > 0 {
@@ -169,6 +127,85 @@ func Inspect(data []byte) (*Document, error) {
 	fillMetadata(f, doc)
 	sort.Slice(doc.Files, func(i, j int) bool { return doc.Files[i].Filename < doc.Files[j].Filename })
 	return doc, nil
+}
+
+// addEmbeddedFile reads one file specification into the inventory and takes it
+// as the invoice payload when it looks like one. A specification with no
+// embedded stream is skipped rather than reported: hybrid PDFs routinely carry
+// /AF entries that point at nothing.
+func (d *Document) addEmbeddedFile(f *pdf.File, spec *pdf.Dict, fallback string) error {
+	name := fallback
+	if n := decodeText(spec.StringValue("UF")); n != "" {
+		name = n
+	}
+	fe := FileEntry{Filename: name, Relationship: spec.NameValue("AFRelationship")}
+	// A file specification's /EF holds streams, not dictionaries, so
+	// StreamValue (which resolves the reference) is the only accessor that
+	// works here. /UF is the Unicode name's stream and usually identical.
+	ef := spec.DictValue("EF", f)
+	if ef == nil {
+		return nil
+	}
+	s := ef.StreamValue("F", f)
+	if s == nil {
+		s = ef.StreamValue("UF", f)
+	}
+	if s == nil {
+		return nil
+	}
+	fe.MIME = s.Dict.NameValue("Subtype")
+	readEFParams(&fe, s.Dict.DictValue("Params", f))
+	body, err := f.StreamBytes(s)
+	if err != nil {
+		return fmt.Errorf("facturx: cannot decode embedded file %q: %w", name, err)
+	}
+	if len(fe.RecordedMD5) > 0 {
+		sum := md5.Sum(body)
+		fe.DigestOK = bytes.Equal(sum[:], fe.RecordedMD5)
+	}
+	if isXMLBody(fe.MIME, body) {
+		d.XMLAttachments = append(d.XMLAttachments, name)
+	}
+	if len(d.XML) == 0 && isPayload(name, d.XMLFilename) {
+		d.XML = body
+		d.XMLFilename = name
+		fe.IsXML = true
+	}
+	d.Files = append(d.Files, fe)
+	return nil
+}
+
+// readEFParams copies the size and checksum a file stream records under /Params.
+func readEFParams(fe *FileEntry, params *pdf.Dict) {
+	if params == nil {
+		return
+	}
+	if n, ok := params.IntValue("Size"); ok {
+		fe.Size = int(n)
+	}
+	if cs, ok := params.Get("CheckSum").(pdf.String); ok {
+		fe.RecordedMD5 = []byte(cs)
+	}
+}
+
+// payloadEntry returns the inventory entry of the attachment that was taken as
+// the invoice, or nil when the payload came from somewhere else.
+func (d *Document) payloadEntry() *FileEntry {
+	for i := range d.Files {
+		if d.Files[i].IsXML {
+			return &d.Files[i]
+		}
+	}
+	return nil
+}
+
+// xmlMIMETypes are the media types producers give the invoice attachment.
+var xmlMIMETypes = map[string]bool{"text/xml": true, "application/xml": true}
+
+// isXMLBody reports whether an attachment is XML, judged either by its declared
+// media type or by the declaration that opens it.
+func isXMLBody(mime string, body []byte) bool {
+	return xmlMIMETypes[mime] || bytes.HasPrefix(bytes.TrimSpace(body), []byte("<?xml"))
 }
 
 // fillMetadata merges the descriptive fields, preferring XMP because PDF/A
