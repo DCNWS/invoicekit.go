@@ -14,6 +14,8 @@ rule sets embedded.
 ```
 go get github.com/dcnws/invoicekit.go   # the library
 go install github.com/dcnws/invoicekit.go/cmd/einv@latest   # the `einv` tool
+
+Prebuilt static binaries for Linux, macOS and Windows are on the [releases](https://github.com/DCNWS/invoicekit.go/releases) page: one `CGO_ENABLED=0` file per platform, with `SHA256SUMS.txt` beside them, for anyone who wants the tool in CI without a Go toolchain.
 ```
 
 Nothing to install to try it: the same engine, compiled to WebAssembly, runs
