@@ -14,7 +14,7 @@ import (
 // --- sample documents -------------------------------------------------------
 //
 // The XML here is written out by hand rather than produced by the generator in
-// the root package: internal/facturx sits below that package, and importing it
+// the root package: facturx sits below that package, and importing it
 // back up would be a cycle. What matters for these tests is the context
 // parameter, which is exactly the part a generator can get wrong, so spelling
 // it out also documents the shape readers expect.

@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/dcnws/invoicekit.go"
-	"github.com/dcnws/invoicekit.go/internal/facturx"
-	"github.com/dcnws/invoicekit.go/internal/hybrid"
+	"github.com/dcnws/invoicekit.go/facturx"
+	"github.com/dcnws/invoicekit.go/hybrid"
 )
 
 // The end-to-end tests in this file work with PDFs that another program

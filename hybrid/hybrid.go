@@ -2,7 +2,7 @@
 // software does: the PDF envelope first, then the invoice carried inside it,
 // against whichever rule set the caller asks for.
 //
-// The two halves come from packages that cannot see each other. internal/facturx
+// The two halves come from packages that cannot see each other. facturx
 // sits below the rule engine and must not import it — reading a PDF attachment
 // needs no idea what an invoice line is — so the pairing lives here, at the top,
 // where both are ordinary dependencies.
@@ -12,7 +12,7 @@ import (
 	"fmt"
 
 	"github.com/dcnws/invoicekit.go"
-	"github.com/dcnws/invoicekit.go/internal/facturx"
+	"github.com/dcnws/invoicekit.go/facturx"
 )
 
 // Result is one hybrid document's two verdicts. The envelope report is embedded,

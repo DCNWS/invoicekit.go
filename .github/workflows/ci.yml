@@ -1,0 +1,38 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.22', '1.24', 'stable']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go build ./...
+      - run: go test -race ./...
+      - name: webassembly build
+        run: GOOS=js GOARCH=wasm go build -o /tmp/einv.wasm ./cmd/einv-wasm
+
+  corpora:
+    # the suites that skip without an upstream corpus, run here so a rule-set
+    # regression cannot slip through on the reduced fixtures alone
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        path: invoicekit.go
+      - run: git clone --depth 1 https://github.com/ConnectingEurope/eInvoicing-EN16931.git ../ref-en16931
+      - run: git clone --depth 1 --branch 3.0.21 https://github.com/OpenPeppol/peppol-bis-invoice-3.git ../ref-peppol
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - run: go vet ./... && go test ./...
+        working-directory: invoicekit.go

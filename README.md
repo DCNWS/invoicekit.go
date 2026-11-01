@@ -36,6 +36,22 @@ if !res.Valid {
 }
 ```
 
+## Packages
+
+Four packages are public API; everything under `internal/` is not, and may move
+between releases without notice.
+
+| import | what it is for |
+|---|---|
+| `github.com/dcnws/invoicekit.go` | the entry point: `Validate`, `Parse`, `Generate`, syntax detection, phase and rule-set listing |
+| `github.com/dcnws/invoicekit.go/facturx` | write and read hybrid invoices — the PDF envelope, its attachment, its XMP — without touching the rule engine |
+| `github.com/dcnws/invoicekit.go/hybrid` | audit a Factur-X / ZUGFeRD file the way a recipient's software does: envelope first, then the invoice inside it against a rule set |
+| `github.com/dcnws/invoicekit.go/xsd` | XML Schema validity for both syntaxes, which the official Schematron sets never check |
+
+`hybrid` is the one that joins the two halves: `facturx` sits below the rule
+engine on purpose, so a PDF can be read without loading a single business rule,
+and `hybrid` is where the PDF and the rule engine are allowed to meet.
+
 ## Structure as well as business rules
 
 A released invoice can satisfy every EN 16931 rule and still be rejected by a

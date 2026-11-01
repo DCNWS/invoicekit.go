@@ -15,7 +15,7 @@ import (
 
 	"github.com/dcnws/invoicekit.go/internal/sch"
 	"github.com/dcnws/invoicekit.go/internal/xp"
-	"github.com/dcnws/invoicekit.go/internal/xsd"
+	"github.com/dcnws/invoicekit.go/xsd"
 )
 
 //go:embed schemas/en16931-cii.sch schemas/en16931-ubl.sch
