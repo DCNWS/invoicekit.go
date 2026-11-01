@@ -190,103 +190,130 @@ func ublHead(x *xw, in *Invoice, seen map[string]bool, cn bool) {
 	ublRefs(x, in.References, seen, cn)
 }
 
+// refSlots holds at most one reference per UBL reference element. The order
+// references share one element, so they are kept together.
+type refSlots struct {
+	contract, project, despatch, receipt, quotation, preceding *Reference
+	order                                                      [3]*Reference
+}
+
+// orderSlots maps each order reference the model knows to the slot it wants in
+// cac:OrderReference, and says what to call it when a second one turns up.
+var orderSlots = map[string]struct {
+	slot int
+	what string
+}{
+	"buyerOrder": {0, "buyer order"},
+	"purchase":   {1, "purchase order"},
+	"salesOrder": {2, "sales order"},
+}
+
+// refSlotsFor maps the remaining reference types to the slot they fill.
+var refSlotsFor = map[string]func(*refSlots, *Reference){
+	"contract":     func(s *refSlots, r *Reference) { s.contract = r },
+	"project":      func(s *refSlots, r *Reference) { s.project = r },
+	"despatch":     func(s *refSlots, r *Reference) { s.despatch = r },
+	"deliveryNote": func(s *refSlots, r *Reference) { s.receipt = r },
+	"quotation":    func(s *refSlots, r *Reference) { s.quotation = r },
+	"preceding":    func(s *refSlots, r *Reference) { s.preceding = r },
+}
+
 // ublRefs routes the model's references into the reference elements UBL
 // offers, in schema order. A reference with no element of its own is reported
 // rather than parked in a reference of a different kind.
 func ublRefs(x *xw, refs []Reference, seen map[string]bool, cn bool) {
-	var contract, project, despatch, receipt, quotation, preceding *Reference
-	var buyerOrder, purchase, salesOrder *Reference
+	s := &refSlots{}
 	for i := range refs {
 		r := refs[i]
-		switch r.Type {
-		case "purchase":
-			purchase = pick(x, purchase, &r, "purchase order")
-		case "buyerOrder":
-			buyerOrder = pick(x, buyerOrder, &r, "buyer order")
-		case "salesOrder":
-			salesOrder = pick(x, salesOrder, &r, "sales order")
-		case "contract":
-			contract = &r
-		case "project":
-			project = &r
-		case "despatch":
-			despatch = &r
-		case "deliveryNote":
-			receipt = &r
-		case "quotation":
-			quotation = &r
-		case "preceding":
-			preceding = &r
-		default:
-			x.badf("reference type %q has no UBL element", r.Type)
+		if at, ok := orderSlots[r.Type]; ok {
+			s.order[at.slot] = pick(x, s.order[at.slot], &r, at.what)
+			continue
 		}
+		if put, ok := refSlotsFor[r.Type]; ok {
+			put(s, &r)
+			continue
+		}
+		x.badf("reference type %q has no UBL element", r.Type)
 	}
+	ublOrderReference(x, s)
+	ublDocumentReferences(x, seen, s, cn)
+}
 
-	// UBL gives the order references one element with two slots, and the
-	// schema makes cbc:ID mandatory inside it, so at most two of the three
-	// order references the model knows fit on an invoice. Where both a buyer
-	// order reference (BT-10) and a purchase order reference (BT-13) are
-	// present they are paired the way Peppol BIS pairs them: the buyer order
-	// reference takes cbc:ID, the purchase order reference cbc:SalesOrderID.
+// ublOrderReference writes cac:OrderReference. UBL gives the order references
+// one element with two slots, and the schema makes cbc:ID mandatory inside it,
+// so at most two of the three order references the model knows fit on an
+// invoice. Where both a buyer order reference (BT-10) and a purchase order
+// reference (BT-13) are present they are paired the way Peppol BIS pairs them:
+// the buyer order reference takes cbc:ID, the purchase order reference
+// cbc:SalesOrderID.
+func ublOrderReference(x *xw, s *refSlots) {
+	buyer, purchase, sales := s.order[0], s.order[1], s.order[2]
 	var slots []*Reference
-	if buyerOrder != nil && purchase != nil {
+	if buyer != nil && purchase != nil {
 		// The Peppol pairing: buyer order in the ID slot leaves the
 		// sales order reference with nowhere to go.
-		slots = append(slots, buyerOrder, purchase)
-		for _, r := range []*Reference{salesOrder} {
-			if r != nil {
-				x.badf("only two order references fit a UBL invoice: %q", r.ID)
-			}
-		}
-	} else {
-		for _, r := range []*Reference{purchase, buyerOrder, salesOrder} {
-			if r != nil && len(slots) < 2 {
-				slots = append(slots, r)
-			}
+		slots = []*Reference{buyer, purchase}
+		if sales != nil {
+			x.badf("only two order references fit a UBL invoice: %q", sales.ID)
 		}
 	}
-	if len(slots) > 0 {
-		x.start("cac:OrderReference")
-		x.mand("cbc:ID", slots[0].ID)
-		if len(slots) > 1 {
-			x.opt("cbc:SalesOrderID", slots[1].ID)
+	for _, r := range []*Reference{purchase, buyer, sales} {
+		if r != nil && len(slots) < 2 {
+			slots = append(slots, r)
 		}
-		x.end("cac:OrderReference")
 	}
+	if len(slots) == 0 {
+		return
+	}
+	x.start("cac:OrderReference")
+	x.mand("cbc:ID", slots[0].ID)
+	if len(slots) > 1 {
+		x.opt("cbc:SalesOrderID", slots[1].ID)
+	}
+	x.end("cac:OrderReference")
+}
 
-	if preceding != nil {
+// ublDocumentReferences writes the remaining reference elements, in the order
+// the schema lists them.
+func ublDocumentReferences(x *xw, seen map[string]bool, s *refSlots, cn bool) {
+	if s.preceding != nil {
 		if x.once(seen, "billing", "preceding invoice reference") {
 			x.start("cac:BillingReference")
-			ublDocRef(x, "cac:InvoiceDocumentReference", preceding.ID)
+			ublDocRef(x, "cac:InvoiceDocumentReference", s.preceding.ID)
 			x.end("cac:BillingReference")
 		}
 	}
-	if despatch != nil {
-		ublDocRef(x, "cac:DespatchDocumentReference", despatch.ID)
+	if s.despatch != nil {
+		ublDocRef(x, "cac:DespatchDocumentReference", s.despatch.ID)
 	}
-	if receipt != nil {
-		ublDocRef(x, "cac:ReceiptDocumentReference", receipt.ID)
+	if s.receipt != nil {
+		ublDocRef(x, "cac:ReceiptDocumentReference", s.receipt.ID)
 	}
-	if contract != nil {
-		ublDocRef(x, "cac:ContractDocumentReference", contract.ID)
+	if s.contract != nil {
+		ublDocRef(x, "cac:ContractDocumentReference", s.contract.ID)
 	}
-	if quotation != nil {
+	if s.quotation != nil {
 		// A supporting document may not carry a scheme identifier unless it is
 		// typed as an invoiced object (UBL-SR-43), so only the number goes in.
-		ublDocRef(x, "cac:AdditionalDocumentReference", quotation.ID)
+		ublDocRef(x, "cac:AdditionalDocumentReference", s.quotation.ID)
 	}
-	if project != nil && cn {
-		// The credit note document has no project reference element.
-		x.badf("a UBL credit note has no project reference: %q", project.ID)
-		project = nil
+	ublProjectReference(x, seen, s, cn)
+}
+
+// ublProjectReference writes cac:ProjectReference, which carries its identifier
+// alone (BT-11): UBL-CR-134 to UBL-CR-136 warn away the rest of
+// ProjectReference, and a project name is not a business term of the standard.
+// The credit note document has no project reference element at all.
+func ublProjectReference(x *xw, seen map[string]bool, s *refSlots, cn bool) {
+	if s.project == nil {
+		return
 	}
-	if project != nil {
-		if x.once(seen, "project", "project reference") {
-			// The project reference carries its identifier alone (BT-11):
-			// UBL-CR-134 to UBL-CR-136 warn away the rest of ProjectReference,
-			// and a project name is not a business term of the standard.
-			ublDocRef(x, "cac:ProjectReference", project.ID)
-		}
+	if cn {
+		x.badf("a UBL credit note has no project reference: %q", s.project.ID)
+		return
+	}
+	if x.once(seen, "project", "project reference") {
+		ublDocRef(x, "cac:ProjectReference", s.project.ID)
 	}
 }
 
@@ -352,20 +379,41 @@ func ublParty(x *xw, p Party, tradingName string, payee bool, seen map[string]bo
 	if p.Identifier != "" {
 		leaf(x, "cac:PartyIdentification", "cbc:ID", p.Identifier, attr{"schemeID", p.IDScheme})
 	}
-	if tradingName != "" {
-		leaf(x, "cac:PartyName", "cbc:Name", tradingName)
-	} else if payee && p.Name != "" {
-		// The payee's name (BT-59) has to be carried somewhere, and
-		// PartyLegalEntity/RegistrationName is warned away for a payee.
-		if x.once(seen, "payeename", "payee name") {
-			leaf(x, "cac:PartyName", "cbc:Name", p.Name)
-		}
-	}
+	ublPartyName(x, p, tradingName, payee, seen)
 	if !payee {
 		ublAddress(x, "cac:PostalAddress", p.Address, p.Subdiv)
 	}
+	vatID, otherID := ublTaxRegistrations(x, p)
+	if vatID != "" {
+		// UBL-SR-53: the tax registration is only accepted together with the
+		// tax scheme, and the scheme may carry nothing but its identifier.
+		x.start("cac:PartyTaxScheme")
+		x.elem("cbc:CompanyID", vatID)
+		x.ublTaxScheme()
+		x.end("cac:PartyTaxScheme")
+	}
+	ublLegalEntity(x, p, otherID, payee)
+	ublContact(x, p, payee)
+}
 
-	var vatID, otherID string
+// ublPartyName writes cac:PartyName. A trading name (BT-28 and its neighbours)
+// is the name of the branch, so it wins over the party's own name; the payee's
+// name (BT-59) has to be carried somewhere, and
+// PartyLegalEntity/RegistrationName is warned away for a payee.
+func ublPartyName(x *xw, p Party, tradingName string, payee bool, seen map[string]bool) {
+	if tradingName != "" {
+		leaf(x, "cac:PartyName", "cbc:Name", tradingName)
+		return
+	}
+	if payee && p.Name != "" && x.once(seen, "payeename", "payee name") {
+		leaf(x, "cac:PartyName", "cbc:Name", p.Name)
+	}
+}
+
+// ublTaxRegistrations splits a party's tax registrations into the VAT number
+// and a non-VAT number, each of which UBL gives exactly one home. A second
+// number of either kind is reported rather than dropped.
+func ublTaxRegistrations(x *xw, p Party) (vatID, otherID string) {
 	for _, t := range p.TaxIDs {
 		if t.Value == "" {
 			continue
@@ -376,46 +424,54 @@ func ublParty(x *xw, p Party, tradingName string, payee bool, seen map[string]bo
 				continue
 			}
 			vatID = t.Value
-		} else if otherID == "" {
-			otherID = t.Value
-		} else {
-			x.badf("only one non-VAT registration fits a UBL party: %q", t.Value)
+			continue
 		}
+		if otherID != "" {
+			x.badf("only one non-VAT registration fits a UBL party: %q", t.Value)
+			continue
+		}
+		otherID = t.Value
 	}
-	if vatID != "" {
-		// UBL-SR-53: the tax registration is only accepted together with the
-		// tax scheme, and the scheme may carry nothing but its identifier.
-		x.start("cac:PartyTaxScheme")
-		x.elem("cbc:CompanyID", vatID)
-		x.ublTaxScheme()
-		x.end("cac:PartyTaxScheme")
-	}
+	return vatID, otherID
+}
 
-	var reg string
+// ublLegalEntity writes cac:PartyLegalEntity. A payee has no registration
+// name, so its element exists only to carry the company identifier, which UBL
+// takes from the party's non-VAT tax registration when the model has no legal
+// registration identifier (BT-30).
+func ublLegalEntity(x *xw, p Party, otherID string, payee bool) {
+	reg := otherID
 	if len(p.RegIDs) > 0 {
 		reg = p.RegIDs[0]
 	}
 	if len(p.RegIDs) > 1 {
 		x.badf("only one legal registration identifier fits a UBL party: %q", p.RegIDs[1:])
 	}
-	if reg == "" {
-		reg = otherID
+	if payee && reg == "" {
+		return
 	}
-	if !payee && p.Name != "" || payee && reg != "" {
-		x.start("cac:PartyLegalEntity")
-		if !payee {
-			x.mand("cbc:RegistrationName", p.Name)
-		}
-		x.opt("cbc:CompanyID", reg)
-		x.end("cac:PartyLegalEntity")
+	if !payee && p.Name == "" {
+		return
 	}
-	if c := p.Contact; !payee && c != nil && (c.Name != "" || c.Phone != "" || c.Email != "") {
-		x.start("cac:Contact")
-		x.opt("cbc:Name", c.Name)
-		x.opt("cbc:Telephone", c.Phone)
-		x.opt("cbc:ElectronicMail", c.Email)
-		x.end("cac:Contact")
+	x.start("cac:PartyLegalEntity")
+	if !payee {
+		x.mand("cbc:RegistrationName", p.Name)
 	}
+	x.opt("cbc:CompanyID", reg)
+	x.end("cac:PartyLegalEntity")
+}
+
+// ublContact writes cac:Contact, which the schematron warns away for a payee.
+func ublContact(x *xw, p Party, payee bool) {
+	c := p.Contact
+	if payee || c == nil || (c.Name == "" && c.Phone == "" && c.Email == "") {
+		return
+	}
+	x.start("cac:Contact")
+	x.opt("cbc:Name", c.Name)
+	x.opt("cbc:Telephone", c.Phone)
+	x.opt("cbc:ElectronicMail", c.Email)
+	x.end("cac:Contact")
 }
 
 // ublAddress writes a postal address. The third model line goes to

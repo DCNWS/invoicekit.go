@@ -444,6 +444,62 @@ func Sum(rs ...*big.Rat) *big.Rat {
 	return t
 }
 
+// setSubtotals writes the three sums and the invoice total before VAT, leaving
+// any figure the caller already supplied alone.
+func setSubtotals(t *Totals, lineTotal, chargeTotal, allowTotal *big.Rat) {
+	if t.LineTotal == nil {
+		t.LineTotal = ratFloat(lineTotal)
+	}
+	if t.ChargeTotal == nil {
+		t.ChargeTotal = ratFloat(chargeTotal)
+	}
+	if t.AllowanceTotal == nil {
+		t.AllowanceTotal = ratFloat(allowTotal)
+	}
+	if t.TaxExclusive == nil {
+		sum := new(big.Rat).Set(ratOf(*t.LineTotal))
+		sum.Add(sum, ratOf(*t.ChargeTotal))
+		sum.Sub(sum, ratOf(*t.AllowanceTotal))
+		t.TaxExclusive = ratFloat(sum)
+	}
+}
+
+// ratFloat converts a rational to the float the model stores currency values in.
+func ratFloat(r *big.Rat) *float64 {
+	f, _ := r.Float64()
+	return &f
+}
+
+// deriveLine fills in what a line does not state: its unit of measure and its
+// total, both of which a reader is entitled to expect, and adds the total to
+// lineTotal.
+func deriveLine(ln *Line, lineTotal *big.Rat) {
+	if ln.UnitCode == "" {
+		// BT-130 is mandatory on every line (BR-23); an item that
+		// declares its own unit of measure supplies it.
+		ln.UnitCode = ln.Item.Units
+		if ln.UnitCode == "" {
+			ln.UnitCode = "H8" // piece
+		}
+	}
+	if ln.Extension == nil {
+		// BR-CO-24/BT-131: the line total is the quantity times the net
+		// price, and a percentage line allowance or charge is a percentage
+		// of that same amount.
+		base := lineBase(*ln)
+		ext := new(big.Rat).Set(base)
+		for _, a := range ln.Allowances {
+			ext.Sub(ext, allowanceAmount(a, base))
+		}
+		for _, c := range ln.Charges {
+			ext.Add(ext, allowanceAmount(c, base))
+		}
+		f, _ := ext.Float64()
+		ln.Extension = &f
+	}
+	lineTotal.Add(lineTotal, ratOf(*ln.Extension))
+}
+
 // Derive fills in the totals and the VAT breakdown that were left empty.
 // It returns an error only for a model that cannot be computed at all (no
 // lines, a percentage that is not a number); rule violations are left for the
@@ -460,31 +516,7 @@ func (in *Invoice) Derive() error {
 	}
 	lineTotal := new(big.Rat)
 	for i := range in.Lines {
-		ln := &in.Lines[i]
-		if ln.UnitCode == "" {
-			// BT-130 is mandatory on every line (BR-23); an item that
-			// declares its own unit of measure supplies it.
-			ln.UnitCode = ln.Item.Units
-			if ln.UnitCode == "" {
-				ln.UnitCode = "H8" // piece
-			}
-		}
-		if ln.Extension == nil {
-			// BR-CO-24/BT-131: the line total is the quantity times the net
-			// price, and a percentage line allowance or charge is a percentage
-			// of that same amount.
-			base := lineBase(*ln)
-			ext := new(big.Rat).Set(base)
-			for _, a := range ln.Allowances {
-				ext.Sub(ext, allowanceAmount(a, base))
-			}
-			for _, c := range ln.Charges {
-				ext.Add(ext, allowanceAmount(c, base))
-			}
-			f, _ := ext.Float64()
-			ln.Extension = &f
-		}
-		lineTotal.Add(lineTotal, ratOf(*ln.Extension))
+		deriveLine(&in.Lines[i], lineTotal)
 	}
 
 	// A document level allowance or charge carries its own VAT category and
@@ -514,25 +546,7 @@ func (in *Invoice) Derive() error {
 		allowTotal.Add(allowTotal, allowanceAmount(a, chargeBasis))
 	}
 
-	if in.Totals.LineTotal == nil {
-		f, _ := lineTotal.Float64()
-		in.Totals.LineTotal = &f
-	}
-	if in.Totals.ChargeTotal == nil {
-		f, _ := chargeTotal.Float64()
-		in.Totals.ChargeTotal = &f
-	}
-	if in.Totals.AllowanceTotal == nil {
-		f, _ := allowTotal.Float64()
-		in.Totals.AllowanceTotal = &f
-	}
-	if in.Totals.TaxExclusive == nil {
-		t := new(big.Rat).Set(ratOf(*in.Totals.LineTotal))
-		t.Add(t, ratOf(*in.Totals.ChargeTotal))
-		t.Sub(t, ratOf(*in.Totals.AllowanceTotal))
-		f, _ := t.Float64()
-		in.Totals.TaxExclusive = &f
-	}
+	setSubtotals(&in.Totals, lineTotal, chargeTotal, allowTotal)
 
 	if len(in.VATBreakdown) == 0 {
 		in.VATBreakdown = deriveVAT(in)
