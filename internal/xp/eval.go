@@ -1008,12 +1008,22 @@ func evalFilter(f *filterExpr, c ctx) (any, error) {
 	return applyPreds(base, f.pred, c)
 }
 
+// applyPreds filters a predicate's base sequence, which may arrive as a single
+// atomic item and is handed back the same way it came.
 func applyPreds(base any, preds []expr, c ctx) (any, error) {
 	items := base
 	if !isSeq(items) {
 		items = []any{items}
 	}
-	cur := items.([]any)
+	return applyPredsSeq(items.([]any), preds, c)
+}
+
+// applyPredsSeq is the node-set form of applyPreds. A path step always offers
+// its candidates as a sequence and wants a sequence back, so this form takes
+// and returns []any: passing the slice through an interface boxed it on the
+// heap at every step with predicates, which measured a tenth of a document
+// validation's CPU.
+func applyPredsSeq(cur []any, preds []expr, c ctx) ([]any, error) {
 	for _, pr := range preds {
 		var keep []any
 		for i, it := range cur {
@@ -1095,12 +1105,11 @@ func stepDescChild(cur []any, nt *nodeTest, c ctx) ([]any, error) {
 				stack = append(stack, ch)
 			}
 			if len(nt.pred) > 0 {
-				kept, err := applyPreds(out[start:], nt.pred, c)
+				kept, err := applyPredsSeq(out[start:], nt.pred, c)
 				if err != nil {
 					return nil, err
 				}
-				k, _ := kept.([]any)
-				out = append(out[:start], k...)
+				out = append(out[:start], kept...)
 			}
 		}
 	}
@@ -1144,12 +1153,11 @@ func step(cur []any, nt *nodeTest, c ctx) ([]any, error) {
 		if len(nt.pred) == 0 {
 			continue
 		}
-		kept, err := applyPreds(out[start:], nt.pred, c)
+		kept, err := applyPredsSeq(out[start:], nt.pred, c)
 		if err != nil {
 			return nil, err
 		}
-		k, _ := kept.([]any)
-		out = append(out[:start], k...)
+		out = append(out[:start], kept...)
 	}
 	return dedupSort(out), nil
 }
