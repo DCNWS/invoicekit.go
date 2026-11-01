@@ -333,9 +333,9 @@ go test -run '^$' -bench . -benchmem -cpu 1 ./
 ```
 
 ```
-cpu: AMD Ryzen 9 5950X (16 cores), one core under test — Go 1.27.3, linux/amd64, 2026-11-01
-BenchmarkValidateUBL     60.1 ms/op   29 docs/op   2.1 ms per document   1.2 MB allocated per document
-BenchmarkValidateCII      1.8 ms/op    1 doc/op    1.8 ms per document   1.0 MB allocated per document
+cpu: AMD Ryzen 9 5950X (16 cores), one core under test — Go 1.27.3, linux/amd64, 2026-11-02
+BenchmarkValidateUBL     62.4 ms/op   29 docs/op   2.1 ms per document   1.2 MB allocated per document
+BenchmarkValidateCII      1.7 ms/op    1 doc/op    1.7 ms per document   1.0 MB allocated per document
 ```
 
 One core is therefore worth roughly 480 documents a second, forty million a
