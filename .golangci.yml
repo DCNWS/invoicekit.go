@@ -1,0 +1,25 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - cyclop
+    - gocognit
+    - modernize
+    - asciicheck  # Checks that all code identifiers does not have non-ASCII symbols in the name.
+    - bidichk     # Checks for dangerous unicode character sequences.
+    - copyloopvar # A linter detects places where loop variables are copied. [fast, auto-fix]
+    - dupl        # Detects duplicate fragments of code. [fast]
+  settings:
+    cyclop:
+      max-complexity: 10
+      package-average: 0.0
+    gocognit:
+      min-complexity: 15
+    modernize:
+    bidichk:
+    copyloopvar:
+      check-alias: true
+    dupl:
+      # Tokens count to trigger issue.
+      threshold: 100
