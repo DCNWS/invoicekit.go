@@ -138,6 +138,51 @@ func ruleSetOf(phases, cius, prof string) (einvoice.Options, error) {
 	return opt, nil
 }
 
+// verdict is one document's outcome, in the shape `validate -json` prints.
+type verdict struct {
+	Name      string                   `json:"name"`
+	Syntax    einvoice.Syntax          `json:"syntax,omitempty"`
+	CIUS      einvoice.CIUS            `json:"cius,omitempty"`
+	Profile   einvoice.Profile         `json:"profile,omitempty"`
+	Valid     bool                     `json:"valid"`
+	Fatal     int                      `json:"fatal"`
+	Warn      int                      `json:"warn"`
+	Counts    map[string]int           `json:"counts,omitempty"`
+	Findings  []einvoice.Finding       `json:"findings,omitempty"`
+	Schema    []einvoice.SchemaFinding `json:"schema,omitempty"`
+	Truncated int                      `json:"truncated,omitempty"`
+	Error     string                   `json:"error,omitempty"`
+}
+
+// verdictOf validates one input path. A file that cannot be read or parsed is
+// reported inside its verdict rather than returned as an error: one bad file
+// among many must not hide the verdicts of the rest.
+func verdictOf(path string, opt einvoice.Options, max int) verdict {
+	data, err := readInput(path)
+	if err != nil {
+		return verdict{Name: path, Error: err.Error()}
+	}
+	res, err := einvoice.Validate(data, opt)
+	if err != nil {
+		return verdict{Name: path, Error: err.Error()}
+	}
+	v := verdict{Name: path, Syntax: res.Syntax, CIUS: res.CIUS, Profile: res.Profile,
+		Valid: res.Valid, Fatal: res.Fatal, Warn: res.Warn}
+	if len(res.Schema) > 0 {
+		v.Schema = res.Schema
+	}
+	if len(res.Findings) == 0 {
+		return v
+	}
+	v.Counts = res.Counts()
+	v.Findings = res.Findings
+	if max >= 0 && len(v.Findings) > max {
+		v.Truncated = len(v.Findings) - max
+		v.Findings = v.Findings[:max]
+	}
+	return v
+}
+
 func runValidate(args []string) error {
 	fs := flag.NewFlagSet("validate", flag.ExitOnError)
 	var (
@@ -167,103 +212,93 @@ func runValidate(args []string) error {
 	}
 	opt.Syntax = sx
 
-	type entry struct {
-		Name      string                   `json:"name"`
-		Syntax    einvoice.Syntax          `json:"syntax,omitempty"`
-		CIUS      einvoice.CIUS            `json:"cius,omitempty"`
-		Profile   einvoice.Profile         `json:"profile,omitempty"`
-		Valid     bool                     `json:"valid"`
-		Fatal     int                      `json:"fatal"`
-		Warn      int                      `json:"warn"`
-		Counts    map[string]int           `json:"counts,omitempty"`
-		Findings  []einvoice.Finding       `json:"findings,omitempty"`
-		Schema    []einvoice.SchemaFinding `json:"schema,omitempty"`
-		Truncated int                      `json:"truncated,omitempty"`
-		Error     string                   `json:"error,omitempty"`
-	}
-
-	all := make([]entry, 0, len(paths))
-	anyInvalid := false
-	anyError := false
+	all := make([]verdict, 0, len(paths))
 	for _, path := range paths {
-		data, err := readInput(path)
-		if err != nil {
-			all = append(all, entry{Name: path, Error: err.Error()})
-			anyError = true
-			continue
-		}
-		res, err := einvoice.Validate(data, opt)
-		if err != nil {
-			all = append(all, entry{Name: path, Error: err.Error()})
-			anyError = true
-			continue
-		}
-		e := entry{Name: path, Syntax: res.Syntax, CIUS: res.CIUS, Profile: res.Profile,
-			Valid: res.Valid, Fatal: res.Fatal, Warn: res.Warn}
-		if len(res.Schema) > 0 {
-			e.Schema = res.Schema
-		}
-		if len(res.Findings) > 0 {
-			e.Counts = res.Counts()
-			e.Findings = res.Findings
-			if *max >= 0 && len(e.Findings) > *max {
-				e.Truncated = len(e.Findings) - *max
-				e.Findings = e.Findings[:*max]
-			}
-		}
-		if !e.Valid {
-			anyInvalid = true
-		}
-		all = append(all, e)
+		all = append(all, verdictOf(path, opt, *max))
 	}
-
 	if *asJSON {
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(all); err != nil {
+		if err := reportVerdictsJSON(all); err != nil {
 			return err
 		}
 	} else {
-		for _, e := range all {
-			if e.Error != "" {
-				fmt.Printf("%s: ERROR: %s\n", e.Name, e.Error)
-				continue
-			}
-			profile := ""
-			if e.Profile != "" {
-				profile = " " + string(e.Profile)
-			}
-			if e.CIUS != "" {
-				profile += " + " + string(e.CIUS)
-			}
-			if e.Valid {
-				fmt.Printf("%s: valid %s%s document\n", e.Name, e.Syntax, profile)
-				continue
-			}
-			fmt.Printf("%s: INVALID %s%s invoice (%d fatal, %d warning, %d structural)\n",
-				e.Name, e.Syntax, profile, e.Fatal, e.Warn, len(e.Schema))
-			for _, f := range e.Schema {
-				fmt.Printf("  %-12s %s at %s\n", "SCHEMA", f.Message, f.Location)
-			}
-			for _, f := range e.Findings {
-				loc := ""
-				if f.Context != "" {
-					loc = " at " + f.Context
-				}
-				fmt.Printf("  %-12s %s%s\n", f.ID, f.Message, loc)
-			}
-			if e.Truncated > 0 {
-				fmt.Printf("  ... and %d more (use -max -1 to list all)\n", e.Truncated)
-			}
-		}
+		reportVerdicts(all)
 	}
-	switch {
-	case anyInvalid:
-		os.Exit(1)
-	case anyError:
-		os.Exit(2)
+	if code := exitCodeFor(all); code != 0 {
+		os.Exit(code)
 	}
 	return nil
+}
+
+// reportVerdictsJSON writes the machine-readable form, an array of verdicts.
+func reportVerdictsJSON(all []verdict) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(all)
+}
+
+// reportVerdicts writes the human-readable form, one block per document.
+func reportVerdicts(all []verdict) {
+	for _, v := range all {
+		reportVerdict(v)
+	}
+}
+
+// reportVerdict prints one document: a summary line, then the structural
+// findings and the rule breaches that explain it.
+func reportVerdict(v verdict) {
+	if v.Error != "" {
+		fmt.Printf("%s: ERROR: %s\n", v.Name, v.Error)
+		return
+	}
+	label := ruleSetLabel(v)
+	if v.Valid {
+		fmt.Printf("%s: valid %s%s document\n", v.Name, v.Syntax, label)
+		return
+	}
+	fmt.Printf("%s: INVALID %s%s invoice (%d fatal, %d warning, %d structural)\n",
+		v.Name, v.Syntax, label, v.Fatal, v.Warn, len(v.Schema))
+	for _, f := range v.Schema {
+		fmt.Printf("  %-12s %s at %s\n", "SCHEMA", f.Message, f.Location)
+	}
+	for _, f := range v.Findings {
+		loc := ""
+		if f.Context != "" {
+			loc = " at " + f.Context
+		}
+		fmt.Printf("  %-12s %s%s\n", f.ID, f.Message, loc)
+	}
+	if v.Truncated > 0 {
+		fmt.Printf("  ... and %d more (use -max -1 to list all)\n", v.Truncated)
+	}
+}
+
+// ruleSetLabel renders the profile and CIUS a verdict was produced under,
+// which is the part of a command line a reader needs to trust the result.
+func ruleSetLabel(v verdict) string {
+	s := ""
+	if v.Profile != "" {
+		s += " " + string(v.Profile)
+	}
+	if v.CIUS != "" {
+		s += " + " + string(v.CIUS)
+	}
+	return s
+}
+
+// exitCodeFor maps verdicts onto the process exit status: 1 if a document
+// broke a rule, 2 if a document could not be read or parsed at all.
+func exitCodeFor(all []verdict) int {
+	for _, v := range all {
+		if !v.Valid && v.Error == "" {
+			return 1
+		}
+	}
+	for _, v := range all {
+		if v.Error != "" {
+			return 2
+		}
+	}
+	return 0
 }
 
 // runGen turns an invoice model held as JSON into a document. The model is
