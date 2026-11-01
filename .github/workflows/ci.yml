@@ -2,6 +2,9 @@ name: ci
 on:
   push:
     branches: [main]
+    # A tag is exactly the moment the version string stops being a detail, so
+    # the release itself is what CI checks.
+    tags: ['v*']
   pull_request:
 
 jobs:
@@ -9,6 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Tags, so the step below can tell which release this commit is, if any.
+          fetch-depth: 0
+      # The version string is what the CLI, the WebAssembly and the HTTP service
+      # report, and it is a constant rather than something read from the tag at
+      # build time. That is only honest if the two are kept in step, which they
+      # were not for v0.2.0: a site quoting go.mod said v0.2.0 while the engine
+      # it had loaded introduced itself as 0.1.0.
+      - name: the release tag agrees with the version the binaries report
+        run: |
+          const=$(sed -n 's/^const Version = "\(.*\)"$/\1/p' einvoice.go)
+          test -n "$const" || { echo "::error=no Version constant in einvoice.go"; exit 1; }
+          tag=$(git tag --points-at HEAD --sort=-v:refname | grep -E '^v[0-9]' | head -1)
+          if [ -n "$tag" ]; then
+            test "${tag#v}" = "$const" || { echo "::error=$tag disagrees with einvoice.Version ($const)"; exit 1; }
+          fi
       # The Go version is read from go.mod, never written here: a pinned
       # version here silently rots, and a version bump that has not been
       # reviewed on this corpus is exactly what should fail loudly.
