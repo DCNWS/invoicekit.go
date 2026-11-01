@@ -43,7 +43,7 @@ between releases without notice.
 
 | import | what it is for |
 |---|---|
-| `github.com/dcnws/invoicekit.go` | the entry point: `Validate`, `Parse`, `Generate`, syntax detection, phase and rule-set listing |
+| `github.com/dcnws/invoicekit.go` | the entry point: `Validate`, `Parse`, `Generate`, syntax detection, and phase, rule-set and rule listing |
 | `github.com/dcnws/invoicekit.go/facturx` | write and read hybrid invoices — the PDF envelope, its attachment, its XMP — without touching the rule engine |
 | `github.com/dcnws/invoicekit.go/hybrid` | audit a Factur-X / ZUGFeRD file the way a recipient's software does: envelope first, then the invoice inside it against a rule set |
 | `github.com/dcnws/invoicekit.go/xsd` | XML Schema validity for both syntaxes, which the official Schematron sets never check |
@@ -82,6 +82,7 @@ einv gen [-syntax cii|ubl] [-o out] [-cius NAME] [-profile NAME] <file|->
 einv parse [-o out] <file|->
 einv detect <file>
 einv phases [cii|ubl]
+einv rules [-json] [-syntax cii|ubl] [-phase ID] [-cius NAME] [-profile NAME]
 einv cius [name]
 einv profile [name]
 einv embed [flags] <pdf> <xml>
@@ -161,6 +162,30 @@ the norm does not carry, an element from a schema this library does not read, a
 second copy of something the model holds once — and the invoice comes back
 anyway, because a model that says what it lost is better than one that quietly
 lost it three systems down.
+
+`einv rules` answers the question a document cannot: which assertions does this
+build enforce. One line per assertion — syntax, id, severity, the phases that
+activate it, then the message as published, `[BR-21]-` prefix and all — so a rule
+reference, a compliance register or a diff between two releases can be written
+from the binary rather than from a PDF of the standard:
+
+```
+$ einv rules -syntax cii | wc -l
+810
+
+$ einv rules -syntax cii -phase syntax_phase | wc -l
+587
+
+$ einv rules -syntax cii -cius xrechnung | grep -m1 BR-DE-16
+CII	BR-DE-16	fatal	xrechnung-model	[BR-DE-16] Wenn in einer Rechnung die Steuercodes S, Z, E, AE, K, G, L oder M verwendet werden, muss mindestens eines der Elemente "Seller VAT identifier" (BT-31)…
+```
+
+The base sets are the 810 CII and 982 UBL assertions the Commission publishes, and
+`-cius` / `-profile` list what a run would add or replace — 862 assertions for an
+XRechnung CII invoice, 1144 for a Peppol UBL one. `-json` adds each rule's XPath
+context and test, which is what the public rule reference on the project site is
+generated from: the page and the library are built from the same list, so they
+cannot end up claiming different rule sets.
 
 ## Profiles: Peppol BIS and national CIUS
 

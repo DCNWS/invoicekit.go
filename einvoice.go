@@ -413,3 +413,49 @@ func CiusPhases(c CIUS, sx Syntax) ([]string, error) {
 	copy(out, ids)
 	return out, nil
 }
+
+// Rule is one assertion this library enforces, as published: its id, the rule
+// set that states it, what it says is wrong, and the phases that activate it.
+// Rules() returns them, which is how a caller publishes or diffs the rule set
+// behind a version string instead of trusting a changelog.
+type Rule struct {
+	ID      string   `json:"id"`
+	Syntax  Syntax   `json:"syntax"`
+	Source  string   `json:"source"`
+	Flag    string   `json:"flag"`
+	Text    string   `json:"text"`
+	Context string   `json:"context"`
+	Test    string   `json:"test"`
+	Phases  []string `json:"phases"`
+}
+
+// Rules lists every assertion a Validate call with these options would apply to
+// a document of the given syntax, in the order the rule sets run and, within
+// each, in document order. Options.Syntax is ignored, since the syntax is named
+// directly, and Options.Phases is not applied: the list says what a build
+// carries, and each rule states the phases it belongs to. A profile replaces the
+// EN 16931 artefacts exactly as it does in Validate, so the list matches the
+// verdict it produces.
+func Rules(sx Syntax, opts Options) ([]Rule, error) {
+	list, err := en16931.Rules(en16931.Syntax(sx), en16931.CIUS(opts.CIUS), en16931.Profile(opts.Profile))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Rule, 0, len(list))
+	for _, r := range list {
+		pr := Rule{
+			ID:      r.ID,
+			Syntax:  sx,
+			Source:  r.Source,
+			Flag:    r.Flag,
+			Text:    r.Text,
+			Context: r.Context,
+			Test:    r.Test,
+		}
+		if len(r.Phases) > 0 {
+			pr.Phases = append([]string(nil), r.Phases...)
+		}
+		out = append(out, pr)
+	}
+	return out, nil
+}

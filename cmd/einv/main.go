@@ -53,6 +53,8 @@ func main() {
 		err = runDetect(os.Args[2:])
 	case "phases", "p":
 		err = runPhases(os.Args[2:])
+	case "rules", "list":
+		err = runRules(os.Args[2:])
 	case "cius":
 		err = runCius(os.Args[2:])
 	case "profile":
@@ -93,6 +95,9 @@ Usage:
                                               model (JSON)
   einv detect <file>                          detect the invoice syntax
   einv phases [cii|ubl]                       list rule phase ids
+  einv rules [-json] [-syntax cii|ubl] [-phase ID] [-cius NAME] [-profile NAME]
+                                              list every assertion this build
+                                              enforces, as published
   einv cius [name]                            list CIUS rule sets, or the
                                               phases of one of them
   einv profile [name]                         list rule-set bundles (Peppol
@@ -434,6 +439,84 @@ func runPhases(args []string) error {
 		fmt.Println(" ", id)
 	}
 	return nil
+}
+
+// runRules lists the assertions this build carries, in the order a run applies
+// them. It answers "what does version X enforce?" without a document to check,
+// which is what a rules reference, a diff between releases or a compliance
+// register needs. The JSON form is what the public site builds its reference
+// from, so the page and the library cannot claim different rule sets.
+func runRules(args []string) error {
+	fs := flag.NewFlagSet("rules", flag.ContinueOnError)
+	var (
+		asJSON = fs.Bool("json", false, "emit the list as JSON")
+		syn    = fs.String("syntax", "", "restrict to one syntax: cii or ubl (default: both)")
+		phase  = fs.String("phase", "", "restrict to one rule phase id (see: einv phases)")
+		cius   = fs.String("cius", "", "list a country or network rule set as well, e.g. xrechnung")
+		prof   = fs.String("profile", "", "list a published bundle instead of our own artefacts, e.g. peppol")
+	)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	opt, err := ruleSetOf("", *cius, *prof)
+	if err != nil {
+		return err
+	}
+	list := []einvoice.Rule{}
+	for _, sx := range []einvoice.Syntax{einvoice.SyntaxCII, einvoice.SyntaxUBL} {
+		if *syn != "" {
+			want, err := syntaxOf(*syn)
+			if err != nil {
+				return err
+			}
+			if want != sx {
+				continue
+			}
+		}
+		more, err := einvoice.Rules(sx, opt)
+		if err != nil {
+			return err
+		}
+		for _, r := range more {
+			if *phase != "" && !hasPhaseID(r.Phases, *phase) {
+				continue
+			}
+			list = append(list, r)
+		}
+	}
+	if *asJSON {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(list)
+	}
+	for _, r := range list {
+		fmt.Println(ruleLine(r))
+	}
+	return nil
+}
+
+// ruleLine renders one rule as one tab-separated line: syntax, id, severity,
+// phase ids and the published text. Published text holds line breaks in four
+// assertions, which would split a rule over two lines and break a grep for one
+// id; the JSON form keeps that text exactly as it was published.
+func ruleLine(r einvoice.Rule) string {
+	return strings.Join([]string{
+		string(r.Syntax),
+		r.ID,
+		r.Flag,
+		strings.Join(r.Phases, ","),
+		strings.Join(strings.Fields(r.Text), " "),
+	}, "\t")
+}
+
+// hasPhaseID reports whether a rule belongs to a phase.
+func hasPhaseID(phases []string, id string) bool {
+	for _, p := range phases {
+		if p == id {
+			return true
+		}
+	}
+	return false
 }
 
 // runCius lists the profile rule sets the library carries, or the phases of
