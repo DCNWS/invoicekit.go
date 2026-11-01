@@ -322,238 +322,350 @@ func testSets(dirs []string) ([]payload, error) {
 	return out, nil
 }
 
-func main() {
-	corpus := flag.String("corpus", "testdata/mutations", "where to write harvested mutants")
-	report := flag.String("report", "", "markdown report to write")
-	jsonOut := flag.String("json", "", "machine readable summary to write")
-	bases := flag.String("bases", "", "comma separated reference documents (default: all clean docs in the corpus)")
-	ref := flag.String("ref", envOr("EINVOICE_REF", "../ref-en16931"), "CEF eInvoicing-EN16931 checkout")
-	limit := flag.Int("limit", 0, "max bases per syntax (0 = no limit)")
-	nomut := flag.Bool("no-mutate", false, "skip the mutation sweep")
-	jobs := flag.Int("jobs", 0, "parallel validations (default GOMAXPROCS)")
-	flag.Parse()
+// universe is the set of asserts a default validation run can reach, which is
+// what coverage is measured against, together with the proofs found so far.
+type universe struct {
+	asserts  map[string]map[string]string   // syntax -> id -> flag
+	pattern  map[string]map[string]string   // syntax -> id -> pattern id
+	phases   map[string]map[string][]string // syntax -> id -> phases
+	patCount map[string]map[string]int      // syntax -> pattern -> asserts
+	covered  map[string]map[string]source   // syntax -> id -> first proven source
+	phaseIDs map[string][]string            // syntax -> default phase ids
+}
 
-	// ---- assert universe: only patterns reachable from a phase ever run ----
-	asserts := map[string]map[string]string{}  // syntax -> id -> flag
-	pattern := map[string]map[string]string{}  // syntax -> id -> pattern id
-	phases := map[string]map[string][]string{} // syntax -> id -> phases
-	patCount := map[string]map[string]int{}    // syntax -> pattern -> asserts
-	var phaseIDs = map[string][]string{}
-	for _, sy := range []en16931.Syntax{en16931.SyntaxCII, en16931.SyntaxUBL} {
-		s, err := en16931.Schematron(sy)
-		if err != nil {
-			fail(err)
-		}
-		phaseIDs[string(sy)] = s.PhaseIDs()
-		asserts[string(sy)] = map[string]string{}
-		pattern[string(sy)] = map[string]string{}
-		phases[string(sy)] = map[string][]string{}
-		patCount[string(sy)] = map[string]int{}
-		byID := map[string]*sch.Pattern{}
-		for _, pat := range s.Patterns {
-			byID[pat.ID] = pat
-		}
-		// Default validation runs with no phase selected, which per ISO
-		// Schematron means every pattern is active - including patterns no
-		// <phase> references (the UBL schema keeps its UBL-SR-* structural
-		// rules in such a pattern).
-		refPattern := map[string]bool{}
-		for _, ph := range s.Phases {
-			for _, pid := range ph.Patterns {
-				refPattern[pid] = true
-				pat := byID[pid]
-				if pat == nil {
-					continue
-				}
-				for _, r := range pat.Rules {
-					for _, a := range r.Asserts {
-						seen := false
-						for _, have := range phases[string(sy)][a.ID] {
-							if have == ph.ID {
-								seen = true
-							}
-						}
-						if !seen {
-							phases[string(sy)][a.ID] = append(phases[string(sy)][a.ID], ph.ID)
-						}
-					}
-				}
-			}
-		}
-		for _, pat := range s.Patterns {
-			if !refPattern[pat.ID] {
-				n := 0
-				for _, r := range pat.Rules {
-					n += len(r.Asserts)
-				}
-				fmt.Fprintf(os.Stderr, "%s: pattern %s (%d asserts) is referenced by no phase but runs by default\n", sy, pat.ID, n)
-			}
-			for _, r := range pat.Rules {
-				for _, a := range r.Asserts {
-					asserts[string(sy)][a.ID] = a.Flag
-					pattern[string(sy)][a.ID] = pat.ID
-					patCount[string(sy)][pat.ID]++
-				}
-			}
-		}
+func newUniverse() *universe {
+	return &universe{
+		asserts:  map[string]map[string]string{},
+		pattern:  map[string]map[string]string{},
+		phases:   map[string]map[string][]string{},
+		patCount: map[string]map[string]int{},
+		covered:  map[string]map[string]source{},
+		phaseIDs: map[string][]string{},
 	}
+}
 
-	covered := map[string]map[string]source{} // syntax -> id -> first proven source
-	for sy := range asserts {
-		covered[sy] = map[string]source{}
-	}
-	mark := func(sy en16931.Syntax, ids []string, src source) int {
-		var n int
-		for _, id := range ids {
-			if _, ok := covered[string(sy)][id]; !ok {
-				covered[string(sy)][id] = src
-				n++
-			}
+// mark records that ids have been proven, and reports how many of them were
+// proven for the first time: a mutant is only worth harvesting when it proves
+// something new.
+func (u *universe) mark(sy en16931.Syntax, ids []string, src source) int {
+	var n int
+	for _, id := range ids {
+		if _, ok := u.covered[string(sy)][id]; !ok {
+			u.covered[string(sy)][id] = src
+			n++
 		}
-		return n
 	}
-	idsOf := func(rep *en16931.Report) []string {
-		seen := map[string]bool{}
-		var out []string
-		for _, f := range rep.Findings {
-			if !seen[f.ID] {
-				seen[f.ID] = true
-				out = append(out, f.ID)
-			}
-		}
-		sort.Strings(out)
-		return out
-	}
+	return n
+}
 
-	// ---- pass 1: the official unit test sets ----
-	var pts []payload
-	if dirs := []string{
-		filepath.Join(*ref, "test", "Invoice-unit-UBL"),
-		filepath.Join(*ref, "test", "CreditNote-unit-UBL"),
-		filepath.Join(*ref, "test", "cii"),
-	}; true {
-		var err error
-		if pts, err = testSets(dirs); err != nil {
-			fail(err)
+// loadSyntax adds one syntax's asserts to the universe. A default validation
+// run selects no phase, which per ISO Schematron means every pattern is
+// active, including patterns no <phase> references: the UBL schema keeps its
+// UBL-SR-* structural rules in such a pattern, so they must be counted.
+func (u *universe) loadSyntax(sy en16931.Syntax) error {
+	s, err := en16931.Schematron(sy)
+	if err != nil {
+		return err
+	}
+	key := string(sy)
+	u.asserts[key] = map[string]string{}
+	u.pattern[key] = map[string]string{}
+	u.phases[key] = map[string][]string{}
+	u.patCount[key] = map[string]int{}
+	u.covered[key] = map[string]source{}
+	u.phaseIDs[key] = s.PhaseIDs()
+
+	byID := make(map[string]*sch.Pattern, len(s.Patterns))
+	for _, pat := range s.Patterns {
+		byID[pat.ID] = pat
+	}
+	referenced := map[string]bool{}
+	for _, ph := range s.Phases {
+		for _, pid := range ph.Patterns {
+			referenced[pid] = true
+			u.addPhase(key, byID[pid], ph.ID)
 		}
 	}
-	var tsCases, tsExpect, tsMissed int
-	var tsMissList []string
+	for _, pat := range s.Patterns {
+		if !referenced[pat.ID] {
+			fmt.Fprintf(os.Stderr, "%s: pattern %s (%d asserts) is referenced by no phase but runs by default\n",
+				sy, pat.ID, countAsserts(pat))
+		}
+		for _, r := range pat.Rules {
+			for _, a := range r.Asserts {
+				u.asserts[key][a.ID] = a.Flag
+				u.pattern[key][a.ID] = pat.ID
+				u.patCount[key][pat.ID]++
+			}
+		}
+	}
+	return nil
+}
+
+// addPhase notes that phID is one of the phases asserting through pat, listing
+// a phase at most once per assert.
+func (u *universe) addPhase(key string, pat *sch.Pattern, phID string) {
+	if pat == nil {
+		return
+	}
+	for _, r := range pat.Rules {
+		for _, a := range r.Asserts {
+			if !slices.Contains(u.phases[key][a.ID], phID) {
+				u.phases[key][a.ID] = append(u.phases[key][a.ID], phID)
+			}
+		}
+	}
+}
+
+func countAsserts(pat *sch.Pattern) int {
+	var n int
+	for _, r := range pat.Rules {
+		n += len(r.Asserts)
+	}
+	return n
+}
+
+// coverage is the universe summarised: what was proven, by what, and which
+// asserts nothing ever fired.
+type coverage struct {
+	totals  map[string]int
+	missing map[string][]string
+	bySrc   map[string]map[string]int
+	hits    map[string]map[string]int // syntax -> pattern -> proven asserts
+}
+
+func (u *universe) coverage() coverage {
+	cov := coverage{
+		totals:  map[string]int{},
+		missing: map[string][]string{},
+		bySrc:   map[string]map[string]int{},
+		hits:    map[string]map[string]int{},
+	}
+	for sy, m := range u.asserts {
+		cov.totals[sy] = len(m)
+		cov.bySrc[sy] = map[string]int{}
+		cov.hits[sy] = map[string]int{}
+		for id := range m {
+			if _, ok := u.covered[sy][id]; !ok {
+				cov.missing[sy] = append(cov.missing[sy], id)
+				continue
+			}
+			cov.hits[sy][u.pattern[sy][id]]++
+		}
+		sort.Strings(cov.missing[sy])
+		for _, s := range u.covered[sy] {
+			cov.bySrc[sy][s.Kind]++
+		}
+	}
+	return cov
+}
+
+// testSetStats counts what the official CEF unit test sets proved.
+type testSetStats struct {
+	cases    int
+	expect   int
+	missed   int
+	missList []string
+}
+
+// corpusStats counts what replaying the harvested corpus proved.
+type corpusStats struct {
+	files    int
+	expect   int
+	missed   int
+	evalErrs int
+	missList []string
+}
+
+// mutantStats counts what the mutation sweep did.
+type mutantStats struct {
+	generated int
+	hits      int
+	rejected  int
+	why       map[string]int
+	example   map[string]string
+}
+
+// runStats bundles the three passes so a report needs one argument, not four.
+type runStats struct {
+	ts   testSetStats
+	cr   corpusStats
+	ms   mutantStats
+	refs int
+}
+
+// syntaxNames is the reporting order. Maps iterate unpredictably, and a report
+// whose sections move between runs is impossible to diff.
+var syntaxNames = []string{"CII", "UBL"}
+
+// firedIDs returns the distinct rule ids a report contains, sorted.
+func firedIDs(rep *en16931.Report) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, f := range rep.Findings {
+		if !seen[f.ID] {
+			seen[f.ID] = true
+			out = append(out, f.ID)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// setOf turns ids into a membership test.
+func setOf(ids []string) map[string]bool {
+	set := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		set[id] = true
+	}
+	return set
+}
+
+// runTestSets validates every payload document in the official test sets and
+// checks the expectations each <test> states about it.
+func runTestSets(ref string, u *universe) (testSetStats, error) {
+	dirs := []string{
+		filepath.Join(ref, "test", "Invoice-unit-UBL"),
+		filepath.Join(ref, "test", "CreditNote-unit-UBL"),
+		filepath.Join(ref, "test", "cii"),
+	}
+	pts, err := testSets(dirs)
+	if err != nil {
+		return testSetStats{}, err
+	}
+	var st testSetStats
 	for _, p := range pts {
 		rep, err := en16931.ValidateDoc(p.sy, p.doc, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %v\n", p.file, err)
 			continue
 		}
-		tsCases++
-		fired := map[string]bool{}
-		for _, id := range idsOf(rep) {
-			fired[id] = true
-		}
-		mark(p.sy, idsOf(rep), source{Kind: "official-testset", What: filepath.Base(p.file) + "#" + fmt.Sprint(p.idx)})
+		st.cases++
+		ids := firedIDs(rep)
+		fired := setOf(ids)
+		what := filepath.Base(p.file) + "#" + fmt.Sprint(p.idx)
+		u.mark(p.sy, ids, source{Kind: "official-testset", What: what})
 		for _, id := range p.mustFire {
-			tsExpect++
-			if !fired[id] {
-				tsMissed++
-				if len(tsMissList) < 40 {
-					tsMissList = append(tsMissList, fmt.Sprintf("%s %s (%s#%d)", p.sy, id, filepath.Base(p.file), p.idx))
-				}
-			}
-		}
-	}
-	fmt.Fprintf(os.Stderr, "official test sets: %d payload documents, %d must-fire expectations\n", tsCases, tsExpect)
-
-	// ---- pass 1b: replay the corpus harvested by an earlier run ----
-	// The rules each harvested mutant is expected to fire are encoded in its
-	// file name, so this pass needs no bookkeeping: it re-checks that the
-	// corpus still proves what it proved when it was harvested, and it lets
-	// -no-mutate report full coverage in a couple of seconds.
-	var cf, ce, cm, cerr int
-	var cmList []string
-	for _, sy := range []en16931.Syntax{en16931.SyntaxCII, en16931.SyntaxUBL} {
-		fs, err := filepath.Glob(filepath.Join(*corpus, string(sy), "*.xml"))
-		if err != nil {
-			fail(err)
-		}
-		sort.Strings(fs)
-		for _, f := range fs {
-			data, err := os.ReadFile(f)
-			if err != nil {
-				fail(err)
-			}
-			base := filepath.Base(f)
-			var ids []string
-			if i := strings.Index(base, "--"); i > 0 {
-				ids = strings.Split(base[:i], "+")
-			}
-			rep, err := en16931.Validate(data, en16931.Options{Syntax: sy})
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %v\n", base, err)
+			st.expect++
+			if fired[id] {
 				continue
 			}
-			for _, fi := range rep.Findings {
-				if fi.Err != "" {
-					cerr++
-				}
-			}
-			fired := map[string]bool{}
-			for _, id := range idsOf(rep) {
-				fired[id] = true
-			}
-			mark(sy, idsOf(rep), source{Kind: "corpus", What: base})
-			cf++
-			for _, id := range ids {
-				ce++
-				if !fired[id] {
-					cm++
-					if len(cmList) < 20 {
-						cmList = append(cmList, fmt.Sprintf("%s %s (%s)", sy, id, base))
-					}
-				}
+			st.missed++
+			if len(st.missList) < 40 {
+				st.missList = append(st.missList, fmt.Sprintf("%s %s (%s#%d)", p.sy, id, filepath.Base(p.file), p.idx))
 			}
 		}
 	}
-	fmt.Printf("corpus replay: %d mutants, %d expected firings, %d did not fire, %d could not be evaluated\n", cf, ce, cm, cerr)
-	for _, l := range cmList {
-		fmt.Println("  not fired:", l)
-	}
+	return st, nil
+}
 
-	// ---- pass 2: mutants of clean reference documents ----
-	var refs []string
-	if *bases != "" {
-		refs = strings.Split(*bases, ",")
-	} else {
-		refs = cleanBases(*ref, *limit)
+// replayCorpus re-checks the mutants an earlier run harvested. The ids each one
+// is expected to fire are encoded in its file name, so this needs no separate
+// bookkeeping: it proves the corpus still shows what it showed when it was
+// harvested, and lets -no-mutate report full coverage in a couple of seconds.
+func replayCorpus(corpus string, u *universe) (corpusStats, error) {
+	var st corpusStats
+	for _, sy := range []en16931.Syntax{en16931.SyntaxCII, en16931.SyntaxUBL} {
+		files, err := filepath.Glob(filepath.Join(corpus, string(sy), "*.xml"))
+		if err != nil {
+			return st, err
+		}
+		sort.Strings(files)
+		for _, f := range files {
+			if err := replayMutant(f, sy, u, &st); err != nil {
+				return st, err
+			}
+		}
 	}
-	if len(refs) == 0 {
-		fail(fmt.Errorf("no clean reference documents found under %s", *ref))
+	return st, nil
+}
+
+// replayMutant validates one corpus file and compares the findings with the
+// rule ids its name claims.
+func replayMutant(path string, sy en16931.Syntax, u *universe, st *corpusStats) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
 	}
+	base := filepath.Base(path)
+	rep, err := en16931.Validate(data, en16931.Options{Syntax: sy})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", base, err)
+		return nil
+	}
+	for _, fi := range rep.Findings {
+		if fi.Err != "" {
+			st.evalErrs++
+		}
+	}
+	ids := firedIDs(rep)
+	fired := setOf(ids)
+	u.mark(sy, ids, source{Kind: "corpus", What: base})
+	st.files++
+	for _, id := range expectedIDs(base) {
+		st.expect++
+		if fired[id] {
+			continue
+		}
+		st.missed++
+		if len(st.missList) < 20 {
+			st.missList = append(st.missList, fmt.Sprintf("%s %s (%s)", sy, id, base))
+		}
+	}
+	return nil
+}
+
+// expectedIDs reads the rule ids a corpus file name claims to fire: the part
+// before "--", which harvest wrote when it saved the mutant.
+func expectedIDs(base string) []string {
+	if i := strings.Index(base, "--"); i > 0 {
+		return strings.Split(base[:i], "+")
+	}
+	return nil
+}
+
+// basesOf returns the clean reference documents to mutate: the ones named on
+// the command line, or every clean document of the reference checkout.
+func basesOf(ref, bases string, limit int) ([]string, error) {
+	if bases != "" {
+		return strings.Split(bases, ","), nil
+	}
+	clean := cleanBases(ref, limit)
+	if len(clean) == 0 {
+		return nil, fmt.Errorf("no clean reference documents found under %s", ref)
+	}
+	return clean, nil
+}
+
+// mutantJobs expands each reference document into its mutants.
+func mutantJobs(refs []string, doMutate bool) ([]job, error) {
 	var work []job
 	for _, base := range refs {
 		b, err := os.ReadFile(base)
 		if err != nil {
-			fail(err)
+			return nil, err
 		}
 		sy, err := en16931.Detect(b)
 		if err != nil {
-			fail(err)
+			return nil, err
 		}
 		doc, err := xp.ParseXML(string(b))
 		if err != nil {
-			fail(err)
+			return nil, err
 		}
-		if !*nomut {
-			for _, m := range mutate(b, doc.RootElem().Name) {
-				work = append(work, job{base: base, sy: sy, m: m})
-			}
+		if !doMutate {
+			continue
+		}
+		for _, m := range mutate(b, doc.RootElem().Name) {
+			work = append(work, job{base: base, sy: sy, m: m})
 		}
 	}
-	fmt.Fprintf(os.Stderr, "%d clean bases, %d mutants\n", len(refs), len(work))
+	return work, nil
+}
 
-	n := *jobs
-	if n < 1 {
-		n = 32
-	}
+// validateAll feeds every mutant to handle as the workers finish it, so a
+// sweep of hundreds of thousands of mutants never holds them all in memory.
+func validateAll(work []job, n int, handle func(o outcome)) {
 	in := make(chan job)
 	out := make(chan outcome, 64)
 	var wg sync.WaitGroup
@@ -573,174 +685,275 @@ func main() {
 		wg.Wait()
 		close(out)
 	}()
-
-	dead, firedMut := 0, 0
-	deadWhy := map[string]int{}
-	deadEx := map[string]string{}
 	for o := range out {
-		if o.err != nil {
-			dead++
-			k := o.err.Error()
-			if len(k) > 90 {
-				k = k[:90]
-			}
-			deadWhy[k]++
-			if _, ok := deadEx[k]; !ok {
-				deadEx[k] = o.job.base + " " + o.job.m.name
-			}
-			continue
-		}
-		nf := idsOf(o.res)
-		if len(nf) == 0 {
-			continue
-		}
-		firedMut++
-		if mark(o.job.sy, nf, source{Kind: "mutant", What: filepath.Base(o.job.base) + " " + o.job.m.name}) > 0 {
-			dir := filepath.Join(*corpus, string(o.job.sy))
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				fail(err)
-			}
-			fn := fmt.Sprintf("%s--%s.xml", sanitize(strings.Join(nf, "+")), sanitize(o.job.m.name))
-			if err := os.WriteFile(filepath.Join(dir, fn), o.job.m.data, 0o644); err != nil {
-				fail(err)
-			}
-		}
+		handle(o)
 	}
+}
 
-	// ---- report ----
-	totals := map[string]int{}
-	missing := map[string][]string{}
-	for sy, m := range asserts {
-		totals[sy] = len(m)
-		for id := range m {
-			if _, ok := covered[sy][id]; !ok {
-				missing[sy] = append(missing[sy], id)
-			}
-		}
-		sort.Strings(missing[sy])
+// workers maps -jobs onto a worker count.
+func workers(n int) int {
+	if n < 1 {
+		return 32
 	}
-	fmt.Printf("\nofficial test-set payloads: %d, must-fire expectations: %d, not fired: %d\n", tsCases, tsExpect, tsMissed)
-	for _, l := range tsMissList {
+	return n
+}
+
+// harvest runs the mutation sweep, recording what each mutant proves and
+// saving the ones that prove something new.
+func harvest(work []job, n int, corpus string, u *universe) mutantStats {
+	st := mutantStats{generated: len(work), why: map[string]int{}, example: map[string]string{}}
+	validateAll(work, n, func(o outcome) {
+		if o.err != nil {
+			st.noteRejection(o)
+			return
+		}
+		ids := firedIDs(o.res)
+		if len(ids) == 0 {
+			return
+		}
+		st.hits++
+		what := filepath.Base(o.job.base) + " " + o.job.m.name
+		if u.mark(o.job.sy, ids, source{Kind: "mutant", What: what}) == 0 {
+			return
+		}
+		if err := saveMutant(corpus, o.job, ids); err != nil {
+			fail(err)
+		}
+	})
+	return st
+}
+
+// noteRejection groups mutants the validator could not parse by the reason it
+// gave, so one broken edit form shows up as a count rather than as thousands of
+// lines.
+func (st *mutantStats) noteRejection(o outcome) {
+	st.rejected++
+	k := o.err.Error()
+	if len(k) > 90 {
+		k = k[:90]
+	}
+	st.why[k]++
+	if _, ok := st.example[k]; !ok {
+		st.example[k] = o.job.base + " " + o.job.m.name
+	}
+}
+
+// saveMutant writes a mutant under the rule ids it fired, which is the
+// convention replayCorpus reads back.
+func saveMutant(corpus string, j job, ids []string) error {
+	dir := filepath.Join(corpus, string(j.sy))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	fn := fmt.Sprintf("%s--%s.xml", sanitize(strings.Join(ids, "+")), sanitize(j.m.name))
+	return os.WriteFile(filepath.Join(dir, fn), j.m.data, 0o644)
+}
+
+// printRun writes the console report: what each pass proved, and what nothing
+// ever fired.
+func printRun(u *universe, cov coverage, rs runStats) {
+	fmt.Printf("\nofficial test-set payloads: %d, must-fire expectations: %d, not fired: %d\n",
+		rs.ts.cases, rs.ts.expect, rs.ts.missed)
+	for _, l := range rs.ts.missList {
 		fmt.Println("  missing:", l)
 	}
-	if tsMissed > len(tsMissList) {
-		fmt.Printf("  ... %d more\n", tsMissed-len(tsMissList))
+	if rs.ts.missed > len(rs.ts.missList) {
+		fmt.Printf("  ... %d more\n", rs.ts.missed-len(rs.ts.missList))
 	}
-	fmt.Printf("mutants: %d generated, %d produced findings, %d rejected\n", len(work), firedMut, dead)
+	fmt.Printf("mutants: %d generated, %d produced findings, %d rejected\n", rs.ms.generated, rs.ms.hits, rs.ms.rejected)
+	printRejections(rs.ms)
+	fmt.Println()
+	for _, sy := range syntaxNames {
+		fmt.Printf("%s: %d/%d active asserts proven (%s)\n",
+			sy, len(u.covered[sy]), cov.totals[sy], srcString(cov.bySrc[sy]))
+		for _, id := range cov.missing[sy] {
+			fmt.Printf("  never fired: %-12s [%s] %s / %s\n",
+				id, u.asserts[sy][id], u.pattern[sy][id], strings.Join(u.phases[sy][id], ","))
+		}
+	}
+	printPerPattern(u, cov)
+}
+
+// printRejections lists the commonest reasons a mutant could not be read.
+func printRejections(ms mutantStats) {
 	var ks []string
-	for k := range deadWhy {
+	for k := range ms.why {
 		ks = append(ks, k)
 	}
-	sort.Slice(ks, func(i, j int) bool { return deadWhy[ks[i]] > deadWhy[ks[j]] })
+	sort.Slice(ks, func(i, j int) bool { return ms.why[ks[i]] > ms.why[ks[j]] })
 	for i, k := range ks {
 		if i >= 12 {
 			break
 		}
-		fmt.Printf("  %6d  %s   e.g. %s\n", deadWhy[k], k, deadEx[k])
+		fmt.Printf("  %6d  %s   e.g. %s\n", ms.why[k], k, ms.example[k])
 	}
-	fmt.Println()
+}
 
-	bySrc := map[string]map[string]int{}
-	for sy, m := range covered {
-		bySrc[sy] = map[string]int{}
-		for _, s := range m {
-			bySrc[sy][s.Kind]++
-		}
-	}
-	for _, sy := range []string{"CII", "UBL"} {
-		fmt.Printf("%s: %d/%d active asserts proven (%s)\n", sy, len(covered[sy]), totals[sy], srcString(bySrc[sy]))
-		for _, id := range missing[sy] {
-			fmt.Printf("  never fired: %-12s [%s] %s / %s\n", id, asserts[sy][id], pattern[sy][id], strings.Join(phases[sy][id], ","))
-		}
-	}
-	for _, sy := range []string{"CII", "UBL"} {
+// printPerPattern shows coverage pattern by pattern, which is where a gap in
+// one part of the model becomes visible.
+func printPerPattern(u *universe, cov coverage) {
+	for _, sy := range syntaxNames {
 		fmt.Printf("\n%s per pattern:\n", sy)
 		var pids []string
-		for pid := range patCount[sy] {
+		for pid := range u.patCount[sy] {
 			pids = append(pids, pid)
 		}
 		sort.Strings(pids)
 		for _, pid := range pids {
-			var hit int
-			for id, p := range pattern[sy] {
-				if p == pid {
-					if _, ok := covered[sy][id]; ok {
-						hit++
-					}
-				}
-			}
-			fmt.Printf("  %-22s %-22s %d/%d\n", pid, phaseOf(phases[sy], pattern[sy], pid), hit, patCount[sy][pid])
+			fmt.Printf("  %-22s %-22s %d/%d\n", pid, phaseOf(u.phases[sy], u.pattern[sy], pid),
+				cov.hits[sy][pid], u.patCount[sy][pid])
 		}
 	}
+}
 
-	// manifest: how each assert was proven
-	type proven struct {
-		ID   string `json:"id"`
-		Kind string `json:"kind"`
-		What string `json:"what"`
-	}
-	for sy, m := range covered {
+// proven records how one assert was proven, which is what a replay test needs
+// to be able to prove it again.
+type proven struct {
+	ID   string `json:"id"`
+	Kind string `json:"kind"`
+	What string `json:"what"`
+}
+
+// writeManifests records how every proven assert was proven.
+func writeManifests(corpus string, u *universe) error {
+	for sy, m := range u.covered {
 		var ps []proven
 		for id, s := range m {
 			ps = append(ps, proven{ID: id, Kind: s.Kind, What: s.What})
 		}
 		sort.Slice(ps, func(i, j int) bool { return ps[i].ID < ps[j].ID })
-		b, _ := json.MarshalIndent(ps, "", "  ")
-		dir := filepath.Join(*corpus, sy)
+		b, err := json.MarshalIndent(ps, "", "  ")
+		if err != nil {
+			return err
+		}
+		dir := filepath.Join(corpus, sy)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fail(err)
+			return err
 		}
 		if err := os.WriteFile(filepath.Join(dir, "manifest.json"), b, 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// syntaxSummary is one syntax's row in the machine-readable summary. The
+// run-wide counts repeat per row so a consumer can read one row alone.
+type syntaxSummary struct {
+	Syntax      string         `json:"syntax"`
+	Active      int            `json:"activeAsserts"`
+	Proven      int            `json:"provenAsserts"`
+	BySource    map[string]int `json:"bySource"`
+	NeverFired  []string       `json:"neverFired"`
+	Phases      []string       `json:"phases"`
+	TestCases   int            `json:"testSetPayloads"`
+	MustFire    int            `json:"mustFireExpectations"`
+	MustFireOff int            `json:"mustFireNotFired"`
+	Mutants     int            `json:"mutants"`
+	MutantHits  int            `json:"mutantsWithFindings"`
+	Corpus      int            `json:"corpusMutants"`
+	CorpusExp   int            `json:"corpusExpectedFirings"`
+	CorpusOff   int            `json:"corpusNotFired"`
+	EvalErrs    int            `json:"corpusEvalErrors"`
+}
+
+func writeJSONSummary(path string, u *universe, cov coverage, rs runStats) error {
+	sums := []syntaxSummary{}
+	for _, sy := range syntaxNames {
+		sums = append(sums, syntaxSummary{
+			Syntax: sy, Active: cov.totals[sy], Proven: len(u.covered[sy]),
+			BySource: cov.bySrc[sy], NeverFired: cov.missing[sy], Phases: u.phaseIDs[sy],
+			TestCases: rs.ts.cases, MustFire: rs.ts.expect, MustFireOff: rs.ts.missed,
+			Mutants: rs.ms.generated, MutantHits: rs.ms.hits,
+			Corpus: rs.cr.files, CorpusExp: rs.cr.expect, CorpusOff: rs.cr.missed,
+			EvalErrs: rs.cr.evalErrs,
+		})
+	}
+	b, err := json.MarshalIndent(sums, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, b, 0o644)
+}
+
+func writeMarkdown(path string, u *universe, cov coverage, rs runStats) error {
+	var sb strings.Builder
+	sb.WriteString("# Assert coverage\n\n")
+	fmt.Fprintf(&sb, "Engine: `%s`\n\n", versionString())
+	fmt.Fprintf(&sb, "- official test-set payloads run: %d (%d must-fire expectations, %d of them did not fire)\n",
+		rs.ts.cases, rs.ts.expect, rs.ts.missed)
+	fmt.Fprintf(&sb, "- corpus replay: %d harvested mutants, %d expected firings, %d did not fire, %d eval errors\n",
+		rs.cr.files, rs.cr.expect, rs.cr.missed, rs.cr.evalErrs)
+	fmt.Fprintf(&sb, "- clean reference documents: %d\n", rs.refs)
+	fmt.Fprintf(&sb, "- mutants generated: %d, producing findings: %d, unparsable: %d\n\n",
+		rs.ms.generated, rs.ms.hits, rs.ms.rejected)
+	for _, sy := range syntaxNames {
+		fmt.Fprintf(&sb, "## %s: %d/%d active asserts proven\n\n", sy, len(u.covered[sy]), cov.totals[sy])
+		fmt.Fprintf(&sb, "sources: %s\n\nphases run by default: %s\n\n",
+			srcString(cov.bySrc[sy]), strings.Join(u.phaseIDs[sy], ", "))
+		fmt.Fprintf(&sb, "never fired (%d): %s\n\n", len(cov.missing[sy]), strings.Join(cov.missing[sy], ", "))
+	}
+	return os.WriteFile(path, []byte(sb.String()), 0o644)
+}
+
+func main() {
+	corpus := flag.String("corpus", "testdata/mutations", "where to write harvested mutants")
+	report := flag.String("report", "", "markdown report to write")
+	jsonOut := flag.String("json", "", "machine readable summary to write")
+	bases := flag.String("bases", "", "comma separated reference documents (default: all clean docs in the corpus)")
+	ref := flag.String("ref", envOr("EINVOICE_REF", "../ref-en16931"), "CEF eInvoicing-EN16931 checkout")
+	limit := flag.Int("limit", 0, "max bases per syntax (0 = no limit)")
+	nomut := flag.Bool("no-mutate", false, "skip the mutation sweep")
+	jobs := flag.Int("jobs", 0, "parallel validations (default GOMAXPROCS)")
+	flag.Parse()
+
+	u := newUniverse()
+	for _, sy := range []en16931.Syntax{en16931.SyntaxCII, en16931.SyntaxUBL} {
+		if err := u.loadSyntax(sy); err != nil {
 			fail(err)
 		}
 	}
 
+	ts, err := runTestSets(*ref, u)
+	if err != nil {
+		fail(err)
+	}
+	fmt.Fprintf(os.Stderr, "official test sets: %d payload documents, %d must-fire expectations\n", ts.cases, ts.expect)
+
+	cr, err := replayCorpus(*corpus, u)
+	if err != nil {
+		fail(err)
+	}
+	fmt.Printf("corpus replay: %d mutants, %d expected firings, %d did not fire, %d could not be evaluated\n",
+		cr.files, cr.expect, cr.missed, cr.evalErrs)
+	for _, l := range cr.missList {
+		fmt.Println("  not fired:", l)
+	}
+
+	refs, err := basesOf(*ref, *bases, *limit)
+	if err != nil {
+		fail(err)
+	}
+	work, err := mutantJobs(refs, !*nomut)
+	if err != nil {
+		fail(err)
+	}
+	fmt.Fprintf(os.Stderr, "%d clean bases, %d mutants\n", len(refs), len(work))
+
+	rs := runStats{ts: ts, cr: cr, ms: harvest(work, workers(*jobs), *corpus, u), refs: len(refs)}
+	cov := u.coverage()
+	printRun(u, cov, rs)
+
+	if err := writeManifests(*corpus, u); err != nil {
+		fail(err)
+	}
 	if *jsonOut != "" {
-		type sum struct {
-			Syntax      string         `json:"syntax"`
-			Active      int            `json:"activeAsserts"`
-			Proven      int            `json:"provenAsserts"`
-			BySource    map[string]int `json:"bySource"`
-			NeverFired  []string       `json:"neverFired"`
-			Phases      []string       `json:"phases"`
-			TestCases   int            `json:"testSetPayloads"`
-			MustFire    int            `json:"mustFireExpectations"`
-			MustFireOff int            `json:"mustFireNotFired"`
-			Mutants     int            `json:"mutants"`
-			MutantHits  int            `json:"mutantsWithFindings"`
-			Corpus      int            `json:"corpusMutants"`
-			CorpusExp   int            `json:"corpusExpectedFirings"`
-			CorpusOff   int            `json:"corpusNotFired"`
-			EvalErrs    int            `json:"corpusEvalErrors"`
-		}
-		var sums []sum
-		for _, sy := range []string{"CII", "UBL"} {
-			sums = append(sums, sum{Syntax: sy, Active: totals[sy], Proven: len(covered[sy]),
-				BySource: bySrc[sy], NeverFired: missing[sy], Phases: phaseIDs[sy],
-				TestCases: tsCases, MustFire: tsExpect, MustFireOff: tsMissed,
-				Mutants: len(work), MutantHits: firedMut,
-				Corpus: cf, CorpusExp: ce, CorpusOff: cm, EvalErrs: cerr})
-		}
-		b, _ := json.MarshalIndent(sums, "", "  ")
-		if err := os.WriteFile(*jsonOut, b, 0o644); err != nil {
+		if err := writeJSONSummary(*jsonOut, u, cov, rs); err != nil {
 			fail(err)
 		}
 	}
-
 	if *report != "" {
-		var sb strings.Builder
-		sb.WriteString("# Assert coverage\n\n")
-		fmt.Fprintf(&sb, "Engine: `%s`\n\n", versionString())
-		fmt.Fprintf(&sb, "- official test-set payloads run: %d (%d must-fire expectations, %d of them did not fire)\n", tsCases, tsExpect, tsMissed)
-		fmt.Fprintf(&sb, "- corpus replay: %d harvested mutants, %d expected firings, %d did not fire, %d eval errors\n", cf, ce, cm, cerr)
-		fmt.Fprintf(&sb, "- clean reference documents: %d\n", len(refs))
-		fmt.Fprintf(&sb, "- mutants generated: %d, producing findings: %d, unparsable: %d\n\n", len(work), firedMut, dead)
-		for _, sy := range []string{"CII", "UBL"} {
-			fmt.Fprintf(&sb, "## %s: %d/%d active asserts proven\n\n", sy, len(covered[sy]), totals[sy])
-			fmt.Fprintf(&sb, "sources: %s\n\nphases run by default: %s\n\n", srcString(bySrc[sy]), strings.Join(phaseIDs[sy], ", "))
-			fmt.Fprintf(&sb, "never fired (%d): %s\n\n", len(missing[sy]), strings.Join(missing[sy], ", "))
-		}
-		if err := os.WriteFile(*report, []byte(sb.String()), 0o644); err != nil {
+		if err := writeMarkdown(*report, u, cov, rs); err != nil {
 			fail(err)
 		}
 	}
