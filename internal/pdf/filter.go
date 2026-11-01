@@ -209,15 +209,20 @@ func runLengthDecode(data []byte) ([]byte, error) {
 	return out, nil
 }
 
-// applyPredictor undoes a row predictor in a decoded stream.
-func applyPredictor(data []byte, p *Dict) ([]byte, error) {
+// predictor is the sample layout a row predictor works on: how wide a row is
+// on the wire, how far a pixel extends sideways, and how deep a sample is.
+type predictor struct {
+	pred     int
+	rowBytes int
+	bpp      int
+	bpc      int
+}
+
+func predictorOf(p *Dict) (predictor, error) {
 	pred, _ := p.IntValue("Predictor")
-	if pred == 1 {
-		return data, nil
-	}
 	cols64, ok := p.IntValue("Columns")
 	if !ok || cols64 <= 0 {
-		return nil, fmt.Errorf("pdf: predictor without /Columns")
+		return predictor{}, fmt.Errorf("pdf: predictor without /Columns")
 	}
 	bpc64, ok := p.IntValue("BitsPerComponent")
 	if !ok || bpc64 <= 0 {
@@ -228,96 +233,152 @@ func applyPredictor(data []byte, p *Dict) ([]byte, error) {
 		comps64 = 1
 	}
 	cols, bpc, comps := int(cols64), int(bpc64), int(comps64)
-	rowBits := cols * comps * bpc
-	rowBytes := int((rowBits + 7) / 8)
-	switch pred {
-	case 10, 11, 12, 13, 14, 15: // PNG predictors; 15 chooses per row
-		out := make([]byte, 0, len(data))
-		var prev []byte
-		for pos := 0; pos < len(data); {
-			ft := data[pos]
-			pos++
-			if pos+rowBytes > len(data) {
-				return nil, fmt.Errorf("pdf: predictor row truncated")
-			}
-			row := make([]byte, rowBytes)
-			copy(row, data[pos:pos+rowBytes])
-			pos += rowBytes
-			switch ft {
-			case 0:
-			case 1:
-				bpp := (comps*bpc + 7) / 8
-				for i := bpp; i < rowBytes; i++ {
-					row[i] += row[i-bpp]
-				}
-			case 2:
-				for i := range rowBytes {
-					if i < len(prev) {
-						row[i] += prev[i]
-					}
-				}
-			case 3:
-				bpp := (comps*bpc + 7) / 8
-				for i := range rowBytes {
-					a := 0
-					if i >= bpp {
-						a = int(row[i-bpp])
-					}
-					b := 0
-					if i < len(prev) {
-						b = int(prev[i])
-					}
-					row[i] += byte((a + b) / 2)
-				}
-			case 4:
-				bpp := (comps*bpc + 7) / 8
-				for i := range rowBytes {
-					a, b, c := 0, 0, 0
-					if i >= bpp {
-						a = int(row[i-bpp])
-					}
-					if i < len(prev) {
-						b = int(prev[i])
-					}
-					if i >= bpp && i < len(prev) {
-						c = int(prev[i-bpp])
-					}
-					pa, pb, pc := abs(a-b), abs(b-c), abs(a-c)
-					switch {
-					case pa <= pb && pa <= pc:
-						row[i] += byte(a)
-					case pb <= pc:
-						row[i] += byte(b)
-					default:
-						row[i] += byte(c)
-					}
-				}
-			default:
-				return nil, fmt.Errorf("pdf: unknown PNG predictor %d", ft)
-			}
-			out = append(out, row...)
-			prev = row
-		}
-		return out, nil
-	case 2: // TIFF differencing (horizontal)
-		if bpc != 8 {
-			return nil, fmt.Errorf("%w: TIFF predictor with %d bits per component", ErrUnsupported, bpc)
-		}
-		out := make([]byte, len(data))
-		for pos := 0; pos < len(data); pos += rowBytes {
-			end := min(pos+rowBytes, len(data))
-			bpp := (comps*8 + 7) / 8
-			for i := pos; i < end; i++ {
-				if i-bpp >= pos {
-					out[i] = data[i] + out[i-bpp]
-				} else {
-					out[i] = data[i]
-				}
-			}
-		}
-		return out, nil
+	return predictor{
+		pred:     int(pred),
+		rowBytes: (cols*comps*bpc + 7) / 8,
+		bpp:      (comps*bpc + 7) / 8,
+		bpc:      bpc,
+	}, nil
+}
+
+// applyPredictor undoes a row predictor in a decoded stream.
+func applyPredictor(data []byte, p *Dict) ([]byte, error) {
+	pr, err := predictorOf(p)
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("%w: predictor %d", ErrUnsupported, pred)
+	if pr.pred == 1 {
+		return data, nil
+	}
+	switch pr.pred {
+	case 10, 11, 12, 13, 14, 15: // PNG predictors; 15 chooses per row
+		return pngRows(data, pr)
+	case 2: // TIFF differencing (horizontal)
+		return tiffRow(data, pr)
+	}
+	return nil, fmt.Errorf("%w: predictor %d", ErrUnsupported, pr.pred)
+}
+
+// pngRows reads each row's filter byte and applies the matching filter. The
+// filters are a table because the five PNG filters are independent of each
+// other and the choice between them is per row, not per stream.
+func pngRows(data []byte, pr predictor) ([]byte, error) {
+	out := make([]byte, 0, len(data))
+	var prev []byte
+	for pos := 0; pos < len(data); {
+		ft := data[pos]
+		pos++
+		if pos+pr.rowBytes > len(data) {
+			return nil, fmt.Errorf("pdf: predictor row truncated")
+		}
+		row := make([]byte, pr.rowBytes)
+		copy(row, data[pos:pos+pr.rowBytes])
+		pos += pr.rowBytes
+		f, ok := pngFilters[ft]
+		if !ok {
+			return nil, fmt.Errorf("pdf: unknown PNG predictor %d", ft)
+		}
+		f(row, prev, pr.bpp)
+		out = append(out, row...)
+		prev = row
+	}
+	return out, nil
+}
+
+// rowFilter turns one row in place, given the previous row and the width of a
+// pixel in bytes.
+type rowFilter func(row, prev []byte, bpp int)
+
+var pngFilters = map[byte]rowFilter{
+	0: pngNone,
+	1: pngSub,
+	2: pngUp,
+	3: pngAverage,
+	4: pngPaeth,
+}
+
+func pngNone(row, prev []byte, bpp int) {}
+
+func pngSub(row, prev []byte, bpp int) {
+	for i := bpp; i < len(row); i++ {
+		row[i] += row[i-bpp]
+	}
+}
+
+func pngUp(row, prev []byte, bpp int) {
+	for i := range row {
+		if i < len(prev) {
+			row[i] += prev[i]
+		}
+	}
+}
+
+func pngAverage(row, prev []byte, bpp int) {
+	for i := range row {
+		row[i] += byte((left(row, i, bpp) + above(prev, i)) / 2)
+	}
+}
+
+// pngPaeth picks whichever of the left, above and upper-left bytes is closest
+// to the linear prediction a+b-c.
+func pngPaeth(row, prev []byte, bpp int) {
+	for i := range row {
+		a, b, c := left(row, i, bpp), above(prev, i), upperLeft(prev, i, bpp)
+		// Pick the neighbour closest to the linear prediction p = a + b - c.
+		p := a + b - c
+		pa, pb, pc := abs(p-a), abs(p-b), abs(p-c)
+		switch {
+		case pa <= pb && pa <= pc:
+			row[i] += byte(a)
+		case pb <= pc:
+			row[i] += byte(b)
+		default:
+			row[i] += byte(c)
+		}
+	}
+}
+
+// left, above and upperLeft read the neighbouring sample bytes, which are
+// taken as zero outside the image.
+func left(row []byte, i, bpp int) int {
+	if i >= bpp {
+		return int(row[i-bpp])
+	}
+	return 0
+}
+
+func above(prev []byte, i int) int {
+	if i < len(prev) {
+		return int(prev[i])
+	}
+	return 0
+}
+
+func upperLeft(prev []byte, i, bpp int) int {
+	if i >= bpp && i-bpp < len(prev) {
+		return int(prev[i-bpp])
+	}
+	return 0
+}
+
+// tiffRow undoes the horizontal TIFF differencing predictor, which only makes
+// sense on whole bytes.
+func tiffRow(data []byte, pr predictor) ([]byte, error) {
+	if pr.bpc != 8 {
+		return nil, fmt.Errorf("%w: TIFF predictor with %d bits per component", ErrUnsupported, pr.bpc)
+	}
+	out := make([]byte, len(data))
+	for pos := 0; pos < len(data); pos += pr.rowBytes {
+		end := min(pos+pr.rowBytes, len(data))
+		for i := pos; i < end; i++ {
+			if i-pr.bpp >= pos {
+				out[i] = data[i] + out[i-pr.bpp]
+			} else {
+				out[i] = data[i]
+			}
+		}
+	}
+	return out, nil
 }
 
 func abs(v int) int {

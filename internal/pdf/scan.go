@@ -311,52 +311,61 @@ func (r *scanner) literalString() (Object, error) {
 			}
 			b = append(b, c)
 		case '\\':
-			if r.pos >= len(r.data) {
-				return nil, fmt.Errorf("pdf: unterminated string escape")
-			}
-			e := r.data[r.pos]
-			r.pos++
-			switch e {
-			case 'n':
-				b = append(b, '\n')
-			case 'r':
-				b = append(b, '\r')
-			case 't':
-				b = append(b, '\t')
-			case 'b':
-				b = append(b, '\b')
-			case 'f':
-				b = append(b, '\f')
-			case '(':
-				b = append(b, '(')
-			case ')':
-				b = append(b, ')')
-			case '\\':
-				b = append(b, '\\')
-			case '\r':
-				if r.pos < len(r.data) && r.data[r.pos] == '\n' {
-					r.pos++
-				}
-			case '\n':
-				// line continuation
-			default:
-				if e >= '0' && e <= '7' {
-					oct := []byte{e}
-					for len(oct) < 3 && r.pos < len(r.data) && r.data[r.pos] >= '0' && r.data[r.pos] <= '7' {
-						oct = append(oct, r.data[r.pos])
-						r.pos++
-					}
-					v, _ := strconv.ParseInt(string(oct), 8, 32)
-					b = append(b, byte(v))
-				} else {
-					b = append(b, e)
-				}
+			var err error
+			if b, err = r.stringEscape(b); err != nil {
+				return nil, err
 			}
 		default:
 			b = append(b, c)
 		}
 	}
 	return nil, fmt.Errorf("pdf: unterminated literal string")
+}
+
+// simpleEscapes maps the single-letter escapes of ISO 32000 table 3 to the byte
+// they denote.
+var simpleEscapes = map[byte]byte{
+	'n': '\n', 'r': '\r', 't': '\t', 'b': '\b', 'f': '\f',
+	'(': '(', ')': ')', '\\': '\\',
+}
+
+// stringEscape consumes the escape that follows a backslash inside a literal
+// string and returns b with whatever it denotes appended.
+func (r *scanner) stringEscape(b []byte) ([]byte, error) {
+	if r.pos >= len(r.data) {
+		return nil, fmt.Errorf("pdf: unterminated string escape")
+	}
+	e := r.data[r.pos]
+	r.pos++
+	if v, ok := simpleEscapes[e]; ok {
+		return append(b, v), nil
+	}
+	if e == '\r' || e == '\n' {
+		// A backslash before a line break continues the string on the next
+		// line and contributes nothing.
+		if e == '\r' && r.pos < len(r.data) && r.data[r.pos] == '\n' {
+			r.pos++
+		}
+		return b, nil
+	}
+	if e >= '0' && e <= '7' {
+		return r.octalEscape(b, e)
+	}
+	// Anything else stands for itself, which is how most producers write
+	// "\x41"-style junk: the letter survives, the backslash does not.
+	return append(b, e), nil
+}
+
+// octalEscape reads the one to three octal digits of an escape, starting from
+// the first one, and appends the byte they denote.
+func (r *scanner) octalEscape(b []byte, first byte) ([]byte, error) {
+	oct := []byte{first}
+	for r.pos < len(r.data) && len(oct) < 3 && r.data[r.pos] >= '0' && r.data[r.pos] <= '7' {
+		oct = append(oct, r.data[r.pos])
+		r.pos++
+	}
+	v, _ := strconv.ParseInt(string(oct), 8, 32)
+	return append(b, byte(v)), nil
 }
 
 // hexString parses "< ... >".
