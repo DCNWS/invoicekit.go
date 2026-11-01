@@ -346,9 +346,10 @@ browser — 1.2 MB a document is the XPath evaluator building its node model,
 and it is a real cost in a memory-limited process.
 
 The WebAssembly build is the same engine, and Go's wasm port is slower than
-native: about 8.5 ms a document in Node 26, in the WebAssembly build that
-`@invoicekit/einvoice` ships: still well inside the time it takes to notice the
-page has reacted to dropping a file on it.
+native: 9.0 ms a UBL document and 8.3 ms a CII one, measured over the same
+corpus in Node 26 on the binary `@invoicekit/einvoice` ships — around a hundred
+documents a second, still well inside the time it takes to notice the page has
+reacted to dropping a file on it.
 
 ## Status
 
