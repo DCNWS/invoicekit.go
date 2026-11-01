@@ -16,6 +16,15 @@ go get github.com/dcnws/invoicekit.go   # the library
 go install github.com/dcnws/invoicekit.go/cmd/einv@latest   # the `einv` tool
 ```
 
+Nothing to install to try it: the same engine, compiled to WebAssembly, runs
+the free tools at [invoicekit.dcnws.com](https://invoicekit.dcnws.com) — it
+validates a CII or UBL document, audits a Factur-X hybrid PDF, and generates
+invoice XML. The [full EN 16931 rule
+list](https://invoicekit.dcnws.com/en16931-rules.html) — 1,569 rule ids, 1,792
+assertions, severity and syntax per rule — is the list this library enforces,
+generated from the released engine. Every check runs in the browser; no
+document is uploaded anywhere.
+
 The module path ends in `.go` and the package is called `einvoice`, so an import
 names one and the code uses the other:
 
