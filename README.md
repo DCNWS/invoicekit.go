@@ -321,6 +321,35 @@ run, and with no phase selected every pattern is active — including the UBL
 pattern that holds the `UBL-SR-*` structural rules and is referenced by no
 `<phase>` in the published schema.
 
+## Speed
+
+Measured here rather than asserted in prose: the official corpus — the 29
+documents that ship with the CEF validation artefacts, 22 of them Peppol BIS
+Billing 3.0 — through the public `Validate` call, one core, nothing cached
+between iterations.
+
+```sh
+go test -run '^$' -bench . -benchmem -cpu 1 ./
+```
+
+```
+cpu: AMD Ryzen 9 5950X (16 cores), one core under test — Go 1.27.3, linux/amd64, 2026-11-01
+BenchmarkValidateUBL    228.8 ms/op   29 docs/op   7.9 ms per document   8.6 MB allocated per document
+BenchmarkValidateCII      6.6 ms/op    1 doc/op    6.6 ms per document   6.9 MB allocated per document
+```
+
+One core is therefore worth roughly 125 documents a second, ten million a day,
+and a document costs microseconds of a request rather than a server minute:
+throughput is not what a per-document price is paying for. Allocation is the
+number to watch if the engine is run in a tight loop — 8.6 MB per document is
+the XPath evaluator building its node model, and it is a real cost in a
+memory-limited process.
+
+The WebAssembly build is the same engine, and Go's wasm port is slower than
+native: about 31 ms a document in Node 26 with the module
+`@invoicekit/einvoice` ships, which is still a few tens of milliseconds between
+dropping a file and reading the verdict.
+
 ## Status
 
 `v0.1` — the business rules and the schema validity of both mandatory syntaxes
