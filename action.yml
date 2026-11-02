@@ -62,11 +62,20 @@ runs:
         FAIL_ON: ${{ inputs.fail-on }}
       run: |
         set -uo pipefail
+        # GitHub runs every step with bash -e, and einv exits 1 when a document
+        # has findings: that is the answer, not a failure. Whether the step
+        # fails is report.mjs's decision, from fail-on.
+        set +e
         args=(-json -max -1)
         [ -z "$CIUS" ] || args+=(-cius "$CIUS")
         [ -z "$PROFILE" ] || args+=(-profile "$PROFILE")
         # shellcheck disable=SC2086  # the input is a list of globs on purpose
         einv validate "${args[@]}" $FILES > "$RUNNER_TEMP/report.json"
+        status=$?
+        if [ "$status" -gt 1 ]; then
+          echo "::error::einv could not run (exit $status): check the files input"
+          exit "$status"
+        fi
         node "$GITHUB_ACTION_PATH/action/report.mjs" "$RUNNER_TEMP/report.json" "$FAIL_ON"
 
 branding:
