@@ -333,20 +333,22 @@ go test -run '^$' -bench . -benchmem -cpu 1 ./
 ```
 
 ```
-cpu: AMD Ryzen 9 5950X (16 cores), one core under test — Go 1.27.3, linux/amd64, 2026-11-02
-BenchmarkValidateUBL     62.4 ms/op   29 docs/op   2.1 ms per document   1.2 MB allocated per document
-BenchmarkValidateCII      1.7 ms/op    1 doc/op    1.7 ms per document   1.0 MB allocated per document
+cpu: AMD Ryzen 9 5950X (16 cores), process pinned to one core — Go 1.27.3, linux/amd64, 2026-11-02
+BenchmarkValidateUBL     55.2 ms/op   29 docs/op   1.9 ms per document   0.96 MB allocated per document
+BenchmarkValidateCII      1.6 ms/op    1 doc/op    1.6 ms per document   0.79 MB allocated per document
 ```
 
-One core is therefore worth roughly 480 documents a second, forty million a
+One core is therefore worth roughly 520 documents a second, forty million a
 day, and a document costs microseconds of a request rather than a server
 minute: throughput is not what a per-document price is paying for. Allocation
 is the number to watch if the engine is run in a tight loop or in the
-browser — 1.2 MB a document is the XPath evaluator building its node model,
-and it is a real cost in a memory-limited process.
+browser — 0.96 MB a document is the XPath evaluator building its node model,
+and it is a real cost in a memory-limited process. It used to be 1.2 MB: a path
+step with predicates handed its candidate slice to the predicate filter as an
+interface, which boxed it onto the heap at every step.
 
 The WebAssembly build is the same engine, and Go's wasm port is slower than
-native: 9.0 ms a UBL document and 8.3 ms a CII one, measured over the same
+native: 8.3 ms a UBL document and 8.1 ms a CII one, measured over the same
 corpus in Node 26 on the binary `@invoicekit/einvoice` ships — around a hundred
 documents a second, still well inside the time it takes to notice the page has
 reacted to dropping a file on it.
