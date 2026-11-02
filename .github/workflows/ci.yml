@@ -62,7 +62,7 @@ jobs:
           files: testdata/samples/*.xml
           cius: xrechnung
           fail-on: never
-          version: v0.2.8
+          version: v0.2.9
       - name: and reports what it found
         run: |
           # The counts are an assertion, not a log line. They hold for the
@@ -78,7 +78,7 @@ jobs:
           test "$got" = "$want" || { echo "::error::the action reported [$got], expected [$want]"; exit 1; }
           echo "$got"
           cite="engine=${{ steps.selftest.outputs.engine }} rule_sets=${{ steps.selftest.outputs.rule_sets }}"
-          wantcite="engine=0.2.8 rule_sets=CII 1.3.17, UBL 1.3.17; CIUS xrechnung 2.6.0, for XRechnung 3.0.2"
+          wantcite="engine=0.2.9 rule_sets=CII 1.3.17, UBL 1.3.17; CIUS xrechnung 2.6.0, for XRechnung 3.0.2"
           test "$cite" = "$wantcite" || { echo "::error::the action cited [$cite], expected [$wantcite]"; exit 1; }
           echo "$cite"
       # A gate that only ever reports is not a gate. Both directions are
@@ -92,7 +92,7 @@ jobs:
           files: testdata/samples/cii-xrechnung.xml
           cius: xrechnung
           fail-on: fatal
-          version: v0.2.8
+          version: v0.2.9
       - name: the gate fails when a fatal finding is in scope
         id: gatefail
         uses: ./
@@ -101,7 +101,7 @@ jobs:
           files: testdata/samples/ubl-min.xml
           cius: xrechnung
           fail-on: fatal
-          version: v0.2.8
+          version: v0.2.9
       - name: and says so in the right direction
         run: |
           test "${{ steps.gatefail.outcome }}" = failure || {
