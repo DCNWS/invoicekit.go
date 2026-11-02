@@ -204,7 +204,7 @@ This repository is itself a GitHub Action, so a pull request that changes an
 invoice can be checked without adding a toolchain, a container image or a JVM:
 
 ```yaml
-- uses: DCNWS/invoicekit.go@v0.2.7
+- uses: DCNWS/invoicekit.go@v0.2.9
   with:
     files: "invoices/*.xml"
     cius: xrechnung          # EN 16931 plus the German CIUS, optional
@@ -217,7 +217,10 @@ and turns every finding into an annotation whose title is the rule id. `files`
 takes globs; `version` pins the release to download (the default is the latest,
 which is fine for a demo and wrong for a gate you depend on). The step exposes
 `files`, `fatal` and `warn` as outputs, so a later step can count rather than
-parse. Nothing is uploaded anywhere: validation happens on the runner.
+parse, plus `engine` and `rule_sets`: the release of the engine and of every
+rule set the verdict came from, repeated in the job summary, so a red build says
+what it was red under. Nothing is uploaded anywhere: validation happens on the
+runner.
 
 ## Profiles: Peppol BIS and national CIUS
 
