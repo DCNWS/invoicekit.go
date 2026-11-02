@@ -45,10 +45,14 @@ jobs:
         id: selftest
         uses: ./
         with:
+          # Pinned, deliberately: an action that tests whatever the latest
+          # release happens to be cannot assert a finding count. The pin lags
+          # the version bump by one commit, because at the moment the tag is
+          # cut the assets it downloads do not exist yet.
           files: testdata/samples/*.xml
           cius: xrechnung
           fail-on: never
-          version: v0.2.5
+          version: v0.2.6
       - name: and reports what it found
         run: |
           # The counts are an assertion, not a log line. They hold for the
@@ -71,7 +75,7 @@ jobs:
           files: testdata/samples/cii-xrechnung.xml
           cius: xrechnung
           fail-on: fatal
-          version: v0.2.5
+          version: v0.2.6
       - name: the gate fails when a fatal finding is in scope
         id: gatefail
         uses: ./
@@ -80,7 +84,7 @@ jobs:
           files: testdata/samples/ubl-min.xml
           cius: xrechnung
           fail-on: fatal
-          version: v0.2.5
+          version: v0.2.6
       - name: and says so in the right direction
         run: |
           test "${{ steps.gatefail.outcome }}" = failure || {
