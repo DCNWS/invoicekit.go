@@ -79,5 +79,5 @@ runs:
         node "$GITHUB_ACTION_PATH/action/report.mjs" "$RUNNER_TEMP/report.json" "$FAIL_ON"
 
 branding:
-  icon: file-check
+  icon: file-text
   color: blue
