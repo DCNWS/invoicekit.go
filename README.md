@@ -302,16 +302,17 @@ The validator is tested against the official artefacts:
 * **1140** VEFA unit test cases from the official test sets: every one of the
   **568** "must not fire" assertions stays silent and every one of the **572**
   "must fire" assertions fires;
-* a harvested corpus of **148** mutants — real invoices broken on purpose
+* a harvested corpus of **330** mutants — real invoices broken on purpose
   (deleted invoice number, missing seller or buyer party, no invoice lines,
   totals that disagree with the line sums, amounts holding `zz` or a
-  `2001-13-01` date, a VAT rate that disagrees with its taxable amount) —
-  replays as **291** expected rule firings with no misses.
+  `2001-13-01` date, a VAT rate that disagrees with its taxable amount, an
+  element the syntax forbids added in the one position the schema allows) —
+  replays as **473** expected rule firings with no misses.
 
-Coverage is measured assert by assert rather than test by test: **171** of the
-**810** active CII asserts and **271** of the **982** active UBL asserts have a
+Coverage is measured assert by assert rather than test by test: **194** of the
+**810** active CII asserts and **430** of the **982** active UBL asserts have a
 document that makes them fire. The gap sits in the structural syntax patterns
-(`EN16931-CII-Syntax` 44/587, `UBL-syntax` 65/759), which largely restate XSD
+(`EN16931-CII-Syntax` 67/587, `UBL-syntax` 224/759), which largely restate XSD
 content models; the model and codelist patterns are nearly complete (CII 105/200
 and 22/23, UBL 184/201 and 22/22). `go run ./cmd/cov` re-runs the mutation sweep,
 replays the corpus and regenerates those numbers.

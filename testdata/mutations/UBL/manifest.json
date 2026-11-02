@@ -1035,6 +1035,71 @@
     "what": "UBL-CR-002--UBLVersionID_empty.xml"
   },
   {
+    "id": "UBL-CR-003",
+    "kind": "corpus",
+    "what": "UBL-CR-003--ins-ProfileExecutionID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-004",
+    "kind": "corpus",
+    "what": "UBL-CR-004--ins-CopyIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-005",
+    "kind": "corpus",
+    "what": "UBL-CR-005--ins-UUID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-006",
+    "kind": "corpus",
+    "what": "UBL-CR-006--ins-IssueTime-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-007",
+    "kind": "corpus",
+    "what": "UBL-CR-007--ins-PricingCurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-008",
+    "kind": "corpus",
+    "what": "UBL-CR-008--ins-PaymentCurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-009",
+    "kind": "corpus",
+    "what": "UBL-CR-009--ins-PaymentAlternativeCurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-010",
+    "kind": "corpus",
+    "what": "UBL-CR-010--ins-AccountingCostCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-011",
+    "kind": "corpus",
+    "what": "UBL-CR-011--ins-LineCountNumeric-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-012",
+    "kind": "corpus",
+    "what": "UBL-CR-012--ins-StartTime-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-013",
+    "kind": "corpus",
+    "what": "UBL-CR-013--ins-EndTime-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-014",
+    "kind": "corpus",
+    "what": "UBL-CR-014--ins-DurationMeasure-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-015",
+    "kind": "corpus",
+    "what": "UBL-CR-015--ins-Description-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-185",
     "kind": "official-testset",
     "what": "BR-CL-14.xml#1"
@@ -1045,14 +1110,739 @@
     "what": "BR-CL-14.xml#1"
   },
   {
+    "id": "UBL-CR-265",
+    "kind": "corpus",
+    "what": "UBL-CR-265--ins-MarkCareIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-266",
+    "kind": "corpus",
+    "what": "UBL-CR-266--ins-MarkAttentionIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-267",
+    "kind": "corpus",
+    "what": "UBL-CR-267--ins-WebsiteURI-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-268",
+    "kind": "corpus",
+    "what": "UBL-CR-268--ins-LogoReferenceID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-269",
+    "kind": "corpus",
+    "what": "UBL-CR-269--ins-EndpointID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-270",
+    "kind": "corpus",
+    "what": "UBL-CR-270--ins-IndustryClassificationCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-271",
+    "kind": "corpus",
+    "what": "UBL-CR-271--ins-Language-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-272",
+    "kind": "corpus",
+    "what": "UBL-CR-272--ins-PostalAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-273",
+    "kind": "corpus",
+    "what": "UBL-CR-273--ins-PhysicalLocation-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-275",
+    "kind": "corpus",
+    "what": "UBL-CR-275--ins-RegistrationName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-276",
+    "kind": "corpus",
+    "what": "UBL-CR-276--ins-RegistrationDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-277",
+    "kind": "corpus",
+    "what": "UBL-CR-277--ins-RegistrationExpirationDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-278",
+    "kind": "corpus",
+    "what": "UBL-CR-278--ins-CompanyLegalFormCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-279",
+    "kind": "corpus",
+    "what": "UBL-CR-279--ins-CompanyLegalForm-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-280",
+    "kind": "corpus",
+    "what": "UBL-CR-280--ins-SoleProprietorshipIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-281",
+    "kind": "corpus",
+    "what": "UBL-CR-281--ins-CompanyLiquidationStatusCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-282",
+    "kind": "corpus",
+    "what": "UBL-CR-282--ins-CorporateStockAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-283",
+    "kind": "corpus",
+    "what": "UBL-CR-283--ins-FullyPaidSharesIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-284",
+    "kind": "corpus",
+    "what": "UBL-CR-284--ins-RegistrationAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-285",
+    "kind": "corpus",
+    "what": "UBL-CR-285--ins-CorporateRegistrationScheme-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-286",
+    "kind": "corpus",
+    "what": "UBL-CR-286--ins-HeadOfficeParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-287",
+    "kind": "corpus",
+    "what": "UBL-CR-287--ins-ShareholderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-288",
+    "kind": "corpus",
+    "what": "UBL-CR-288--ins-Contact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-289",
+    "kind": "corpus",
+    "what": "UBL-CR-289--ins-Person-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-290",
+    "kind": "corpus",
+    "what": "UBL-CR-290--ins-AgentParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-293",
+    "kind": "corpus",
+    "what": "UBL-CR-293--ins-FinancialAccount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-294",
+    "kind": "corpus",
+    "what": "UBL-CR-294--ins-BuyerCustomerParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-295",
+    "kind": "corpus",
+    "what": "UBL-CR-295--ins-SellerSupplierParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-296",
+    "kind": "corpus",
+    "what": "UBL-CR-296--ins-MarkCareIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-297",
+    "kind": "corpus",
+    "what": "UBL-CR-297--ins-MarkAttentionIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-298",
+    "kind": "corpus",
+    "what": "UBL-CR-298--ins-WebsiteURI-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-299",
+    "kind": "corpus",
+    "what": "UBL-CR-299--ins-LogoReferenceID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-300",
+    "kind": "corpus",
+    "what": "UBL-CR-300--ins-EndpointID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-301",
+    "kind": "corpus",
+    "what": "UBL-CR-301--ins-IndustryClassificationCode-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-302",
     "kind": "official-testset",
     "what": "BR-CL-10.xml#1"
   },
   {
+    "id": "UBL-CR-303",
+    "kind": "corpus",
+    "what": "UBL-CR-303--ins-Language-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-304",
+    "kind": "corpus",
+    "what": "UBL-CR-304--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-305",
+    "kind": "corpus",
+    "what": "UBL-CR-305--ins-AddressTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-306",
+    "kind": "corpus",
+    "what": "UBL-CR-306--ins-AddressFormatCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-307",
+    "kind": "corpus",
+    "what": "UBL-CR-307--ins-Postbox-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-308",
+    "kind": "corpus",
+    "what": "UBL-CR-308--ins-Floor-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-309",
+    "kind": "corpus",
+    "what": "UBL-CR-309--ins-Room-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-310",
+    "kind": "corpus",
+    "what": "UBL-CR-310--ins-BlockName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-311",
+    "kind": "corpus",
+    "what": "UBL-CR-311--ins-BuildingName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-312",
+    "kind": "corpus",
+    "what": "UBL-CR-312--ins-BuildingNumber-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-313",
+    "kind": "corpus",
+    "what": "UBL-CR-313--ins-InhouseMail-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-314",
+    "kind": "corpus",
+    "what": "UBL-CR-314--ins-Department-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-315",
+    "kind": "corpus",
+    "what": "UBL-CR-315--ins-MarkAttention-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-316",
+    "kind": "corpus",
+    "what": "UBL-CR-316--ins-MarkCare-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-317",
+    "kind": "corpus",
+    "what": "UBL-CR-317--ins-PlotIdentification-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-318",
+    "kind": "corpus",
+    "what": "UBL-CR-318--ins-CitySubdivisionName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-319",
+    "kind": "corpus",
+    "what": "UBL-CR-319--ins-CountrySubentityCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-320",
+    "kind": "corpus",
+    "what": "UBL-CR-320--ins-Region-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-321",
+    "kind": "corpus",
+    "what": "UBL-CR-321--ins-District-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-322",
+    "kind": "corpus",
+    "what": "UBL-CR-322--ins-TimezoneOffset-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-323",
+    "kind": "corpus",
+    "what": "UBL-CR-323--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-324",
+    "kind": "corpus",
+    "what": "UBL-CR-324--ins-LocationCoordinate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-325",
+    "kind": "corpus",
+    "what": "UBL-CR-325--ins-PhysicalLocation-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-331",
+    "kind": "corpus",
+    "what": "UBL-CR-331--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-332",
+    "kind": "corpus",
+    "what": "UBL-CR-332--ins-TaxTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-333",
+    "kind": "corpus",
+    "what": "UBL-CR-333--ins-CurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-334",
+    "kind": "corpus",
+    "what": "UBL-CR-334--ins-JurisdictionRegionAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-335",
+    "kind": "corpus",
+    "what": "UBL-CR-335--ins-PartyLegalEntity-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-336",
+    "kind": "corpus",
+    "what": "UBL-CR-336--ins-Contact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-337",
+    "kind": "corpus",
+    "what": "UBL-CR-337--ins-Person-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-338",
+    "kind": "corpus",
+    "what": "UBL-CR-338--ins-AgentParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-341",
+    "kind": "corpus",
+    "what": "UBL-CR-341--ins-FinancialAccount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-342",
+    "kind": "corpus",
+    "what": "UBL-CR-342--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-343",
+    "kind": "corpus",
+    "what": "UBL-CR-343--ins-Quantity-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-344",
+    "kind": "corpus",
+    "what": "UBL-CR-344--ins-MinimumQuantity-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-345",
+    "kind": "corpus",
+    "what": "UBL-CR-345--ins-MaximumQuantity-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-346",
+    "kind": "corpus",
+    "what": "UBL-CR-346--ins-ActualDeliveryTime-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-347",
+    "kind": "corpus",
+    "what": "UBL-CR-347--ins-LatestDeliveryDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-348",
+    "kind": "corpus",
+    "what": "UBL-CR-348--ins-LatestDeliveryTime-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-349",
+    "kind": "corpus",
+    "what": "UBL-CR-349--ins-ReleaseID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-350",
+    "kind": "corpus",
+    "what": "UBL-CR-350--ins-TrackingID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-351",
+    "kind": "corpus",
+    "what": "UBL-CR-351--ins-Description-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-352",
+    "kind": "corpus",
+    "what": "UBL-CR-352--ins-Conditions-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-353",
+    "kind": "corpus",
+    "what": "UBL-CR-353--ins-CountrySubentity-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-354",
+    "kind": "corpus",
+    "what": "UBL-CR-354--ins-CountrySubentityCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-355",
+    "kind": "corpus",
+    "what": "UBL-CR-355--ins-LocationTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-356",
+    "kind": "corpus",
+    "what": "UBL-CR-356--ins-InformationURI-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-357",
+    "kind": "corpus",
+    "what": "UBL-CR-357--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-358",
+    "kind": "corpus",
+    "what": "UBL-CR-358--ins-ValidityPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-359",
+    "kind": "corpus",
+    "what": "UBL-CR-359--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-360",
+    "kind": "corpus",
+    "what": "UBL-CR-360--ins-AddressTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-361",
+    "kind": "corpus",
+    "what": "UBL-CR-361--ins-AddressFormatCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-362",
+    "kind": "corpus",
+    "what": "UBL-CR-362--ins-Postbox-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-363",
+    "kind": "corpus",
+    "what": "UBL-CR-363--ins-Floor-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-364",
+    "kind": "corpus",
+    "what": "UBL-CR-364--ins-Room-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-365",
+    "kind": "corpus",
+    "what": "UBL-CR-365--ins-BlockName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-366",
+    "kind": "corpus",
+    "what": "UBL-CR-366--ins-BuildingName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-367",
+    "kind": "corpus",
+    "what": "UBL-CR-367--ins-BuildingNumber-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-368",
+    "kind": "corpus",
+    "what": "UBL-CR-368--ins-InhouseMail-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-369",
+    "kind": "corpus",
+    "what": "UBL-CR-369--ins-Department-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-370",
+    "kind": "corpus",
+    "what": "UBL-CR-370--ins-MarkAttention-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-371",
+    "kind": "corpus",
+    "what": "UBL-CR-371--ins-MarkCare-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-372",
+    "kind": "corpus",
+    "what": "UBL-CR-372--ins-PlotIdentification-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-373",
+    "kind": "corpus",
+    "what": "UBL-CR-373--ins-CitySubdivisionName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-374",
+    "kind": "corpus",
+    "what": "UBL-CR-374--ins-CountrySubentityCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-375",
+    "kind": "corpus",
+    "what": "UBL-CR-375--ins-Region-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-376",
+    "kind": "corpus",
+    "what": "UBL-CR-376--ins-District-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-377",
+    "kind": "corpus",
+    "what": "UBL-CR-377--ins-TimezoneOffset-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-379",
+    "kind": "corpus",
+    "what": "UBL-CR-379--ins-LocationCoordinate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-380",
+    "kind": "corpus",
+    "what": "UBL-CR-380--ins-SubsidiaryLocation-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-381",
+    "kind": "corpus",
+    "what": "UBL-CR-381--ins-LocationCoordinate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-382",
+    "kind": "corpus",
+    "what": "UBL-CR-382--ins-AlternativeDeliveryLocation-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-383",
+    "kind": "corpus",
+    "what": "UBL-CR-383--ins-RequestedDeliveryPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-384",
+    "kind": "corpus",
+    "what": "UBL-CR-384--ins-EstimatedDeliveryPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-385",
+    "kind": "corpus",
+    "what": "UBL-CR-385--ins-CarrierParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-386",
+    "kind": "corpus",
+    "what": "UBL-CR-386--ins-MarkCareIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-387",
+    "kind": "corpus",
+    "what": "UBL-CR-387--ins-MarkAttentionIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-388",
+    "kind": "corpus",
+    "what": "UBL-CR-388--ins-WebsiteURI-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-389",
+    "kind": "corpus",
+    "what": "UBL-CR-389--ins-LogoReferenceID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-390",
+    "kind": "corpus",
+    "what": "UBL-CR-390--ins-EndpointID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-391",
+    "kind": "corpus",
+    "what": "UBL-CR-391--ins-IndustryClassificationCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-393",
+    "kind": "corpus",
+    "what": "UBL-CR-393--ins-Language-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-394",
+    "kind": "corpus",
+    "what": "UBL-CR-394--ins-PostalAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-395",
+    "kind": "corpus",
+    "what": "UBL-CR-395--ins-PhysicalLocation-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-397",
+    "kind": "corpus",
+    "what": "UBL-CR-397--ins-PartyLegalEntity-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-398",
+    "kind": "corpus",
+    "what": "UBL-CR-398--ins-Contact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-399",
+    "kind": "corpus",
+    "what": "UBL-CR-399--ins-Person-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-400",
+    "kind": "corpus",
+    "what": "UBL-CR-400--ins-AgentParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-403",
+    "kind": "corpus",
+    "what": "UBL-CR-403--ins-FinancialAccount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-404",
+    "kind": "corpus",
+    "what": "UBL-CR-404--ins-NotifyParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-405",
+    "kind": "corpus",
+    "what": "UBL-CR-405--ins-Despatch-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-406",
+    "kind": "corpus",
+    "what": "UBL-CR-406--ins-DeliveryTerms-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-410",
+    "kind": "corpus",
+    "what": "UBL-CR-410--ins-DeliveryTerms-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-412",
     "kind": "official-testset",
     "what": "BR-CO-25.xml#1"
+  },
+  {
+    "id": "UBL-CR-452",
+    "kind": "corpus",
+    "what": "UBL-CR-452--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-453",
+    "kind": "corpus",
+    "what": "UBL-CR-453--ins-PaymentMeansID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-454",
+    "kind": "corpus",
+    "what": "UBL-CR-454--ins-PrepaidPaymentReferenceID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-455",
+    "kind": "corpus",
+    "what": "UBL-CR-455--ins-ReferenceEventCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-456",
+    "kind": "corpus",
+    "what": "UBL-CR-456--ins-SettlementDiscountPercent-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-457",
+    "kind": "corpus",
+    "what": "UBL-CR-457--ins-PenaltySurchargePercent-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-458",
+    "kind": "corpus",
+    "what": "UBL-CR-458--ins-PaymentPercent-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-459",
+    "kind": "corpus",
+    "what": "UBL-CR-459--ins-Amount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-460",
+    "kind": "corpus",
+    "what": "UBL-CR-460--ins-SettlementDiscountAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-461",
+    "kind": "corpus",
+    "what": "UBL-CR-461--ins-PenaltyAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-462",
+    "kind": "corpus",
+    "what": "UBL-CR-462--ins-PaymentTermsDetailsURI-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-463",
+    "kind": "corpus",
+    "what": "UBL-CR-463--ins-PaymentDueDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-464",
+    "kind": "corpus",
+    "what": "UBL-CR-464--ins-InstallmentDueDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-465",
+    "kind": "corpus",
+    "what": "UBL-CR-465--ins-InvoicingPartyReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-466",
+    "kind": "corpus",
+    "what": "UBL-CR-466--ins-SettlementPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-467",
+    "kind": "corpus",
+    "what": "UBL-CR-467--ins-PenaltyPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-469",
+    "kind": "corpus",
+    "what": "UBL-CR-469--ins-ValidityPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-470",
+    "kind": "corpus",
+    "what": "UBL-CR-470--ins-PrepaidPayment-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-652",
@@ -1073,6 +1863,11 @@
     "id": "UBL-CR-678",
     "kind": "official-testset",
     "what": "BR-E-06.xml#1"
+  },
+  {
+    "id": "UBL-CR-682",
+    "kind": "corpus",
+    "what": "UBL-CR-682--ins-DeliveryAddress-under-Invoice.xml"
   },
   {
     "id": "UBL-DT-01",
@@ -1207,12 +2002,12 @@
   {
     "id": "UBL-SR-24",
     "kind": "corpus",
-    "what": "UBL-SR-24--Delivery_dup.xml"
+    "what": "UBL-CR-342--ins-ID-under-Invoice.xml"
   },
   {
     "id": "UBL-SR-25",
     "kind": "corpus",
-    "what": "UBL-SR-25--DeliveryParty_empty.xml"
+    "what": "UBL-CR-386--ins-MarkCareIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-SR-26",

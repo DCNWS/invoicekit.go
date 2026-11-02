@@ -635,6 +635,116 @@
     "what": "BR-46+BR-CO-17+BR-Z-09--CalculatedAmount_del.xml"
   },
   {
+    "id": "CII-DT-069",
+    "kind": "corpus",
+    "what": "CII-DT-069--ins-DurationMeasure-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-071",
+    "kind": "corpus",
+    "what": "CII-DT-071--ins-Description-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-075",
+    "kind": "corpus",
+    "what": "CII-DT-075--ins-SeasonCode-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-076",
+    "kind": "corpus",
+    "what": "CII-DT-076--ins-ID-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-077",
+    "kind": "corpus",
+    "what": "CII-DT-077--ins-Name-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-078",
+    "kind": "corpus",
+    "what": "CII-DT-078--ins-SequenceNumeric-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-079",
+    "kind": "corpus",
+    "what": "CII-DT-079--ins-StartDateFlexibilityCode-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-081",
+    "kind": "corpus",
+    "what": "CII-DT-081--ins-PurposeCode-under-BillingSpecifiedPeriod.xml"
+  },
+  {
+    "id": "CII-DT-082",
+    "kind": "corpus",
+    "what": "CII-DT-082--ins-ID-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-083",
+    "kind": "corpus",
+    "what": "CII-DT-083--ins-PostOfficeBox-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-084",
+    "kind": "corpus",
+    "what": "CII-DT-084--ins-BuildingName-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-086",
+    "kind": "corpus",
+    "what": "CII-DT-086--ins-LineFour-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-087",
+    "kind": "corpus",
+    "what": "CII-DT-087--ins-LineFive-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-088",
+    "kind": "corpus",
+    "what": "CII-DT-088--ins-StreetName-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-089",
+    "kind": "corpus",
+    "what": "CII-DT-089--ins-CitySubDivisionName-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-090",
+    "kind": "corpus",
+    "what": "CII-DT-090--ins-CountryName-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-091",
+    "kind": "corpus",
+    "what": "CII-DT-091--ins-CountrySubDivisionID-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-092",
+    "kind": "corpus",
+    "what": "CII-DT-092--ins-AttentionOf-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-093",
+    "kind": "corpus",
+    "what": "CII-DT-093--ins-CareOf-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-094",
+    "kind": "corpus",
+    "what": "CII-DT-094--ins-BuildingNumber-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-095",
+    "kind": "corpus",
+    "what": "CII-DT-095--ins-DepartmentName-under-PostalTradeAddress.xml"
+  },
+  {
+    "id": "CII-DT-096",
+    "kind": "corpus",
+    "what": "CII-DT-096--ins-AdditionalStreetName-under-PostalTradeAddress.xml"
+  },
+  {
     "id": "CII-DT-097",
     "kind": "corpus",
     "what": "BR-03+CII-DT-097--DateTimeString_empty.xml"
@@ -773,6 +883,11 @@
     "id": "CII-SR-463",
     "kind": "corpus",
     "what": "CII-SR-463--SpecifiedTradeAllowanceCharge_text1.xml"
+  },
+  {
+    "id": "CII-SR-464",
+    "kind": "corpus",
+    "what": "CII-SR-464--ins-PayerSpecifiedDebtorFinancialInstitution-under-SpecifiedTradeSettlementPaymentMeans.xml"
   },
   {
     "id": "CII-SR-467",
