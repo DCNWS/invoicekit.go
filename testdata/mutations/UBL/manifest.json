@@ -446,8 +446,8 @@
   },
   {
     "id": "BR-CL-26",
-    "kind": "corpus",
-    "what": "BR-CL-26--ID_attr-schemeID_junk.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Hyrbil.xml ID/attr-schemeID/junk"
   },
   {
     "id": "BR-CO-03",
@@ -1031,73 +1031,388 @@
   },
   {
     "id": "UBL-CR-002",
-    "kind": "corpus",
-    "what": "UBL-CR-002--UBLVersionID_empty.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml UBLVersionID/empty"
   },
   {
     "id": "UBL-CR-003",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-003--ins-ProfileExecutionID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-004",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-004--ins-CopyIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-005",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-005--ins-UUID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-006",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-006--ins-IssueTime-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-007",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-007--ins-PricingCurrencyCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-008",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-008--ins-PaymentCurrencyCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-009",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-009--ins-PaymentAlternativeCurrencyCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-010",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-010--ins-AccountingCostCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-011",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-011--ins-LineCountNumeric-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-012",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-012--ins-StartTime-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-013",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-013--ins-EndTime-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-014",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-014--ins-DurationMeasure-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-015",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-015--ins-Description-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-016",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-016--ins-CopyIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-017",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-017--ins-UUID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-018",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-018--ins-IssueDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-019",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-019--ins-IssueTime-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-020",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-020--ins-CustomerReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-021",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-021--ins-OrderTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-022",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-022--ins-DocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-038",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-038--ins-SelfBilledInvoiceDocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-039",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-039--ins-CreditNoteDocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-040",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-040--ins-SelfBilledCreditNoteDocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-041",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-041--ins-DebitNoteDocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-042",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-042--ins-ReminderDocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-043",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-043--ins-AdditionalDocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-044",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-044--ins-BillingReferenceLine-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-077",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-077--ins-StatementDocumentReference-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-137",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-137--ins-Signature-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-138",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-138--ins-CustomerAssignedAccountID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-139",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-139--ins-AdditionalAccountID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-140",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-140--ins-DataSendingCapability-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-141",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-141--ins-MarkCareIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-142",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-142--ins-MarkAttentionIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-143",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-143--ins-WebsiteURI-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-144",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-144--ins-LogoReferenceID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-145",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-145--ins-IndustryClassificationCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-146",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-146--ins-Language-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-147",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-147--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-148",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-148--ins-AddressTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-149",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-149--ins-AddressFormatCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-150",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-150--ins-Postbox-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-151",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-151--ins-Floor-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-152",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-152--ins-Room-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-153",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-153--ins-BlockName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-154",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-154--ins-BuildingName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-155",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-155--ins-BuildingNumber-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-156",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-156--ins-InhouseMail-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-157",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-157--ins-Department-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-158",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-158--ins-MarkAttention-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-159",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-159--ins-MarkCare-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-160",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-160--ins-PlotIdentification-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-161",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-161--ins-CitySubdivisionName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-162",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-162--ins-CountrySubentityCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-163",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-163--ins-Region-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-164",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-164--ins-District-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-165",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-165--ins-TimezoneOffset-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-166",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-166--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-167",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-167--ins-LocationCoordinate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-168",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-168--ins-PhysicalLocation-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-169",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-169--ins-RegistrationName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-170",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-170--ins-TaxLevelCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-171",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-171--ins-ExemptionReasonCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-172",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-172--ins-ExemptionReason-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-173",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-173--ins-RegistrationAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-174",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-174--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-175",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-175--ins-TaxTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-176",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-176--ins-CurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-177",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-177--ins-JurisdictionRegionAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-178",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-178--ins-RegistrationDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-179",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-179--ins-RegistrationExpirationDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-180",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-180--ins-CompanyLegalFormCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-181",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-181--ins-SoleProprietorshipIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-182",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-182--ins-CompanyLiquidationStatusCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-183",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-183--ins-CorporateStockAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-184",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-184--ins-FullyPaidSharesIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-185",
@@ -1105,178 +1420,558 @@
     "what": "BR-CL-14.xml#1"
   },
   {
+    "id": "UBL-CR-186",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-186--ins-CorporateRegistrationScheme-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-187",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-187--ins-HeadOfficeParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-188",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-188--ins-ShareholderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-189",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-189--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-190",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-190--ins-Telefax-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-191",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-191--ins-Note-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-192",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-192--ins-OtherCommunication-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-193",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-193--ins-Person-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-194",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-194--ins-AgentParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-195",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-195--ins-ServiceProviderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-196",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-196--ins-PowerOfAttorney-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-197",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-197--ins-FinancialAccount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-198",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-198--ins-DespatchContact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-199",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-199--ins-AccountingContact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-200",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-200--ins-SellerContact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-201",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-201--ins-CustomerAssignedAccountID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-202",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-202--ins-SupplierAssignedAccountID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-203",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-203--ins-AdditionalAccountID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-204",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-204--ins-MarkCareIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-205",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-205--ins-MarkAttentionIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-206",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-206--ins-WebsiteURI-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-207",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-207--ins-LogoReferenceID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-208",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-208--ins-IndustryClassificationCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-209",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-209--ins-Language-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-210",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-210--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-211",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-211--ins-AddressTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-212",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-212--ins-AddressFormatCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-213",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-213--ins-Postbox-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-214",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-214--ins-Floor-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-215",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-215--ins-Room-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-216",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-216--ins-BlockName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-217",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-217--ins-BuildingName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-218",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-218--ins-BuildingNumber-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-219",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-219--ins-InhouseMail-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-220",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-220--ins-Department-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-221",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-221--ins-MarkAttention-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-222",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-222--ins-MarkCare-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-223",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-223--ins-PlotIdentification-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-224",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-224--ins-CitySubdivisionName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-225",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-225--ins-CountrySubentityCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-226",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-226--ins-Region-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-227",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-227--ins-District-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-228",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-228--ins-TimezoneOffset-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-229",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-229--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-230",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-230--ins-LocationCoordinate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-231",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-231--ins-PhysicalLocation-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-237",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-237--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-238",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-238--ins-TaxTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-239",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-239--ins-CurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-240",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-240--ins-JurisdictionRegionAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-241",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-241--ins-RegistrationDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-242",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-242--ins-RegistrationExpirationDate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-243",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-243--ins-CompanyLegalFormCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-244",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-244--ins-CompanyLegalForm-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-245",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-245--ins-SoleProprietorshipIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-246",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-246--ins-CompanyLiquidationStatusCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-247",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-247--ins-CorporateStockAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-248",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-248--ins-FullyPaidSharesIndicator-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-249",
     "kind": "official-testset",
     "what": "BR-CL-14.xml#1"
   },
   {
+    "id": "UBL-CR-250",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-250--ins-CorporateRegistrationScheme-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-251",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-251--ins-HeadOfficeParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-252",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-252--ins-ShareholderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-253",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-253--ins-ID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-254",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-254--ins-Telefax-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-255",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-255--ins-Note-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-256",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-256--ins-OtherCommunication-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-257",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-257--ins-Person-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-258",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-258--ins-AgentParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-259",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-259--ins-ServiceProviderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-260",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-260--ins-PowerOfAttorney-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-261",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-261--ins-FinancialAccount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-262",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-262--ins-DeliveryContact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-263",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-263--ins-AccountingContact-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-264",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-264--ins-BuyerContact-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-265",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-265--ins-MarkCareIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-266",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-266--ins-MarkAttentionIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-267",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-267--ins-WebsiteURI-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-268",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-268--ins-LogoReferenceID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-269",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-269--ins-EndpointID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-270",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-270--ins-IndustryClassificationCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-271",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-271--ins-Language-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-272",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-272--ins-PostalAddress-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-273",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-273--ins-PhysicalLocation-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-274",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-274--ins-PartyTaxScheme-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-275",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-275--ins-RegistrationName-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-276",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-276--ins-RegistrationDate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-277",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-277--ins-RegistrationExpirationDate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-278",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-278--ins-CompanyLegalFormCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-279",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-279--ins-CompanyLegalForm-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-280",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-280--ins-SoleProprietorshipIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-281",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-281--ins-CompanyLiquidationStatusCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-282",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-282--ins-CorporateStockAmount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-283",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-283--ins-FullyPaidSharesIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-284",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-284--ins-RegistrationAddress-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-285",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-285--ins-CorporateRegistrationScheme-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-286",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-286--ins-HeadOfficeParty-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-287",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-287--ins-ShareholderParty-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-288",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-288--ins-Contact-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-289",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-289--ins-Person-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-290",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-290--ins-AgentParty-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-291",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-291--ins-ServiceProviderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-292",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-292--ins-PowerOfAttorney-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-293",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-293--ins-FinancialAccount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-294",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-294--ins-BuyerCustomerParty-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-295",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-295--ins-SellerSupplierParty-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-296",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-296--ins-MarkCareIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-297",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-297--ins-MarkAttentionIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-298",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-298--ins-WebsiteURI-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-299",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-299--ins-LogoReferenceID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-300",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-300--ins-EndpointID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-301",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-301--ins-IndustryClassificationCode-under-Invoice.xml"
   },
   {
@@ -1286,468 +1981,523 @@
   },
   {
     "id": "UBL-CR-303",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-303--ins-Language-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-304",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-304--ins-ID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-305",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-305--ins-AddressTypeCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-306",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-306--ins-AddressFormatCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-307",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-307--ins-Postbox-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-308",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-308--ins-Floor-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-309",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-309--ins-Room-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-310",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-310--ins-BlockName-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-311",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-311--ins-BuildingName-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-312",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-312--ins-BuildingNumber-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-313",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-313--ins-InhouseMail-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-314",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-314--ins-Department-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-315",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-315--ins-MarkAttention-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-316",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-316--ins-MarkCare-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-317",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-317--ins-PlotIdentification-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-318",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-318--ins-CitySubdivisionName-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-319",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-319--ins-CountrySubentityCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-320",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-320--ins-Region-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-321",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-321--ins-District-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-322",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-322--ins-TimezoneOffset-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-323",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-323--ins-Name-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-324",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-324--ins-LocationCoordinate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-325",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-325--ins-PhysicalLocation-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-331",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-331--ins-Name-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-332",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-332--ins-TaxTypeCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-333",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-333--ins-CurrencyCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-334",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-334--ins-JurisdictionRegionAddress-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-335",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-335--ins-PartyLegalEntity-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-336",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-336--ins-Contact-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-337",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-337--ins-Person-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-338",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-338--ins-AgentParty-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-339",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-339--ins-ServiceProviderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-340",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-340--ins-PowerOfAttorney-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-341",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-341--ins-FinancialAccount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-342",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-342--ins-ID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-343",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-343--ins-Quantity-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-344",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-344--ins-MinimumQuantity-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-345",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-345--ins-MaximumQuantity-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-346",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-346--ins-ActualDeliveryTime-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-347",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-347--ins-LatestDeliveryDate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-348",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-348--ins-LatestDeliveryTime-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-349",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-349--ins-ReleaseID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-350",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-350--ins-TrackingID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-351",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-351--ins-Description-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-352",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-352--ins-Conditions-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-353",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-353--ins-CountrySubentity-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-354",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-354--ins-CountrySubentityCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-355",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-355--ins-LocationTypeCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-356",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-356--ins-InformationURI-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-357",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-357--ins-Name-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-358",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-358--ins-ValidityPeriod-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-359",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-359--ins-ID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-360",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-360--ins-AddressTypeCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-361",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-361--ins-AddressFormatCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-362",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-362--ins-Postbox-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-363",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-363--ins-Floor-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-364",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-364--ins-Room-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-365",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-365--ins-BlockName-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-366",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-366--ins-BuildingName-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-367",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-367--ins-BuildingNumber-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-368",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-368--ins-InhouseMail-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-369",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-369--ins-Department-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-370",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-370--ins-MarkAttention-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-371",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-371--ins-MarkCare-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-372",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-372--ins-PlotIdentification-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-373",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-373--ins-CitySubdivisionName-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-374",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-374--ins-CountrySubentityCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-375",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-375--ins-Region-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-376",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-376--ins-District-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-377",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-377--ins-TimezoneOffset-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-378",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-378--ins-Name-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-379",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-379--ins-LocationCoordinate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-380",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-380--ins-SubsidiaryLocation-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-381",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-381--ins-LocationCoordinate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-382",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-382--ins-AlternativeDeliveryLocation-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-383",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-383--ins-RequestedDeliveryPeriod-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-384",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-384--ins-EstimatedDeliveryPeriod-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-385",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-385--ins-CarrierParty-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-386",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-386--ins-MarkCareIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-387",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-387--ins-MarkAttentionIndicator-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-388",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-388--ins-WebsiteURI-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-389",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-389--ins-LogoReferenceID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-390",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-390--ins-EndpointID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-391",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-391--ins-IndustryClassificationCode-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-392",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-392--ins-PartyIdentification-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-393",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-393--ins-Language-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-394",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-394--ins-PostalAddress-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-395",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-395--ins-PhysicalLocation-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-396",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-396--ins-PartyTaxScheme-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-397",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-397--ins-PartyLegalEntity-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-398",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-398--ins-Contact-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-399",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-399--ins-Person-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-400",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-400--ins-AgentParty-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-401",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-401--ins-ServiceProviderParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-402",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-402--ins-PowerOfAttorney-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-403",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-403--ins-FinancialAccount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-404",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-404--ins-NotifyParty-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-405",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-405--ins-Despatch-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-406",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-406--ins-DeliveryTerms-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-407",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-407--ins-MinimumDeliveryUnit-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-408",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-408--ins-MaximumDeliveryUnit-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-409",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-409--ins-Shipment-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-410",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-410--ins-DeliveryTerms-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-411",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-411--ins-ID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-412",
@@ -1755,94 +2505,374 @@
     "what": "BR-CO-25.xml#1"
   },
   {
+    "id": "UBL-CR-413",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-413--ins-PaymentChannelCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-414",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-414--ins-InstructionID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-424",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-424--ins-AliasName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-425",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-425--ins-AccountTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-426",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-426--ins-AccountFormatCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-427",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-427--ins-CurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-428",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-428--ins-PaymentNote-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-429",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-429--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-430",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-430--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-431",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-431--ins-Address-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-432",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-432--ins-Address-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-433",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-433--ins-Country-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-434",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-434--ins-CreditAccount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-435",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-435--ins-MandateTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-436",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-436--ins-MaximumPaymentInstructionsNumeric-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-437",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-437--ins-MaximumPaidAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-438",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-438--ins-SignatureID-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-439",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-439--ins-PayerParty-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-440",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-440--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-441",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-441--ins-AliasName-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-442",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-442--ins-AccountTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-443",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-443--ins-AccountFormatCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-444",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-444--ins-CurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-445",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-445--ins-PaymentNote-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-446",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-446--ins-FinancialInstitutionBranch-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-447",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-447--ins-Country-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-448",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-448--ins-ValidityPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-449",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-449--ins-PaymentReversalPeriod-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-450",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-450--ins-Clause-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-451",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-451--ins-TradeFinancing-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-452",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-452--ins-ID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-453",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-453--ins-PaymentMeansID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-454",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-454--ins-PrepaidPaymentReferenceID-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-455",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-455--ins-ReferenceEventCode-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-456",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-456--ins-SettlementDiscountPercent-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-457",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-457--ins-PenaltySurchargePercent-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-458",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-458--ins-PaymentPercent-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-459",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-459--ins-Amount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-460",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-460--ins-SettlementDiscountAmount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-461",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-461--ins-PenaltyAmount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-462",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-462--ins-PaymentTermsDetailsURI-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-463",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-463--ins-PaymentDueDate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-464",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-464--ins-InstallmentDueDate-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-465",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-465--ins-InvoicingPartyReference-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-466",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-466--ins-SettlementPeriod-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-467",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-467--ins-PenaltyPeriod-under-Invoice.xml"
   },
   {
+    "id": "UBL-CR-468",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-468--ins-ExchangeRate-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-469",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-469--ins-ValidityPeriod-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-470",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-470--ins-PrepaidPayment-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-490",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-490--ins-TaxExchangeRate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-491",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-491--ins-PricingExchangeRate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-492",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-492--ins-PaymentExchangeRate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-493",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-493--ins-PaymentAlternativeExchangeRate-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-494",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-494--ins-RoundingAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-495",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-495--ins-TaxEvidenceIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-496",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-496--ins-TaxIncludedIndicator-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-497",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-497--ins-CalculationSequenceNumeric-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-498",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-498--ins-TransactionCurrencyTaxAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-499",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-499--ins-Percent-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-500",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-500--ins-BaseUnitMeasure-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-501",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-501--ins-PerUnitAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-502",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-502--ins-TierRange-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-503",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-503--ins-TierRatePercent-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-504",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-504--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-505",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-505--ins-BaseUnitMeasure-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-506",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-506--ins-PerUnitAmount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-507",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-507--ins-TierRange-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-508",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-508--ins-TierRatePercent-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-509",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-509--ins-Name-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-510",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-510--ins-TaxTypeCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-511",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-511--ins-CurrencyCode-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-512",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-512--ins-JurisdictionRegionAddress-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-513",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-513--ins-WithholdingTaxTotal-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-514",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-514--ins-PayableAlternativeAmount-under-Invoice.xml"
   },
   {
     "id": "UBL-CR-652",
@@ -1855,6 +2885,11 @@
     "what": "BR-08.xml#1"
   },
   {
+    "id": "UBL-CR-664",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-430--ins-Name-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-665",
     "kind": "official-testset",
     "what": "BR-CL-07.xml#4"
@@ -1865,8 +2900,18 @@
     "what": "BR-E-06.xml#1"
   },
   {
+    "id": "UBL-CR-680",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-680--ins-PayerFinancialAccount-under-Invoice.xml"
+  },
+  {
+    "id": "UBL-CR-681",
+    "kind": "insertion-mutant",
+    "what": "UBL-CR-681--ins-InstructionNote-under-Invoice.xml"
+  },
+  {
     "id": "UBL-CR-682",
-    "kind": "corpus",
+    "kind": "insertion-mutant",
     "what": "UBL-CR-682--ins-DeliveryAddress-under-Invoice.xml"
   },
   {
@@ -1886,33 +2931,33 @@
   },
   {
     "id": "UBL-SR-01",
-    "kind": "corpus",
-    "what": "UBL-SR-01--ContractDocumentReference_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml ContractDocumentReference/dup"
   },
   {
     "id": "UBL-SR-02",
-    "kind": "corpus",
-    "what": "UBL-SR-02--ReceiptDocumentReference_dup.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml ReceiptDocumentReference/dup"
   },
   {
     "id": "UBL-SR-03",
-    "kind": "corpus",
-    "what": "UBL-SR-03--DespatchDocumentReference_dup.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml DespatchDocumentReference/dup"
   },
   {
     "id": "UBL-SR-04",
-    "kind": "corpus",
-    "what": "UBL-SR-04--AdditionalDocumentReference_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Elhandel.xml AdditionalDocumentReference/dup"
   },
   {
     "id": "UBL-SR-05",
-    "kind": "corpus",
-    "what": "UBL-SR-05--PaymentTerms_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml PaymentTerms/dup"
   },
   {
     "id": "UBL-SR-06",
-    "kind": "corpus",
-    "what": "UBL-SR-06--InvoiceDocumentReference_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Kreditering_med_kreditnota.xml InvoiceDocumentReference/dup"
   },
   {
     "id": "UBL-SR-07",
@@ -1921,18 +2966,18 @@
   },
   {
     "id": "UBL-SR-08",
-    "kind": "corpus",
-    "what": "UBL-SR-08--InvoicePeriod_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Elhandel.xml InvoicePeriod/dup"
   },
   {
     "id": "UBL-SR-09",
-    "kind": "corpus",
-    "what": "UBL-SR-09+UBL-SR-10+UBL-SR-11+UBL-SR-12+UBL-SR-13+UBL-SR-14+UBL-SR-57--AccountingSupplierParty_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml AccountingSupplierParty/dup"
   },
   {
     "id": "UBL-SR-10",
-    "kind": "corpus",
-    "what": "UBL-SR-09+UBL-SR-10+UBL-SR-11+UBL-SR-12+UBL-SR-13+UBL-SR-14+UBL-SR-57--AccountingSupplierParty_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Factoring.xml AccountingSupplierParty/dup"
   },
   {
     "id": "UBL-SR-11",
@@ -1951,13 +2996,13 @@
   },
   {
     "id": "UBL-SR-14",
-    "kind": "corpus",
-    "what": "UBL-SR-09+UBL-SR-10+UBL-SR-11+UBL-SR-12+UBL-SR-13+UBL-SR-14+UBL-SR-57--AccountingSupplierParty_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml AccountingSupplierParty/dup"
   },
   {
     "id": "UBL-SR-15",
-    "kind": "corpus",
-    "what": "UBL-SR-15+UBL-SR-17+UBL-SR-40+UBL-SR-57--Party_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml AccountingCustomerParty/dup"
   },
   {
     "id": "UBL-SR-16",
@@ -1991,33 +3036,33 @@
   },
   {
     "id": "UBL-SR-22",
-    "kind": "corpus",
-    "what": "UBL-SR-22--PartyName_dup.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml PartyName/dup"
   },
   {
     "id": "UBL-SR-23",
-    "kind": "corpus",
-    "what": "UBL-SR-23--PartyTaxScheme_dup.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml PartyTaxScheme/dup"
   },
   {
     "id": "UBL-SR-24",
-    "kind": "corpus",
-    "what": "UBL-CR-342--ins-ID-under-Invoice.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml Delivery/dup"
   },
   {
     "id": "UBL-SR-25",
-    "kind": "corpus",
-    "what": "UBL-CR-386--ins-MarkCareIndicator-under-Invoice.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml DeliveryParty/empty"
   },
   {
     "id": "UBL-SR-26",
-    "kind": "corpus",
-    "what": "UBL-SR-26--PaymentID_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml PaymentID/dup"
   },
   {
     "id": "UBL-SR-27",
-    "kind": "corpus",
-    "what": "UBL-SR-27--PaymentMeansCode_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml PaymentMeansCode/dup"
   },
   {
     "id": "UBL-SR-29",
@@ -2026,53 +3071,53 @@
   },
   {
     "id": "UBL-SR-30",
-    "kind": "corpus",
-    "what": "UBL-SR-30--AllowanceChargeReason_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Inkopskort.xml AllowanceChargeReason/dup"
   },
   {
     "id": "UBL-SR-31",
-    "kind": "corpus",
-    "what": "UBL-SR-31--AllowanceChargeReason_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml AllowanceChargeReason/dup"
   },
   {
     "id": "UBL-SR-32",
-    "kind": "corpus",
-    "what": "BR-E-01+UBL-SR-32--TaxCategory_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml TaxCategory/dup"
   },
   {
     "id": "UBL-SR-33",
-    "kind": "corpus",
-    "what": "UBL-SR-33--DocumentDescription_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml DocumentDescription/dup"
   },
   {
     "id": "UBL-SR-34",
-    "kind": "corpus",
-    "what": "UBL-SR-34--Note_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml Note/dup"
   },
   {
     "id": "UBL-SR-35",
-    "kind": "corpus",
-    "what": "UBL-SR-35--OrderLineReference_dup.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml OrderLineReference/dup"
   },
   {
     "id": "UBL-SR-36",
-    "kind": "corpus",
-    "what": "UBL-SR-36--InvoicePeriod_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Elhandel.xml InvoicePeriod/dup"
   },
   {
     "id": "UBL-SR-37",
-    "kind": "corpus",
-    "what": "UBL-SR-37--Price_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Kreditering_(urspr_faktura).xml Price/dup"
   },
   {
     "id": "UBL-SR-39",
-    "kind": "corpus",
-    "what": "UBL-SR-39--ID_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Forskott_(ej moms).xml ProjectReference/dup"
   },
   {
     "id": "UBL-SR-40",
-    "kind": "corpus",
-    "what": "UBL-SR-15+UBL-SR-17+UBL-SR-40+UBL-SR-57--Party_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml AccountingCustomerParty/dup"
   },
   {
     "id": "UBL-SR-42",
@@ -2091,8 +3136,8 @@
   },
   {
     "id": "UBL-SR-46",
-    "kind": "corpus",
-    "what": "UBL-SR-46--PaymentMeans_dup.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml PaymentMeans/dup"
   },
   {
     "id": "UBL-SR-47",
@@ -2111,18 +3156,18 @@
   },
   {
     "id": "UBL-SR-50",
-    "kind": "corpus",
-    "what": "UBL-SR-48+UBL-SR-50--Item_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Elhandel.xml Item/dup"
   },
   {
     "id": "UBL-SR-51",
-    "kind": "corpus",
-    "what": "UBL-SR-51--AddressLine_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml AddressLine/dup"
   },
   {
     "id": "UBL-SR-52",
-    "kind": "corpus",
-    "what": "UBL-SR-52--DocumentReference_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-Tjanster_Bevakning.xml DocumentReference/dup"
   },
   {
     "id": "UBL-SR-53",
@@ -2131,8 +3176,8 @@
   },
   {
     "id": "UBL-SR-56",
-    "kind": "corpus",
-    "what": "UBL-SR-56--OriginatorDocumentReference_dup.xml"
+    "kind": "mutant",
+    "what": "CreditNote-Max_content.xml OriginatorDocumentReference/dup"
   },
   {
     "id": "UBL-SR-57",
@@ -2141,8 +3186,8 @@
   },
   {
     "id": "UBL-SR-58",
-    "kind": "corpus",
-    "what": "UBL-SR-58+UBL-SR-59--PayeeFinancialAccount_dup.xml"
+    "kind": "mutant",
+    "what": "BIS_Billing_30-DataIT.xml PayeeFinancialAccount/dup"
   },
   {
     "id": "UBL-SR-59",

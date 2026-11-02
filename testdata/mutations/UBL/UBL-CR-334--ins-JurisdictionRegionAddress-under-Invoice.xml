@@ -67,7 +67,7 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
 
-  <cac:TaxRepresentativeParty><cac:PartyTaxScheme><cac:TaxScheme><cac:JurisdictionRegionAddress>x</cac:JurisdictionRegionAddress></cac:TaxScheme></cac:PartyTaxScheme></cac:TaxRepresentativeParty>
+  <cac:TaxRepresentativeParty><cac:PartyTaxScheme><cac:TaxScheme><cac:JurisdictionRegionAddress/></cac:TaxScheme></cac:PartyTaxScheme></cac:TaxRepresentativeParty>
   <cac:Delivery>
     <cbc:ActualDeliveryDate>2026-02-27</cbc:ActualDeliveryDate>
   </cac:Delivery>

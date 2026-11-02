@@ -82,9 +82,9 @@
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
 
-  <cac:PaymentTerms><cbc:PenaltySurchargePercent>x</cbc:PenaltySurchargePercent></cac:PaymentTerms>
   <cac:PaymentTerms>
     <cbc:Note>Net 14 days.</cbc:Note>
+  <cbc:PenaltySurchargePercent>x</cbc:PenaltySurchargePercent>
   </cac:PaymentTerms>
 
   <cac:TaxTotal>

@@ -71,7 +71,7 @@
     <cbc:ActualDeliveryDate>2026-02-27</cbc:ActualDeliveryDate>
   </cac:Delivery>
 
-  <cac:DeliveryTerms>x</cac:DeliveryTerms>
+  <cac:DeliveryTerms/>
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode name="Credit transfer">30</cbc:PaymentMeansCode>
     <cbc:PaymentID>2026-114</cbc:PaymentID>

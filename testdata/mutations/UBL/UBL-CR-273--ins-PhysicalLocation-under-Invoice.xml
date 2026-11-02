@@ -67,7 +67,7 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
 
-  <cac:PayeeParty><cac:PhysicalLocation>x</cac:PhysicalLocation></cac:PayeeParty>
+  <cac:PayeeParty><cac:PhysicalLocation/></cac:PayeeParty>
   <cac:Delivery>
     <cbc:ActualDeliveryDate>2026-02-27</cbc:ActualDeliveryDate>
   </cac:Delivery>

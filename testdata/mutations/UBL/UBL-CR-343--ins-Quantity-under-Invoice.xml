@@ -67,8 +67,8 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
 
-  <cac:Delivery><cbc:Quantity>x</cbc:Quantity></cac:Delivery>
   <cac:Delivery>
+    <cbc:Quantity>x</cbc:Quantity>
     <cbc:ActualDeliveryDate>2026-02-27</cbc:ActualDeliveryDate>
   </cac:Delivery>
 

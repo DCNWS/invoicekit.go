@@ -67,7 +67,7 @@
     </cac:Party>
   </cac:AccountingCustomerParty>
 
-  <cac:TaxRepresentativeParty><cac:FinancialAccount>x</cac:FinancialAccount></cac:TaxRepresentativeParty>
+  <cac:TaxRepresentativeParty><cac:FinancialAccount/></cac:TaxRepresentativeParty>
   <cac:Delivery>
     <cbc:ActualDeliveryDate>2026-02-27</cbc:ActualDeliveryDate>
   </cac:Delivery>

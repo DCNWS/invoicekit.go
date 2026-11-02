@@ -86,7 +86,7 @@
     <cbc:Note>Net 14 days.</cbc:Note>
   </cac:PaymentTerms>
 
-  <cac:PrepaidPayment>x</cac:PrepaidPayment>
+  <cac:PrepaidPayment/>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="SEK">325.00</cbc:TaxAmount>
     <cac:TaxSubtotal>

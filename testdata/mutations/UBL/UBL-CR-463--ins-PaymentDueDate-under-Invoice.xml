@@ -82,9 +82,9 @@
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
 
-  <cac:PaymentTerms><cbc:PaymentDueDate>x</cbc:PaymentDueDate></cac:PaymentTerms>
   <cac:PaymentTerms>
     <cbc:Note>Net 14 days.</cbc:Note>
+  <cbc:PaymentDueDate>x</cbc:PaymentDueDate>
   </cac:PaymentTerms>
 
   <cac:TaxTotal>

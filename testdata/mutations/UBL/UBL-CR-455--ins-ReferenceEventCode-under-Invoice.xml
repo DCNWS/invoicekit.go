@@ -82,9 +82,9 @@
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
 
-  <cac:PaymentTerms><cbc:ReferenceEventCode>x</cbc:ReferenceEventCode></cac:PaymentTerms>
   <cac:PaymentTerms>
     <cbc:Note>Net 14 days.</cbc:Note>
+  <cbc:ReferenceEventCode>x</cbc:ReferenceEventCode>
   </cac:PaymentTerms>
 
   <cac:TaxTotal>
