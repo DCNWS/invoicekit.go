@@ -65,6 +65,10 @@ einv check dist/invoices/*.pdf     # PDF/A-3, the attachment and the XML inside 
 einv convert invoice.xml --to ubl
 \`\`\`
 
+The same release is also a GitHub Action: \`uses: DCNWS/invoicekit.go@v${version}\`
+validates the invoice XML a pull request touches, on the runner, and turns every
+finding into an annotation titled with the rule id.
+
 Rule sets: EN 16931 v1.3.17, XRechnung CIUS 2.6.0 (XRechnung 3.0.2), Peppol BIS\nBilling 3.0 release 3.0.21, all embedded at build time. The library itself is\n\`go get github.com/dcnws/invoicekit.go\`; these binaries are the same module\nbuilt with \`CGO_ENABLED=0\` and verified on the CEF conformance documents.
 
 Checksums: \`sha256sum -c SHA256SUMS.txt\`.`;
