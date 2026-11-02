@@ -99,9 +99,11 @@ Usage:
   einv detect <file>                          detect the invoice syntax
   einv phases [cii|ubl]                       list rule phase ids
   einv rules [-json] [-syntax cii|ubl] [-phase ID] [-cius NAME] [-profile NAME]
-  einv artefacts [-json] [-cius NAME] [-profile NAME]   the rule-set releases a verdict came from
                                               list every assertion this build
                                               enforces, as published
+  einv artefacts [-json] [-cius NAME] [-profile NAME]
+                                              the rule-set releases a verdict
+                                              came from
   einv cius [name]                            list CIUS rule sets, or the
                                               phases of one of them
   einv profile [name]                         list rule-set bundles (Peppol
