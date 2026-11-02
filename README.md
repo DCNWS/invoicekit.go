@@ -204,7 +204,7 @@ This repository is itself a GitHub Action, so a pull request that changes an
 invoice can be checked without adding a toolchain, a container image or a JVM:
 
 ```yaml
-- uses: DCNWS/invoicekit.go@v0.2.6
+- uses: DCNWS/invoicekit.go@v0.2.7
   with:
     files: "invoices/*.xml"
     cius: xrechnung          # EN 16931 plus the German CIUS, optional
@@ -272,6 +272,25 @@ XRechnung is the only CIUS embedded so far, because it is the one our own
 invoices have to pass. French Factur-X does not add Schematron rules beyond
 EN 16931, so there is nothing to layer there — what France adds is the hybrid PDF
 envelope, which is what `einv embed` and `einv check` are for.
+
+### The artefacts a verdict came from
+
+A rule id is only useful with its release. BR-DE-25 is not the same assertion it
+was in XRechnung 2.4, and telling a supplier to fix a rule their validator has
+never heard of wastes everyone's morning. So the version travels with the
+verdict:
+
+```go
+for _, a := range einvoice.Artefacts() {
+	fmt.Println(a.Syntax, a.Version, a.Updated) // CII 1.3.17 2026-10-09
+}
+```
+
+Those numbers are not remembered from a release note. The Commission stamps a
+version and a last-update date into every Schematron it publishes, and the
+library reads the stamp out of the embedded file at run time, beside
+`CiusVersion` and `ProfileVersion`. A verdict can name the artefacts that
+produced it, or say nothing.
 
 ## TypeScript / browser
 
