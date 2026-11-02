@@ -198,6 +198,27 @@ context and test, which is what the public rule reference on the project site is
 generated from: the page and the library are built from the same list, so they
 cannot end up claiming different rule sets.
 
+## In CI: the validator as one step
+
+This repository is itself a GitHub Action, so a pull request that changes an
+invoice can be checked without adding a toolchain, a container image or a JVM:
+
+```yaml
+- uses: DCNWS/invoicekit.go@v0.2.5
+  with:
+    files: "invoices/*.xml"
+    cius: xrechnung          # EN 16931 plus the German CIUS, optional
+    fail-on: fatal           # fatal | any | never
+```
+
+The step downloads the static `einv` binary from our own releases, verifies it
+against `SHA256SUMS.txt` from the same release, runs it over the files you name,
+and turns every finding into an annotation whose title is the rule id. `files`
+takes globs; `version` pins the release to download (the default is the latest,
+which is fine for a demo and wrong for a gate you depend on). The step exposes
+`files`, `fatal` and `warn` as outputs, so a later step can count rather than
+parse. Nothing is uploaded anywhere: validation happens on the runner.
+
 ## Profiles: Peppol BIS and national CIUS
 
 EN 16931 lets a network or a country tighten the norm without relaxing it. Two

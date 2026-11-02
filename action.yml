@@ -1,0 +1,74 @@
+# EN 16931 e-invoice validation as a single CI step. Composite on purpose: the
+# only artefact is a static binary downloaded from our own releases, so there is
+# no container image to keep patched and no toolchain to wait for.
+name: invoicekit
+description: Validate CII and UBL e-invoices against EN 16931, with XRechnung CIUS or Peppol BIS on top. No Java.
+author: DCNWS
+
+inputs:
+  files:
+    description: Space separated files or globs to check, relative to the workspace.
+    required: false
+    default: "*.xml"
+  cius:
+    description: >-
+      Country or network rule set to check on top of EN 16931, e.g. xrechnung.
+      Empty means EN 16931 alone; `einv cius` lists what is embedded.
+    required: false
+    default: ""
+  profile:
+    description: >-
+      Published rule-set bundle to use instead of our own EN 16931 artefacts,
+      e.g. peppol. Empty means our own; `einv profile` lists what is embedded.
+    required: false
+    default: ""
+  fail-on:
+    description: >-
+      When the step fails: "fatal" for fatal findings only, "any" for warnings
+      as well, "never" to annotate without failing the job.
+    required: false
+    default: fatal
+  version:
+    description: >-
+      Release tag to take the binary from, e.g. v0.2.5. Empty means the latest
+      release. Pin it in anything you depend on.
+    required: false
+    default: ""
+
+outputs:
+  files:
+    description: How many documents were checked.
+    value: ${{ steps.report.outputs.files }}
+  fatal:
+    description: How many fatal findings the documents produced.
+    value: ${{ steps.report.outputs.fatal }}
+  warn:
+    description: How many warnings the documents produced.
+    value: ${{ steps.report.outputs.warn }}
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch the validator
+      shell: bash
+      run: sh "$GITHUB_ACTION_PATH/action/fetch.sh" "${{ inputs.version }}"
+    - name: Check the documents
+      id: report
+      shell: bash
+      env:
+        FILES: ${{ inputs.files }}
+        CIUS: ${{ inputs.cius }}
+        PROFILE: ${{ inputs.profile }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        set -uo pipefail
+        args=(-json -max -1)
+        [ -z "$CIUS" ] || args+=(-cius "$CIUS")
+        [ -z "$PROFILE" ] || args+=(-profile "$PROFILE")
+        # shellcheck disable=SC2086  # the input is a list of globs on purpose
+        einv validate "${args[@]}" $FILES > "$RUNNER_TEMP/report.json"
+        node "$GITHUB_ACTION_PATH/action/report.mjs" "$RUNNER_TEMP/report.json" "$FAIL_ON"
+
+branding:
+  icon: file-check
+  color: blue

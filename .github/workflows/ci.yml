@@ -38,6 +38,19 @@ jobs:
       - run: go vet ./...
       - run: go build ./...
       - run: go test -race ./...
+      # The repository is also a GitHub Action, and an action that nobody runs
+      # is an action that is broken. `uses: ./` runs this commit's action.yml on
+      # the runner, against the sample documents in the repository.
+      - name: the action validates the sample documents
+        id: selftest
+        uses: ./
+        with:
+          files: testdata/samples/*.xml
+          cius: xrechnung
+          fail-on: never
+      - name: and reports what it found
+        run: |
+          echo "documents=${{ steps.selftest.outputs.files }}"
       - name: webassembly build
         run: GOOS=js GOARCH=wasm go build -o /tmp/einv.wasm ./cmd/einv-wasm
 
