@@ -11,6 +11,20 @@ XRechnung CIUS 2.6.0 (XRechnung 3.0.2) and Peppol BIS Billing 3.0 release
 3.0.21. No release so far has moved a rule set, so no release so far has
 changed what is valid. `einvoice.Artefacts()` reports these at runtime.
 
+## v0.2.9 — 2026-11-02
+
+- **Fixed:** the GitHub Action cited the wrong rule book. It asked the binary
+  which artefacts it carries *without* repeating the `-cius`/`-profile` it had
+  just validated under, so a run against XRechnung printed
+  `rule_sets=CII 1.3.17, UBL 1.3.17` and left out the CIUS that produced most
+  of the findings — a receipt for a verdict that was not the one handed down.
+  The selectors are now built once and both commands read them.
+- **Added:** unit tests for the Action's reporter (`node --test action/`), run
+  in CI: the exit code for each `fail-on`, the annotation budget, and the
+  citation string, including the CIUS case the self-check had to catch by
+  failing. An action with no offline test is an action tested only by red
+  builds.
+
 ## v0.2.8 — 2026-11-02
 
 - **Added:** `einv artefacts [-json] [-cius NAME] [-profile NAME]` prints the

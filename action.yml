@@ -72,16 +72,22 @@ runs:
         # has findings: that is the answer, not a failure. Whether the step
         # fails is report.mjs's decision, from fail-on.
         set +e
-        args=(-json -max -1)
-        [ -z "$CIUS" ] || args+=(-cius "$CIUS")
-        [ -z "$PROFILE" ] || args+=(-profile "$PROFILE")
+        # The rule-set selectors, built once: the verdict and the citation have
+        # to name the same rule book, so there is one place where a CIUS or a
+        # profile is decided and both commands read it.
+        rules=()
+        [ -z "$CIUS" ] || rules+=(-cius "$CIUS")
+        [ -z "$PROFILE" ] || rules+=(-profile "$PROFILE")
         # shellcheck disable=SC2086  # the input is a list of globs on purpose
-        einv validate "${args[@]}" $FILES > "$RUNNER_TEMP/report.json"
+        einv validate -json -max -1 ${rules[@]+"${rules[@]}"} $FILES > "$RUNNER_TEMP/report.json"
         status=$?
-        # The same binary reports which rule sets it carries, so the verdict and
-        # its provenance cannot drift apart. Failure here is not fatal: the
+        # The same binary reports which rule sets it carries, with the same
+        # -cius/-profile it just judged the documents under, so the verdict and
+        # its provenance cannot drift apart. Omitting the flags here cited the
+        # base rule sets for a run that had actually applied a CIUS, which is
+        # the drift this line exists to prevent. Failure here is not fatal: the
         # verdict above is the answer, the citation is the receipt.
-        einv artefacts -json > "$RUNNER_TEMP/artefacts.json" || true
+        einv artefacts -json ${rules[@]+"${rules[@]}"} > "$RUNNER_TEMP/artefacts.json" || true
         if [ "$status" -gt 1 ]; then
           echo "::error::einv could not run (exit $status): check the files input"
           exit "$status"

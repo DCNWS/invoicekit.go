@@ -290,7 +290,7 @@ The same answer is a command, for anyone holding nothing but a binary:
 
 ```
 $ einv artefacts -cius xrechnung
-engine	0.2.8
+engine	0.2.9
 rule_set	CII	EN 16931	1.3.17	2026-10-09
 rule_set	UBL	EN 16931	1.3.17	2026-10-09
 cius	xrechnung	2.6.0, for XRechnung 3.0.2

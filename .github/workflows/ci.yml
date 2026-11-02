@@ -38,6 +38,14 @@ jobs:
       - run: go vet ./...
       - run: go build ./...
       - run: go test -race ./...
+      # The Action's reporter is a node program with a contract — step outputs,
+      # exit codes, the citation line — that the self-check below can only test
+      # end to end, against a published release. These are the offline tests for
+      # the parts an end-to-end run cannot pin down.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node --test action/
       # The repository is also a GitHub Action, and an action that nobody runs
       # is an action that is broken. `uses: ./` runs this commit's action.yml on
       # the runner, against the sample documents in the repository.
