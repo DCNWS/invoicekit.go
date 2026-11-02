@@ -577,8 +577,12 @@ func replayCorpus(corpus string, u *universe) (corpusStats, error) {
 			return st, err
 		}
 		sort.Strings(files)
+		man, err := manifestSources(corpus, sy)
+		if err != nil {
+			return st, err
+		}
 		for _, f := range files {
-			if err := replayMutant(f, sy, u, &st); err != nil {
+			if err := replayMutant(f, sy, man, u, &st); err != nil {
 				return st, err
 			}
 		}
@@ -586,9 +590,38 @@ func replayCorpus(corpus string, u *universe) (corpusStats, error) {
 	return st, nil
 }
 
+// manifestSources reads back the provenance a previous run recorded, keyed by
+// assert id. The manifest says which pass produced a mutant, and a replay
+// cannot re-derive that: the targeted pass only works on asserts that are still
+// unproven, so an assert the corpus already proves is never rebuilt and its
+// origin would be lost. Entries written by a replay itself are skipped, since
+// they carry no more information than the file's own name.
+func manifestSources(corpus string, sy en16931.Syntax) (map[string]source, error) {
+	path := filepath.Join(corpus, string(sy), "manifest.json")
+	b, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return map[string]source{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var ps []proven
+	if err := json.Unmarshal(b, &ps); err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
+	}
+	out := make(map[string]source, len(ps))
+	for _, pr := range ps {
+		if pr.ID == "" || pr.Kind == "" || pr.Kind == "corpus" {
+			continue
+		}
+		out[pr.ID] = source{Kind: pr.Kind, What: pr.What}
+	}
+	return out, nil
+}
+
 // replayMutant validates one corpus file and compares the findings with the
 // rule ids its name claims.
-func replayMutant(path string, sy en16931.Syntax, u *universe, st *corpusStats) error {
+func replayMutant(path string, sy en16931.Syntax, man map[string]source, u *universe, st *corpusStats) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -606,7 +639,13 @@ func replayMutant(path string, sy en16931.Syntax, u *universe, st *corpusStats) 
 	}
 	ids := firedIDs(rep)
 	fired := setOf(ids)
-	u.mark(sy, ids, source{Kind: "corpus", What: base})
+	for _, id := range ids {
+		src, ok := man[id]
+		if !ok {
+			src = source{Kind: "corpus", What: base}
+		}
+		u.mark(sy, []string{id}, src)
+	}
 	st.files++
 	for _, id := range expectedIDs(base) {
 		st.expect++
