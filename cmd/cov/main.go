@@ -491,6 +491,7 @@ type runStats struct {
 	ts   testSetStats
 	cr   corpusStats
 	ms   mutantStats
+	tg   map[string]targetStats // set only when -targeted ran
 	refs int
 }
 
@@ -762,6 +763,12 @@ func printRun(u *universe, cov coverage, rs runStats) {
 	}
 	fmt.Printf("mutants: %d generated, %d produced findings, %d rejected\n", rs.ms.generated, rs.ms.hits, rs.ms.rejected)
 	printRejections(rs.ms)
+	for _, sy := range syntaxNames {
+		if st, ok := rs.tg[sy]; ok {
+			fmt.Printf("targeted %s: %d candidate asserts, %d insertion mutants, %d still silent\n",
+				sy, st.rules, st.made, st.nofire)
+		}
+	}
 	fmt.Println()
 	for _, sy := range syntaxNames {
 		fmt.Printf("%s: %d/%d active asserts proven (%s)\n",
@@ -855,6 +862,8 @@ type syntaxSummary struct {
 	CorpusExp   int            `json:"corpusExpectedFirings"`
 	CorpusOff   int            `json:"corpusNotFired"`
 	EvalErrs    int            `json:"corpusEvalErrors"`
+	TargetRules int            `json:"targetedCandidates"`
+	TargetMade  int            `json:"targetedMutants"`
 }
 
 func writeJSONSummary(path string, u *universe, cov coverage, rs runStats) error {
@@ -866,7 +875,8 @@ func writeJSONSummary(path string, u *universe, cov coverage, rs runStats) error
 			TestCases: rs.ts.cases, MustFire: rs.ts.expect, MustFireOff: rs.ts.missed,
 			Mutants: rs.ms.generated, MutantHits: rs.ms.hits,
 			Corpus: rs.cr.files, CorpusExp: rs.cr.expect, CorpusOff: rs.cr.missed,
-			EvalErrs: rs.cr.evalErrs,
+			EvalErrs:    rs.cr.evalErrs,
+			TargetRules: rs.tg[sy].rules, TargetMade: rs.tg[sy].made,
 		})
 	}
 	b, err := json.MarshalIndent(sums, "", "  ")
@@ -885,8 +895,15 @@ func writeMarkdown(path string, u *universe, cov coverage, rs runStats) error {
 	fmt.Fprintf(&sb, "- corpus replay: %d harvested mutants, %d expected firings, %d did not fire, %d eval errors\n",
 		rs.cr.files, rs.cr.expect, rs.cr.missed, rs.cr.evalErrs)
 	fmt.Fprintf(&sb, "- clean reference documents: %d\n", rs.refs)
-	fmt.Fprintf(&sb, "- mutants generated: %d, producing findings: %d, unparsable: %d\n\n",
+	fmt.Fprintf(&sb, "- mutants generated: %d, producing findings: %d, unparsable: %d\n",
 		rs.ms.generated, rs.ms.hits, rs.ms.rejected)
+	for _, sy := range syntaxNames {
+		if st, ok := rs.tg[sy]; ok {
+			fmt.Fprintf(&sb, "- targeted %s: %d candidate asserts, %d insertion mutants, %d still silent\n",
+				sy, st.rules, st.made, st.nofire)
+		}
+	}
+	sb.WriteString("\n")
 	for _, sy := range syntaxNames {
 		fmt.Fprintf(&sb, "## %s: %d/%d active asserts proven\n\n", sy, len(u.covered[sy]), cov.totals[sy])
 		fmt.Fprintf(&sb, "sources: %s\n\nphases run by default: %s\n\n",
@@ -904,6 +921,7 @@ func main() {
 	ref := flag.String("ref", envOr("EINVOICE_REF", "../ref-en16931"), "CEF eInvoicing-EN16931 checkout")
 	limit := flag.Int("limit", 0, "max bases per syntax (0 = no limit)")
 	nomut := flag.Bool("no-mutate", false, "skip the mutation sweep")
+	targ := flag.Bool("targeted", false, "build insertion mutants for asserts nothing else ever fired")
 	jobs := flag.Int("jobs", 0, "parallel validations (default GOMAXPROCS)")
 	flag.Parse()
 
@@ -942,6 +960,24 @@ func main() {
 
 	rs := runStats{ts: ts, cr: cr, ms: harvest(work, workers(*jobs), *corpus, u), refs: len(refs)}
 	cov := u.coverage()
+
+	// The targeted pass runs last: it only has something to do for asserts the
+	// test sets, the corpus and the sweep all failed to prove.
+	if *targ {
+		rs.tg = map[string]targetStats{}
+		for _, sy := range []en16931.Syntax{en16931.SyntaxCII, en16931.SyntaxUBL} {
+			doc, err := targetedBase(refs, sy)
+			if err != nil {
+				fail(err)
+			}
+			st, err := targeted(sy, doc, setOf(cov.missing[string(sy)]), workers(*jobs), *corpus, u)
+			if err != nil {
+				fail(err)
+			}
+			rs.tg[string(sy)] = st
+		}
+		cov = u.coverage()
+	}
 	printRun(u, cov, rs)
 
 	if err := writeManifests(*corpus, u); err != nil {
