@@ -348,10 +348,16 @@ step with predicates handed its candidate slice to the predicate filter as an
 interface, which boxed it onto the heap at every step.
 
 The WebAssembly build is the same engine, and Go's wasm port is slower than
-native: 8.3 ms a UBL document and 8.1 ms a CII one, measured over the same
-corpus in Node 26 on the binary `@invoicekit/einvoice` ships — around a hundred
-documents a second, still well inside the time it takes to notice the page has
-reacted to dropping a file on it.
+native: 9.0 ms a UBL document and 7.0 ms a CII one in Node 26 on one core, and
+7.9 ms a document (about 130 a second) in a real browser running the module the
+live site ships — a hundred-odd documents a second either way, still well inside
+the time it takes to notice the page has reacted to dropping a file on it. Both
+figures are engine v0.2.5 over this corpus, produced by
+`scripts/bench-wasm.mjs` in
+[the TypeScript repository](https://github.com/DCNWS/invoicekit.ts/blob/main/scripts/bench-wasm.mjs)
+and by the browser's own clock, not by prose. The first validation in a browser
+also pays for compiling the binary, which is why a long-lived page or worker is
+cheaper per document than a fresh one.
 
 ## Status
 
