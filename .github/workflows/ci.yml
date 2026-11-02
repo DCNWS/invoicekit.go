@@ -45,7 +45,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - run: node --test action/
+      # A directory argument only works on node 26; the runner is on 24, where
+      # it is read as a module path. Name the files.
+      - run: node --test action/*.test.mjs
       # The repository is also a GitHub Action, and an action that nobody runs
       # is an action that is broken. `uses: ./` runs this commit's action.yml on
       # the runner, against the sample documents in the repository.
