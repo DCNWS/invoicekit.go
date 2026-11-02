@@ -24,6 +24,7 @@ import (
 
 	"github.com/dcnws/invoicekit.go/internal/en16931"
 	"github.com/dcnws/invoicekit.go/internal/sch"
+	"github.com/dcnws/invoicekit.go/xsd"
 )
 
 // qName is an element name, optionally prefixed, as paths and predicates write
@@ -380,26 +381,240 @@ func foundNode(b []byte, lo, hi int) (node, bool) {
 	return node{name: nm, lo: lo, hi: hi}, true
 }
 
-// frag renders an element path as literal XML, outermost element first, with a
-// placeholder text node at the leaf. Chains deeper than four elements are
-// refused: they need a whole subtree of context to stay schema valid, and
-// inventing that is the job of a targeted rule, not of this one.
-func frag(chain string, smap, dmap map[string]string) ([]byte, bool) {
-	_, steps, ok := parsePath(chain)
-	if !ok || len(steps) > 4 {
-		return nil, false
-	}
+// fragOf renders chain steps as literal XML, outermost first, with leaf as the
+// content of the innermost element. A chain whose innermost element has no
+// content is written self-closing.
+func fragOf(steps []pathStep, smap, dmap map[string]string, leaf []byte) []byte {
 	var out []byte
 	for i := range slices.Backward(steps) {
 		n := xlateQName(steps[i].name, smap, dmap)
 		inner := out
-		out = append([]byte("<"+n+">"), inner...)
 		if inner == nil {
-			out = append(out, 'x')
+			inner = leaf
 		}
-		out = append(out, []byte("</"+n+">")...)
+		if len(inner) == 0 {
+			out = append([]byte("<"+n+"/>"), inner...)
+		} else {
+			out = append(append([]byte("<"+n+">"), inner...), []byte("</"+n+">")...)
+		}
+	}
+	return out
+}
+
+// fragsOf renders a chain as the schema model describes it when it can, then
+// the two blind guesses: placeholder text at the leaf, and an empty leaf. Which
+// one the schema accepts is a property of the leaf's type, not of the assert,
+// and the schematron paths do not say whether an element holds text or children.
+func fragsOf(m *xsd.Model, steps []pathStep, smap, dmap map[string]string) [][]byte {
+	var out [][]byte
+	if f := schemaFrag(m, smap, dmap, steps); f != nil {
+		out = append(out, f)
+	}
+	return append(out,
+		fragOf(steps, smap, dmap, []byte("x")),
+		fragOf(steps, smap, dmap, nil))
+}
+
+// maxSchemaDepth bounds how deep the schema model is followed when filling in
+// the content an inserted element requires.
+const maxSchemaDepth = 8
+
+// schemaFrag renders the chain steps as literal XML with the content the XML
+// schema requires of each element, so an insertion validates instead of guessing
+// at what the leaf holds. It refuses a chain the model does not describe, and a
+// step carrying a predicate, which a content model cannot express.
+func schemaFrag(m *xsd.Model, smap, dmap map[string]string, steps []pathStep) []byte {
+	if m == nil {
+		return nil
+	}
+	var names []string
+	// cur is the content model of the element built so far: nil means its
+	// type is a simple value, or (before the first step) that nothing has
+	// been resolved yet.
+	var cur *xsd.Term
+	for i, st := range steps {
+		if st.preds != "" {
+			return nil
+		}
+		c, ok := clarkName(st.name, smap)
+		if !ok {
+			return nil
+		}
+		names = append(names, c)
+		if i == 0 {
+			d := m.Decls[c]
+			if d == nil {
+				return nil
+			}
+			if d.Type != nil {
+				cur = d.Type.Term
+			}
+			continue
+		}
+		if cur == nil {
+			return nil
+		}
+		el := findElem(cur, c)
+		if el == nil {
+			return nil
+		}
+		cur = el.Content()
+	}
+	var inner []byte
+	if cur != nil {
+		b, ok := partsOf(cur, dmap, 0)
+		if !ok {
+			return nil
+		}
+		inner = b
+	} else {
+		inner = []byte("x")
+	}
+	return wrapNames(names, dmap, inner)
+}
+
+// clarkName names a prefixed element in Clark notation, {namespace}local, which
+// is how the schema model keys its components.
+func clarkName(q string, smap map[string]string) (string, bool) {
+	p, loc, found := strings.Cut(q, ":")
+	if !found || p == "" {
+		return "", false
+	}
+	uri, ok := smap[p]
+	if !ok {
+		return "", false
+	}
+	return "{" + uri + "}" + loc, true
+}
+
+// prefixed names a Clark element with the prefix the document uses for its
+// namespace, so an inserted element needs no new namespace declaration.
+func prefixed(clark string, dmap map[string]string) (string, bool) {
+	uri, loc := "", clark
+	if strings.HasPrefix(clark, "{") {
+		i := strings.Index(clark, "}")
+		if i < 0 {
+			return "", false
+		}
+		uri, loc = clark[1:i], clark[i+1:]
+	}
+	pre, ok := dmap[uri]
+	if !ok {
+		return "", false
+	}
+	if pre == "" {
+		return loc, true
+	}
+	return pre + ":" + loc, true
+}
+
+// findElem returns the term of the content model that accepts the element,
+// searching sequences and choices but not the elements' own content.
+func findElem(t *xsd.Term, clark string) *xsd.Term {
+	if t == nil {
+		return nil
+	}
+	if t.Kind == xsd.Elem {
+		if t.Name == clark {
+			return t
+		}
+		return nil
+	}
+	for _, p := range t.Parts {
+		if el := findElem(p, clark); el != nil {
+			return el
+		}
+	}
+	return nil
+}
+
+// partsOf renders the parts of a content model that the schema requires: every
+// part of a sequence with a minimum of one, and the first branch of a choice
+// that can be rendered. An optional part is left out, and an xs:any that the
+// schema requires cannot be filled in, so the chain is refused.
+func partsOf(t *xsd.Term, dmap map[string]string, depth int) ([]byte, bool) {
+	if depth > maxSchemaDepth {
+		return nil, false
+	}
+	switch t.Kind {
+	case xsd.Elem:
+		return elemOf(t, dmap, depth)
+	case xsd.Any, xsd.Ref:
+		return nil, t.Min == 0
+	}
+	if t.Kind == xsd.Choice && t.Min == 0 {
+		return nil, true
+	}
+	var out []byte
+	for _, p := range t.Parts {
+		if p.Min == 0 {
+			continue
+		}
+		b, ok := partsOf(p, dmap, depth+1)
+		if ok {
+			out = append(out, b...)
+			continue
+		}
+		if t.Kind == xsd.Choice {
+			continue
+		}
+		return nil, false
+	}
+	if t.Kind == xsd.Choice && len(out) == 0 {
+		return nil, false
 	}
 	return out, true
+}
+
+// elemOf renders one element with the content its type requires: a placeholder
+// value when its type has no element children.
+func elemOf(t *xsd.Term, dmap map[string]string, depth int) ([]byte, bool) {
+	name, ok := prefixed(t.Name, dmap)
+	if !ok {
+		return nil, false
+	}
+	ct := t.Content()
+	if ct == nil {
+		return []byte("<" + name + ">x</" + name + ">"), true
+	}
+	inner, ok := partsOf(ct, dmap, depth)
+	if !ok {
+		return nil, false
+	}
+	return wrap([]byte(name), inner), true
+}
+
+// wrapNames nests the named elements around inner, names[0] outermost.
+func wrapNames(names []string, dmap map[string]string, inner []byte) []byte {
+	out := inner
+	for i := range slices.Backward(names) {
+		nm, ok := prefixed(names[i], dmap)
+		if !ok {
+			return nil
+		}
+		out = wrap([]byte(nm), out)
+	}
+	return out
+}
+
+// wrap puts content inside an element, self-closing it when there is none.
+func wrap(name, content []byte) []byte {
+	if len(content) == 0 {
+		return append([]byte("<"+string(name)+"/>"), content...)
+	}
+	out := append([]byte("<"+string(name)+">"), content...)
+	return append(out, []byte("</"+string(name)+">")...)
+}
+
+// childStep returns the child of n named and predicated like one chain step.
+func childStep(b []byte, n node, st pathStep, smap, dmap map[string]string) (node, bool) {
+	nm := xlateQName(st.name, smap, dmap)
+	for _, c := range children(b, n.lo, n.hi) {
+		if c.name == nm && predOK(b, c, st.preds, smap, dmap) {
+			return c, true
+		}
+	}
+	return node{}, false
 }
 
 // insert renders f as a child of n at every position a sibling could occupy,
@@ -494,14 +709,14 @@ func targeted(sy en16931.Syntax, doc []byte, want map[string]bool, n int, corpus
 		return targetStats{}, err
 	}
 	smap, dmap := s.NS, docPrefixes(doc)
+	m, err := en16931.SchemaModel(sy)
+	if err != nil {
+		return targetStats{}, err
+	}
 	var st targetStats
 	for _, r := range targetRules(s, want) {
-		f, ok := frag(r.chain, smap, dmap)
-		if !ok {
-			continue
-		}
 		st.rules++
-		variants := variantsAt(doc, r.ctx, f, smap, dmap)
+		variants := variantsAt(m, doc, r.ctx, r.chain, smap, dmap)
 		if len(variants) == 0 {
 			continue
 		}
@@ -524,16 +739,43 @@ func targeted(sy en16931.Syntax, doc []byte, want map[string]bool, n int, corpus
 	return st, nil
 }
 
-// variantsAt builds the insertion variants under the first context alternative
-// that is present in the document.
-func variantsAt(doc []byte, ctx string, f []byte, smap, dmap map[string]string) [][]byte {
+// variantsAt builds the insertion variants of chain under the first context
+// alternative the document contains. The chain is grown where it runs out, not
+// bolted onto the context: most of the elements these asserts name allow one
+// copy only, so a document that already has the Delivery must gain the missing
+// tail inside that Delivery, and adding a second one is what the schema refuses.
+//
+// The tail that is missing is rendered from the schema's own content model
+// where that model describes it, so what goes in carries the elements its type
+// demands. The placeholder and empty guesses follow, for chains the model
+// cannot express: a step carrying a predicate, or a component the model has no
+// declaration for.
+func variantsAt(m *xsd.Model, doc []byte, ctx, chain string, smap, dmap map[string]string) [][]byte {
+	_, steps, ok := parsePath(chain)
+	if !ok {
+		return nil
+	}
 	for alt := range strings.SplitSeq(ctx, "|") {
 		n, ok := walk(doc, strings.TrimSpace(alt), 0, len(doc), smap, dmap)
 		if !ok {
 			continue
 		}
-		if vs := insert(doc, n, f); len(vs) > 0 {
-			return vs
+		k := 0
+		for k < len(steps) {
+			c, ok := childStep(doc, n, steps[k], smap, dmap)
+			if !ok {
+				break
+			}
+			n, k = c, k+1
+		}
+		if rest := steps[k:]; k < len(steps) && len(rest) <= 4 {
+			var vs [][]byte
+			for _, f := range fragsOf(m, rest, smap, dmap) {
+				vs = append(vs, insert(doc, n, f)...)
+			}
+			if len(vs) > 0 {
+				return vs
+			}
 		}
 	}
 	return nil
@@ -549,8 +791,8 @@ func variantsAt(doc []byte, ctx string, f []byte, smap, dmap map[string]string) 
 func firstFiring(sy en16931.Syntax, id string, docs [][]byte, n int) ([]byte, []string) {
 	type res struct {
 		i   int
-		rep *en16931.Report
-		err error
+		ids []string
+		ok  bool
 	}
 	in := make(chan int)
 	out := make(chan res, 8)
@@ -558,8 +800,8 @@ func firstFiring(sy en16931.Syntax, id string, docs [][]byte, n int) ([]byte, []
 	for range min(n, len(docs)) {
 		wg.Go(func() {
 			for i := range in {
-				rep, err := en16931.Validate(docs[i], en16931.Options{Syntax: sy})
-				out <- res{i, rep, err}
+				ids, ok := firingIDs(sy, id, docs[i])
+				out <- res{i, ids, ok}
 			}
 		})
 	}
@@ -573,22 +815,30 @@ func firstFiring(sy en16931.Syntax, id string, docs [][]byte, n int) ([]byte, []
 	}()
 	best, ids := -1, []string(nil)
 	for r := range out {
-		if r.err != nil || r.rep == nil || (best >= 0 && r.i >= best) {
+		if !r.ok || (best >= 0 && r.i >= best) {
 			continue
 		}
-		if len(r.rep.Schema) != 0 || r.rep.Internal != 0 {
-			continue
-		}
-		fired := firedIDs(r.rep)
-		if !slices.Contains(fired, id) {
-			continue
-		}
-		best, ids = r.i, fired
+		best, ids = r.i, r.ids
 	}
 	if best < 0 {
 		return nil, nil
 	}
 	return docs[best], ids
+}
+
+// firingIDs validates doc and returns every assert it fires, reporting true
+// only when the schema accepted the document, every rule could be evaluated
+// against it, and id is among the asserts that spoke.
+func firingIDs(sy en16931.Syntax, id string, doc []byte) ([]string, bool) {
+	rep, err := en16931.Validate(doc, en16931.Options{Syntax: sy})
+	if err != nil || rep == nil || len(rep.Schema) != 0 || rep.Internal != 0 {
+		return nil, false
+	}
+	fired := firedIDs(rep)
+	if !slices.Contains(fired, id) {
+		return nil, false
+	}
+	return fired, true
 }
 
 // leaf names the last element of a path without its namespace prefix or

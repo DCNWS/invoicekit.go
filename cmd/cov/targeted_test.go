@@ -154,18 +154,6 @@ func TestWalk(t *testing.T) {
 	}
 }
 
-func TestFrag(t *testing.T) {
-	smap := map[string]string{"ram": "urn:ram", "cac": "urn:cac"}
-	dmap := map[string]string{"urn:ram": "ram"}
-	got, ok := frag("ram:A/ram:B", smap, dmap)
-	if !ok || string(got) != "<ram:A><ram:B>x</ram:B></ram:A>" {
-		t.Fatalf("frag = %q ok=%v", got, ok)
-	}
-	if _, ok := frag("a/b/c/d/e", map[string]string{}, map[string]string{}); ok {
-		t.Fatal("frag accepted a chain five elements deep")
-	}
-}
-
 func TestInsert(t *testing.T) {
 	b := []byte(tdoc)
 	n, _ := walk(b, "//ram:Period", 0, len(b), nil, nil)
@@ -294,17 +282,17 @@ func TestFirstFiringOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	smap, dmap := s.NS, docPrefixes(doc)
+	m, err := en16931.SchemaModel(en16931.SyntaxUBL)
+	if err != nil {
+		t.Fatal(err)
+	}
 	rules := targetRules(s, map[string]bool{"UBL-CR-342": true})
 	if len(rules) != 1 {
 		t.Fatalf("rules: %v", rules)
 	}
-	f, ok := frag(rules[0].chain, smap, dmap)
-	if !ok {
-		t.Fatal("no fragment")
-	}
-	vs := variantsAt(doc, rules[0].ctx, f, smap, dmap)
-	if len(vs) != 18 {
-		t.Fatalf("variants: %d", len(vs))
+	vs := variantsAt(m, doc, rules[0].ctx, rules[0].chain, smap, dmap)
+	if len(vs) == 0 {
+		t.Fatal("no variants")
 	}
 	keep, ids := firstFiring(en16931.SyntaxUBL, "UBL-CR-342", vs, 8)
 	if keep == nil {
@@ -313,17 +301,19 @@ func TestFirstFiringOrder(t *testing.T) {
 	if !slices.Contains(ids, "UBL-CR-342") {
 		t.Errorf("ids: %v", ids)
 	}
-	if !slices.ContainsFunc(vs, func(v []byte) bool { return bytes.Equal(v, keep) }) {
-		t.Error("the kept mutant is not one of the variants")
+	at := slices.IndexFunc(vs, func(v []byte) bool { return bytes.Equal(v, keep) })
+	if at < 0 {
+		t.Fatal("the kept mutant is not one of the variants")
 	}
-	for i, v := range vs {
-		if bytes.Equal(v, keep) {
-			if i != 11 {
-				t.Fatalf("picked variant %d, want the earliest valid one (11)", i)
-			}
-			return
+	// The choice must be the earliest variant that is schema valid and fires
+	// the rule: checking every earlier one is what stops the pass from
+	// silently settling on a later position and rewriting a harvested corpus.
+	for i := range at {
+		if _, ok := firingIDs(en16931.SyntaxUBL, "UBL-CR-342", vs[i]); ok {
+			t.Fatalf("variant %d fires too, but variant %d was kept", i, at)
 		}
 	}
+	t.Logf("earliest firing variant: %d of %d", at, len(vs))
 }
 
 func bytesContains(b []byte, s string) bool {

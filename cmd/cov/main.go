@@ -11,6 +11,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"encoding/xml"
 	"flag"
@@ -244,6 +245,10 @@ type job struct {
 	base string
 	sy   en16931.Syntax
 	m    mutant
+	// idx is the mutant's position in mutate's output for base. Mutant names
+	// are only unique per element name, and an element name repeats, so a
+	// mutant that has to be rebuilt after the sweep comes back by position.
+	idx int
 }
 
 type outcome struct {
@@ -657,8 +662,9 @@ func mutantJobs(refs []string, doMutate bool) ([]job, error) {
 		if !doMutate {
 			continue
 		}
-		for _, m := range mutate(b, doc.RootElem().Name) {
-			work = append(work, job{base: base, sy: sy, m: m})
+		ms := mutate(b, doc.RootElem().Name)
+		for i, m := range ms {
+			work = append(work, job{base: base, sy: sy, m: m, idx: i})
 		}
 	}
 	return work, nil
@@ -699,10 +705,28 @@ func workers(n int) int {
 	return n
 }
 
+// firing is what the sweep has to remember about a mutant that fired: enough
+// to re-derive its bytes later without holding hundreds of thousands of them
+// in memory.
+type firing struct {
+	sy   en16931.Syntax
+	base string
+	name string
+	idx  int
+	ids  []string
+}
+
 // harvest runs the mutation sweep, recording what each mutant proves and
 // saving the ones that prove something new.
+//
+// Marking and saving happen after the sweep, in mutant order rather than in the
+// order the workers finished: thousands of mutants prove overlapping sets of
+// asserts, so deciding on the fly would let scheduling pick which of several
+// equivalent mutants enters the corpus, and every run would rewrite a different
+// set of test files.
 func harvest(work []job, n int, corpus string, u *universe) mutantStats {
 	st := mutantStats{generated: len(work), why: map[string]int{}, example: map[string]string{}}
+	var fired []firing
 	validateAll(work, n, func(o outcome) {
 		if o.err != nil {
 			st.noteRejection(o)
@@ -713,15 +737,52 @@ func harvest(work []job, n int, corpus string, u *universe) mutantStats {
 			return
 		}
 		st.hits++
-		what := filepath.Base(o.job.base) + " " + o.job.m.name
-		if u.mark(o.job.sy, ids, source{Kind: "mutant", What: what}) == 0 {
-			return
+		fired = append(fired, firing{sy: o.job.sy, base: o.job.base, name: o.job.m.name, idx: o.job.idx, ids: ids})
+	})
+	slices.SortFunc(fired, func(a, b firing) int {
+		if c := cmp.Compare(a.sy, b.sy); c != 0 {
+			return c
 		}
-		if err := saveMutant(corpus, o.job, ids); err != nil {
+		if c := strings.Compare(a.base, b.base); c != 0 {
+			return c
+		}
+		// Position, not name: mutant names come from element local names,
+		// which repeat, so names alone are not a total order.
+		return cmp.Compare(a.idx, b.idx)
+	})
+	for _, f := range fired {
+		what := filepath.Base(f.base) + " " + f.name
+		if u.mark(f.sy, f.ids, source{Kind: "mutant", What: what}) == 0 {
+			continue
+		}
+		m, err := mutantAt(f.base, f.idx)
+		if err != nil {
 			fail(err)
 		}
-	})
+		if err := saveMutant(corpus, job{base: f.base, sy: f.sy, m: m}, f.ids); err != nil {
+			fail(err)
+		}
+	}
 	return st
+}
+
+// mutantAt regenerates one mutant of base by its position in mutate's output.
+// Mutants are cheap to produce and expensive to keep, so harvest re-derives
+// the few hundred it saves instead of holding all of them.
+func mutantAt(base string, idx int) (mutant, error) {
+	b, err := os.ReadFile(base)
+	if err != nil {
+		return mutant{}, err
+	}
+	doc, err := xp.ParseXML(string(b))
+	if err != nil {
+		return mutant{}, err
+	}
+	ms := mutate(b, doc.RootElem().Name)
+	if idx >= len(ms) {
+		return mutant{}, fmt.Errorf("%s: mutant %d of %d is no longer generated", base, idx, len(ms))
+	}
+	return ms[idx], nil
 }
 
 // noteRejection groups mutants the validator could not parse by the reason it
@@ -734,8 +795,9 @@ func (st *mutantStats) noteRejection(o outcome) {
 		k = k[:90]
 	}
 	st.why[k]++
-	if _, ok := st.example[k]; !ok {
-		st.example[k] = o.job.base + " " + o.job.m.name
+	ex := o.job.base + " " + o.job.m.name
+	if cur, ok := st.example[k]; !ok || ex < cur {
+		st.example[k] = ex
 	}
 }
 
