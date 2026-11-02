@@ -2,9 +2,9 @@
 // Turns the `-json` output of `einv validate` into workflow annotations and
 // step outputs. It lives in a file rather than inline YAML so it is lintable,
 // testable and reviewable as the program it is.
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
 
-const [report, failOn = "fatal"] = process.argv.slice(2);
+const [report, failOn = "fatal", artefactsPath = ""] = process.argv.slice(2);
 
 const emit = (name, value) => {
 	if (!process.env.GITHUB_OUTPUT) return;
@@ -44,6 +44,31 @@ for (const doc of documents) {
 		console.log(`::${level} title=${title}::${doc.name}: ${f.message}${f.context ? ` — ${f.context}` : ""}`);
 	}
 	console.log(`${doc.name}: ${doc.syntax} ${doc.valid ? "valid" : `invalid (${doc.fatal} fatal, ${doc.warn} warning)`}`);
+}
+
+// A verdict is only useful if it can be traced, so the run also names the release
+// of the engine and of every rule set that spoke. This is the sentence that turns
+// "the build failed on BR-DE-03" into something a customer and a developer can
+// both check six months later.
+if (artefactsPath && existsSync(artefactsPath)) {
+	try {
+		const info = JSON.parse(readFileSync(artefactsPath, "utf8"));
+		const sets = (info.rule_sets ?? []).map((a) => `${a.syntax} ${a.version}`).join(", ");
+		const extra = [
+			...Object.entries(info.cius ?? {}).map(([name, version]) => `CIUS ${name} ${version}`),
+			...Object.entries(info.profiles ?? {}).map(([name, version]) => `profile ${name} ${version}`),
+		];
+		const citation = [`engine ${info.engine}`, sets, ...extra].filter(Boolean).join(" · ");
+		emit("engine", info.engine);
+		emit("rule_sets", [sets, ...extra].filter(Boolean).join("; "));
+		console.log(citation);
+		if (process.env.GITHUB_STEP_SUMMARY) {
+			appendFileSync(process.env.GITHUB_STEP_SUMMARY, `**InvoiceKit** checked ${documents.length} document(s) — ${citation}\n`);
+		}
+	} catch (e) {
+		// The citation is a bonus; a verdict still stands without it.
+		console.log(`could not read the artefact report: ${e.message}`);
+	}
 }
 
 emit("files", documents.length);

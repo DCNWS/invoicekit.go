@@ -56,6 +56,8 @@ func main() {
 		err = runPhases(os.Args[2:])
 	case "rules", "list":
 		err = runRules(os.Args[2:])
+	case "artefacts", "artefact":
+		err = runArtefacts(os.Args[2:])
 	case "cius":
 		err = runCius(os.Args[2:])
 	case "profile":
@@ -97,6 +99,7 @@ Usage:
   einv detect <file>                          detect the invoice syntax
   einv phases [cii|ubl]                       list rule phase ids
   einv rules [-json] [-syntax cii|ubl] [-phase ID] [-cius NAME] [-profile NAME]
+  einv artefacts [-json] [-cius NAME] [-profile NAME]   the rule-set releases a verdict came from
                                               list every assertion this build
                                               enforces, as published
   einv cius [name]                            list CIUS rule sets, or the
@@ -475,6 +478,96 @@ func runPhases(args []string) error {
 		fmt.Println(" ", id)
 	}
 	return nil
+}
+
+// runArtefacts reports the releases of the rule sets this binary embeds, which
+// is the other half of a verdict: a finding is only reproducible if the artefact
+// version behind it is known. A compliance register, a support ticket and a
+// diff between two of our own releases all start here.
+func runArtefacts(args []string) error {
+	fs := flag.NewFlagSet("artefacts", flag.ContinueOnError)
+	var (
+		asJSON = fs.Bool("json", false, "emit the report as JSON")
+		cius   = fs.String("cius", "", "include a country or network rule set, e.g. xrechnung")
+		prof   = fs.String("profile", "", "include a published bundle, e.g. peppol")
+	)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	opt := einvoice.Options{}
+	if *cius != "" {
+		opt.CIUS = einvoice.CIUS(*cius)
+	}
+	if *prof != "" {
+		opt.Profile = einvoice.Profile(*prof)
+	}
+	if err := einvoice.CheckRuleSets(opt); err != nil {
+		return err
+	}
+	return writeArtefacts(os.Stdout, *asJSON, opt)
+}
+
+// writeArtefacts renders the same report in either form. The text lines are
+// tab-separated so they survive cut, sort and grep; the JSON is what a register
+// or a support tool reads.
+func writeArtefacts(w io.Writer, asJSON bool, opt einvoice.Options) error {
+	report := struct {
+		Engine   string              `json:"engine"`
+		RuleSets []einvoice.Artefact `json:"rule_sets"`
+		CIUS     map[string]string   `json:"cius"`
+		Profiles map[string]string   `json:"profiles"`
+	}{
+		Engine:   einvoice.Version,
+		RuleSets: einvoice.Artefacts(),
+		CIUS:     map[string]string{},
+		Profiles: map[string]string{},
+	}
+	if opt.CIUS != "" {
+		report.CIUS[string(opt.CIUS)] = einvoice.CiusVersion(opt.CIUS)
+	}
+	if opt.Profile != "" {
+		report.Profiles[string(opt.Profile)] = einvoice.ProfileVersion(opt.Profile)
+	}
+	if asJSON {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(report)
+	}
+	if _, err := fmt.Fprintf(w, "engine\t%s\n", report.Engine); err != nil {
+		return err
+	}
+	for _, a := range report.RuleSets {
+		if _, err := fmt.Fprintf(w, "rule_set\t%s\tEN 16931\t%s\t%s\n", a.Syntax, a.Version, a.Updated); err != nil {
+			return err
+		}
+	}
+	for _, line := range sortedNamed(report.CIUS, "cius") {
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return err
+		}
+	}
+	for _, line := range sortedNamed(report.Profiles, "profile") {
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// sortedNamed renders name/version pairs in a stable order, so two runs of the
+// same binary produce byte-identical output and a diff of two releases is a diff
+// of versions rather than of map iteration.
+func sortedNamed(m map[string]string, kind string) []string {
+	names := make([]string, 0, len(m))
+	for name := range m {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		out = append(out, kind+"\t"+name+"\t"+m[name])
+	}
+	return out
 }
 
 // runRules lists the assertions this build carries, in the order a run applies

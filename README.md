@@ -286,6 +286,19 @@ for _, a := range einvoice.Artefacts() {
 }
 ```
 
+The same answer is a command, for anyone holding nothing but a binary:
+
+```
+$ einv artefacts -cius xrechnung
+engine	0.2.8
+rule_set	CII	EN 16931	1.3.17	2026-10-09
+rule_set	UBL	EN 16931	1.3.17	2026-10-09
+cius	xrechnung	2.6.0, for XRechnung 3.0.2
+```
+
+`-json` gives the machine-readable form, and the GitHub Action writes the same
+line into its job summary, so a red build says which artefacts made it red.
+
 Those numbers are not remembered from a release note. The Commission stamps a
 version and a last-update date into every Schematron it publishes, and the
 library reads the stamp out of the embedded file at run time, beside
