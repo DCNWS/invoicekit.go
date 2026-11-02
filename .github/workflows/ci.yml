@@ -48,9 +48,45 @@ jobs:
           files: testdata/samples/*.xml
           cius: xrechnung
           fail-on: never
+          version: v0.2.5
       - name: and reports what it found
         run: |
-          echo "documents=${{ steps.selftest.outputs.files }}"
+          # The counts are an assertion, not a log line. They hold for the
+          # pinned release the step below downloads — the action can only take a
+          # binary from a published release, so the self-test is a test of the
+          # released engine, and bumping the pin is the decision that moves them.
+          # (This commit's own engine is covered by go test above.)
+          got="files=${{ steps.selftest.outputs.files }} fatal=${{ steps.selftest.outputs.fatal }} warn=${{ steps.selftest.outputs.warn }}"
+          want="files=3 fatal=7 warn=6"
+          test "$got" = "$want" || { echo "::error::the action reported [$got], expected [$want]"; exit 1; }
+          echo "$got"
+      # A gate that only ever reports is not a gate. Both directions are
+      # checked here, against the same documents, because the failure path is
+      # the one a user actually depends on and the one easiest to break.
+      - name: the gate passes when nothing fatal is in scope
+        uses: ./
+        with:
+          # cii-xrechnung.xml carries warnings and no fatal findings, which is
+          # exactly the case fail-on: fatal is meant to let through.
+          files: testdata/samples/cii-xrechnung.xml
+          cius: xrechnung
+          fail-on: fatal
+          version: v0.2.5
+      - name: the gate fails when a fatal finding is in scope
+        id: gatefail
+        uses: ./
+        continue-on-error: true
+        with:
+          files: testdata/samples/ubl-min.xml
+          cius: xrechnung
+          fail-on: fatal
+          version: v0.2.5
+      - name: and says so in the right direction
+        run: |
+          test "${{ steps.gatefail.outcome }}" = failure || {
+            echo "::error::fail-on: fatal let a document with 6 fatal findings through"
+            exit 1
+          }
       - name: webassembly build
         run: GOOS=js GOARCH=wasm go build -o /tmp/einv.wasm ./cmd/einv-wasm
 
