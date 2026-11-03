@@ -857,12 +857,13 @@ func skip(dec *xml.Decoder) error {
 }
 
 // Compile turns every context, test, let and function body into an XPath
-// expression. Unsupported constructs are collected rather than fatal: they are
-// listed by CompileErrors and the affected rule is reported at validation time
-// as a schema error instead of silently passing.
+// expression. Expressions the XPath engine cannot parse are collected rather
+// than fatal: they are listed by CompileErrors, and Compile keeps reporting
+// them, so a schema that failed to compile can never be scored. Expressions
+// that parse but fail at runtime are reported per document by Validate.
 func (s *Schema) Compile() error {
 	if s.compiled {
-		return nil
+		return s.compileProblem()
 	}
 	s.errs = nil
 	c := xp.NewCompiler(s.NS)
@@ -955,12 +956,18 @@ func (s *Schema) Compile() error {
 		}
 	}
 	s.compiled = true
-	if len(s.errs) > 0 {
-		_, a := s.Stats()
-		return fmt.Errorf("%d/%d Schematron expressions do not compile (first: %s)",
-			len(s.errs), a+len(s.Patterns), s.errs[0])
+	return s.compileProblem()
+}
+
+// compileProblem summarises the collected expression errors, naming how many
+// of the schema's expressions are affected and what the first one was.
+func (s *Schema) compileProblem() error {
+	if len(s.errs) == 0 {
+		return nil
 	}
-	return nil
+	_, a := s.Stats()
+	return fmt.Errorf("%d/%d Schematron expressions do not compile (first: %s)",
+		len(s.errs), a+len(s.Patterns), s.errs[0])
 }
 
 // kind names an assertion element for diagnostics.
@@ -1038,10 +1045,11 @@ func anchorContext(ctx string) string {
 // are named) against doc. Evaluation errors become findings so that a single
 // unsupported construct never silently hides a broken document.
 func (s *Schema) Validate(d *xp.Doc, phases []string) ([]Finding, error) {
-	if !s.compiled {
-		if err := s.Compile(); err != nil {
-			return nil, err
-		}
+	// A verdict from a schema that does not compile is not a verdict: it looks
+	// like a clean document. Compile is a no-op once the schema is good, so this
+	// also catches a caller that ignored the error of an earlier attempt.
+	if err := s.Compile(); err != nil {
+		return nil, err
 	}
 	active, err := s.activePatterns(phases)
 	if err != nil {
