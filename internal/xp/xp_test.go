@@ -300,7 +300,13 @@ type boolCase struct {
 // individual language features share this harness.
 func runBoolCases(t *testing.T, ns map[string]string, cases []boolCase) {
 	t.Helper()
-	d := doc(t)
+	runBoolOn(t, doc(t), ns, cases)
+}
+
+// runBoolOn is runBoolCases against a document the caller supplies, for the
+// tests that need a tree the shared one does not carry.
+func runBoolOn(t *testing.T, d *Doc, ns map[string]string, cases []boolCase) {
+	t.Helper()
 	for _, c := range cases {
 		e, err := Compile(c.src, ns)
 		if err != nil {
