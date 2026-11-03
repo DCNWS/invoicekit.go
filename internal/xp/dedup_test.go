@@ -62,24 +62,63 @@ func TestDedupSortLeavesOrderedInputAlone(t *testing.T) {
 	}
 }
 
-// Two text nodes for the same element are different nodes: deduplication works
-// on identity, not on document-order position, which is coarse for the virtual
-// text and attribute nodes.
-func TestDedupSortKeepsDistinctTextNodes(t *testing.T) {
+// A text() or @attr step builds a fresh virtual node every time it runs, so
+// two of them can stand for the same node in the tree. The tree holds one text
+// node per element, so two text nodes that share a parent are that node and
+// deduplication collapses them, even though their sort position alone says
+// nothing either way. Text of two different elements stays distinct.
+func TestDedupSortCollapsesTheSameVirtualNodes(t *testing.T) {
 	_, n := dedupDoc(t)
 	a := &textNode{parent: n["A1"], data: "12"}
 	b := &textNode{parent: n["A1"], data: "12"}
-	got := dedupSort([]any{a, b})
-	if len(got) != 2 {
-		t.Fatalf("got %d text nodes, want 2", len(got))
+	if x1, x2 := ordOf(a); x1 != n["A1"].Ord || x2 != 1 {
+		t.Fatalf("text node sort position: got (%d,%d), want (%d,1)", x1, x2, n["A1"].Ord)
 	}
-	if got[0] != any(a) || got[1] != any(b) {
-		t.Fatalf("text nodes reordered or lost: %v", got)
+	if got := dedupSort([]any{b, a}); len(got) != 1 {
+		t.Fatalf("got %d text nodes, want 1: %v", len(got), got)
 	}
-	x1, x2 := ordOf(a)
-	y1, y2 := ordOf(b)
-	if x1 != y1 || x2 != y2 {
-		t.Fatalf("the two text nodes should share a document-order position, so identity is the only test")
+	v := &textNode{parent: n["V1"], data: "1"}
+	got := dedupSort([]any{a, v, a})
+	if len(got) != 2 || got[0] != any(a) || got[1] != any(v) {
+		t.Fatalf("text nodes of different elements lost or reordered: %v", got)
+	}
+	c := &attrNode{parent: n["A1"], idx: 0, a: n["A1"].Attrs[0]}
+	d := &attrNode{parent: n["A1"], idx: 0, a: n["A1"].Attrs[0]}
+	if got := dedupSort([]any{c, d}); len(got) != 1 {
+		t.Fatalf("got %d attribute nodes, want 1: %v", len(got), got)
+	}
+}
+
+// The same identity has to hold through evaluation, or a union of two steps
+// that reach the same attribute counts it twice and "is" of a step with itself
+// is false.
+func TestVirtualNodeIdentityThroughEvaluation(t *testing.T) {
+	d := doc(t)
+	cases := []struct {
+		src  string
+		want bool
+	}{
+		{`count(//ram:B/@id | //ram:B/@id) = 1`, true},
+		{`//ram:B/@id is //ram:B/@id`, true},
+		{`//ram:B/@* is //ram:B/@id`, true},
+		{`count(//ram:B/@* | //ram:B/@*) = 1`, true},
+		{`count(//udt:V/text() | //udt:V/text()) = 4`, true},
+		{`//ram:A[1]/udt:V[1]/text() is //ram:A[1]/udt:V[1]/text()`, true},
+		{`//ram:A[1]/udt:V[1]/text() is //ram:A[2]/udt:V[1]/text()`, false},
+		{`//ram:B/@id is //ram:B/@name`, false},
+	}
+	for _, c := range cases {
+		e, err := Compile(c.src, tns)
+		if err != nil {
+			t.Fatalf("compile %s: %v", c.src, err)
+		}
+		got, err := e.EvalBool(d, d.Root)
+		if err != nil {
+			t.Fatalf("eval %s: %v", c.src, err)
+		}
+		if got != c.want {
+			t.Errorf("%s: got %v, want %v", c.src, got, c.want)
+		}
 	}
 }
 
