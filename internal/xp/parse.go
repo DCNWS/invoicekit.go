@@ -325,6 +325,13 @@ func (p *parser) parseUnary() (expr, error) {
 	if err != nil {
 		return nil, err
 	}
+	if x == nil {
+		// Every expression funnels through here, so this is the one place that
+		// can tell "the operand is missing" from "the operand has ended": a bare
+		// "1 +", an empty predicate or a call argument that is not there at all
+		// are mistakes, not the empty sequence.
+		return nil, p.fail("expected operand")
+	}
 	if p.isOp("cast") || p.isOp("castable") {
 		castable := p.isOp("castable")
 		p.next()
@@ -379,8 +386,17 @@ func (p *parser) parsePath() (expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	if abs && first == nil {
-		return nil, p.fail("expected step after '/'")
+	if first == nil {
+		if !abs {
+			return nil, nil // the next token does not open an expression
+		}
+		// A bare "/" is the root node and a bare "//" is every descendant of
+		// it. Both are legal XPath and both appear in hand-written Schematron.
+		axis := "self"
+		if lead {
+			axis = "descendant-or-self"
+		}
+		return &pathExpr{abs: true, first: &nodeTest{axis: axis, kind: "node", wild: true}}, nil
 	}
 	px := &pathExpr{abs: abs, first: first}
 	if lead {
@@ -551,6 +567,9 @@ func (p *parser) parseOpPrimary(op string) (expr, error) {
 		e, err := p.parsePathElt()
 		if err != nil {
 			return nil, err
+		}
+		if e == nil {
+			return nil, p.fail("expected operand after '-'")
 		}
 		return &unExpr{op: "-", x: e}, nil
 	}
