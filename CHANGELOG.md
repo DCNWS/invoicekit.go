@@ -11,6 +11,34 @@ XRechnung CIUS 2.6.0 (XRechnung 3.0.2) and Peppol BIS Billing 3.0 release
 3.0.21. No release so far has moved a rule set, so no release so far has
 changed what is valid. `einvoice.Artefacts()` reports these at runtime.
 
+## v0.2.11 — 2026-11-03
+
+- **Fixed:** a fiscal number is no longer written as a VAT number. UBL
+  names the register on the tax scheme element around a registration
+  number: `VAT` holds BT-31 and BT-48, `TAX` holds BT-32, which CII
+  labels `FC`. v0.2.10 put every number under `VAT` and labelled the
+  identifier with `@schemeID` instead, so a German invoice's
+  Steuernummer crossed into UBL as a VAT number — and UBL's rules read
+  that scheme, not the label: BR-CO-09 then wants an ISO country prefix
+  in the number, BR-O-02 and BR-O-04 reject the invoice outright
+  whenever a line is not subject to VAT, and UBL-CR-652 warns away the
+  label it carried. A VAT number and a fiscal number now sit side by
+  side (UBL-SR-42 gives a party two tax scheme elements); a third is
+  still reported rather than chosen between, and a reader takes the
+  basis back from the scheme — `TAX` reads as `FC` — so both directions
+  round-trip.
+- **Fixed:** a VAT breakdown states its rate (BT-119) under category O
+  as well. BR-48 excuses the rate only for a document with no VAT at
+  all, and XRechnung asks for it in every category (BR-DE-14), so
+  leaving it out turned a valid CII XRechnung into an invalid UBL one.
+  The reason once given for skipping it was a misreading of UBL-CR-499,
+  which warns away a percent written on the subtotal itself, not one in
+  the category beside it.
+- **Added:** `TestConversionIntroducesNoNewBreach` converts a real CII
+  XRechnung to UBL and a real Peppol UBL invoice to CII and compares the
+  finding sets. A conversion may neither introduce a finding nor lose
+  one: either way the verdict moves somewhere the sender never put it.
+
 ## v0.2.10 — 2026-11-03
 
 - **Fixed:** a tax registration kept the register it came from. CII says
