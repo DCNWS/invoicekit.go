@@ -166,13 +166,24 @@ func (p *parser) fail(f string, a ...any) error {
 func (p *parser) resolve(n string) (string, string, error) {
 	pre, local, found := strings.Cut(n, ":")
 	if found {
-		uri, ok := p.ns[pre]
-		if !ok {
-			return "", "", fmt.Errorf("xp: undefined prefix %q", pre)
+		uri, err := p.resolvePrefix(pre)
+		if err != nil {
+			return "", "", err
 		}
 		return local, uri, nil
 	}
 	return n, "", nil
+}
+
+// resolvePrefix maps the prefix of a name or of a "prefix:*" wildcard to its
+// URI. An undeclared prefix is an error rather than an empty namespace: a rule
+// written against one namespace must not silently match another's nodes.
+func (p *parser) resolvePrefix(pre string) (string, error) {
+	uri, ok := p.ns[pre]
+	if !ok {
+		return "", fmt.Errorf("xp: undefined prefix %q", pre)
+	}
+	return uri, nil
 }
 
 func (p *parser) parseExpr() (expr, error) { return p.parseOr() }
@@ -481,9 +492,14 @@ func (p *parser) parsePrimary() (expr, error) {
 // (node(), text(), attribute()), an explicit axis (ancestor::), a function call
 // or an ordinary element name.
 func (p *parser) parseNameStep(name string) (expr, error) {
-	if name == "*" {
+	if name == "*" || strings.HasSuffix(name, ":*") {
 		p.next()
-		return &nodeTest{axis: "child", wild: true, name: "*"}, nil
+		nt, err := p.wildTest(name)
+		if err != nil {
+			return nil, err
+		}
+		nt.axis = "child"
+		return nt, nil
 	}
 	p.next()
 	if p.isKindTest(name) {
@@ -810,19 +826,25 @@ func (p *parser) parseNameOrWild() (*nodeTest, error) {
 		return p.parseKindTest(tk.s)
 	}
 	p.next()
-	if tk.s == "*" {
-		return &nodeTest{wild: true, name: "*"}, nil
-	}
-	if strings.HasSuffix(tk.s, ":*") {
-		_, ns, err := p.resolve(tk.s[:len(tk.s)-2])
-		if err != nil {
-			return nil, err
-		}
-		return &nodeTest{wild: true, name: "*", ns: ns}, nil
+	if tk.s == "*" || strings.HasSuffix(tk.s, ":*") {
+		return p.wildTest(tk.s)
 	}
 	local, ns, err := p.resolve(tk.s)
 	if err != nil {
 		return nil, err
 	}
 	return &nodeTest{name: local, ns: ns}, nil
+}
+
+// wildTest builds the wildcard node test for "*" or "prefix:*": the star has no
+// local name, so only the namespace (empty for an unprefixed star) constrains it.
+func (p *parser) wildTest(name string) (*nodeTest, error) {
+	if !strings.HasSuffix(name, ":*") {
+		return &nodeTest{wild: true, name: "*"}, nil
+	}
+	ns, err := p.resolvePrefix(name[:len(name)-2])
+	if err != nil {
+		return nil, err
+	}
+	return &nodeTest{wild: true, name: "*", ns: ns}, nil
 }

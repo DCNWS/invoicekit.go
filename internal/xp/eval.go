@@ -363,6 +363,10 @@ func boolean(v any) bool {
 		return t != ""
 	case *big.Rat:
 		return t.Sign() != 0
+	case float64:
+		// The only float64 this engine produces is NaN, whose effective
+		// boolean value is false under XPath 2.0.
+		return !math.IsNaN(t)
 	case *Node, *attrNode, *textNode:
 		return true
 	case []any:
@@ -1211,7 +1215,8 @@ func stepParent(nt *nodeTest, n any, out []any) []any {
 	if el == nil || el.Parent == nil || el.Parent.IsDoc {
 		return out
 	}
-	if nt.wild || nt.name == "" || matchTest(nt, el.Parent) {
+	// A bare ".." carries no test at all; anything else has to match.
+	if (nt.kind == "" && nt.name == "") || matchTest(nt, el.Parent) {
 		out = append(out, el.Parent)
 	}
 	return out
@@ -1336,7 +1341,15 @@ func elementOf(v any) *Node {
 	return nil
 }
 
+// matchTest reports whether an element satisfies a node test. A kind test is
+// flagged wild because it constrains the kind rather than the name, so the kind
+// is checked first: text(), comment() and the rest never match an element.
 func matchTest(nt *nodeTest, n *Node) bool {
+	switch nt.kind {
+	case "", "node", "element":
+	default:
+		return false
+	}
 	if nt.wild {
 		if nt.ns == "" {
 			return true
@@ -1346,7 +1359,14 @@ func matchTest(nt *nodeTest, n *Node) bool {
 	return n.Name == nt.name && n.NS == nt.ns
 }
 
+// matchAttr reports whether an attribute satisfies a node test, honouring the
+// kind test the same way matchTest does.
 func matchAttr(nt *nodeTest, a Attr) bool {
+	switch nt.kind {
+	case "", "node", "attribute":
+	default:
+		return false
+	}
 	if nt.wild {
 		if nt.ns == "" {
 			return true
