@@ -11,6 +11,43 @@ XRechnung CIUS 2.6.0 (XRechnung 3.0.2) and Peppol BIS Billing 3.0 release
 3.0.21. No release so far has moved a rule set, so no release so far has
 changed what is valid. `einvoice.Artefacts()` reports these at runtime.
 
+## v0.2.10 — 2026-11-03
+
+- **Fixed:** a tax registration kept the register it came from. CII says
+  which one a number is: `VA` is the VAT number and `FC` the fiscal
+  number a German profile writes where it has no VAT number. The reader
+  dropped that label and called every number a VAT number, so the
+  writer filed anything else under `cac:PartyLegalEntity/cbc:CompanyID`
+  — the company register, BT-30, which is not a tax register at all.
+  The basis now rides on `TaxID.Scheme`, is written as the identifier's
+  `@schemeID` inside `cac:PartyTaxScheme`, and is read back from there.
+  UBL has no term for a non-VAT tax registration, so such a number goes
+  where the VAT number goes and the document is reported under the rules
+  that follow from it (BR-O-02, BR-O-04, BR-CO-09) instead of being made
+  to look valid by losing the number.
+- **Fixed:** the legal registration identifier (BT-30, BT-47) keeps its
+  `@schemeID` — an ICD code, `0189` being the German commercial register
+  — through both readers and both writers. It used to survive as a bare
+  string, which says nothing about which register issued it.
+- **Fixed:** an allowance or charge keeps the base its percentage was
+  taken on (BT-93, BT-100, BT-137, BT-142): `AllowanceCharge` has a
+  `Basis` field. A reader used to throw the base away, and keep either
+  the stated amount or the percentage, so a document whose amount
+  disagreed with its percentage came back with the amount replaced by
+  the engine's own arithmetic. Every stated figure is kept, the
+  disagreement is still reported, and a writer measures the percentage
+  against the document's base, falling back to the line net or the
+  invoice total only where the document stated no base. A percentage
+  taken on a different base is different money.
+- **Added:** a finding when a UBL bank account would have to hold two
+  identifiers, an IBAN and a private number: EN 16931 gives an account
+  one, so the second is dropped, and a drop nobody is told about is a
+  conversion that quietly loses the address money is due at.
+
+No rule set moved, and the verdicts on the three sample documents are
+unchanged — 7 fatal and 6 warnings under XRechnung — so the Action's pin
+can follow this release without moving the counts it asserts.
+
 ## v0.2.9 — 2026-11-02
 
 - **Fixed:** the GitHub Action cited the wrong rule book. It asked the binary
