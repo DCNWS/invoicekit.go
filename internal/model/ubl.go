@@ -383,16 +383,18 @@ func ublParty(x *xw, p Party, tradingName string, payee bool, seen map[string]bo
 	if !payee {
 		ublAddress(x, "cac:PostalAddress", p.Address, p.Subdiv)
 	}
-	vatID, otherID := ublTaxRegistrations(x, p)
-	if vatID != "" {
+	for _, t := range ublTaxRegistrations(x, p) {
 		// UBL-SR-53: the tax registration is only accepted together with the
 		// tax scheme, and the scheme may carry nothing but its identifier.
+		// That scheme says the tax is VAT, so a VAT number needs no label; a
+		// number from another register carries its basis on the identifier,
+		// the way UBL labels an identifier anywhere else.
 		x.start("cac:PartyTaxScheme")
-		x.elem("cbc:CompanyID", vatID)
+		x.elem("cbc:CompanyID", t.Value, attr{"schemeID", ublRegBasis(t.Scheme)})
 		x.ublTaxScheme()
 		x.end("cac:PartyTaxScheme")
 	}
-	ublLegalEntity(x, p, otherID, payee)
+	ublLegalEntity(x, p, payee)
 	ublContact(x, p, payee)
 }
 
@@ -410,37 +412,57 @@ func ublPartyName(x *xw, p Party, tradingName string, payee bool, seen map[strin
 	}
 }
 
-// ublTaxRegistrations splits a party's tax registrations into the VAT number
-// and a non-VAT number, each of which UBL gives exactly one home. A second
-// number of either kind is reported rather than dropped.
-func ublTaxRegistrations(x *xw, p Party) (vatID, otherID string) {
+// ublTaxRegistrations returns the registration numbers a party has, which UBL
+// writes into cac:PartyTaxScheme: BT-31 for the seller, BT-48 for the buyer.
+// CII says which register a number comes from (VA is the VAT number, FC the
+// fiscal number a German profile uses in its place) and its rules key on that
+// label, while UBL has one tax registration element whose number IS the VAT
+// identifier - BR-CO-09 wants an ISO country prefix in it and BR-O-02 and
+// BR-O-04 forbid it outright when anything is category O. The number therefore
+// goes into that one element whatever its basis is, keeping the basis as the
+// identifier's label so the distinction survives being read back, and the
+// validator reports the collision rather than the writer hiding the number.
+// EN 16931 gives a party one tax registration term, so a second number has no
+// term at all: the VAT registration wins and the rest are reported.
+func ublTaxRegistrations(x *xw, p Party) []TaxID {
+	vat, rest := []TaxID{}, []TaxID{}
 	for _, t := range p.TaxIDs {
 		if t.Value == "" {
 			continue
 		}
-		if t.Scheme == "" || t.Scheme == "VAT" || t.Scheme == "VA" {
-			if vatID != "" {
-				x.badf("only one VAT registration fits a UBL party: %q", t.Value)
-				continue
-			}
-			vatID = t.Value
+		if t.Scheme == "" || t.Scheme == "VA" || t.Scheme == "VAT" {
+			vat = append(vat, t)
 			continue
 		}
-		if otherID != "" {
-			x.badf("only one non-VAT registration fits a UBL party: %q", t.Value)
-			continue
-		}
-		otherID = t.Value
+		rest = append(rest, t)
 	}
-	return vatID, otherID
+	ids := append(vat, rest...)
+	if len(ids) > 1 {
+		x.badf("a UBL party has room for one tax registration, not %q", ids[1:])
+		ids = ids[:1]
+	}
+	return ids
 }
 
-// ublLegalEntity writes cac:PartyLegalEntity. A payee has no registration
-// name, so its element exists only to carry the company identifier, which UBL
-// takes from the party's non-VAT tax registration when the model has no legal
-// registration identifier (BT-30).
-func ublLegalEntity(x *xw, p Party, otherID string, payee bool) {
-	reg := otherID
+// ublRegBasis is the basis to label a tax registration number with. A VAT
+// number goes unlabelled, because the tax scheme element around it already
+// names the tax; anything else says which register issued it.
+func ublRegBasis(scheme string) string {
+	switch scheme {
+	case "", "VA", "VAT":
+		return ""
+	default:
+		return scheme
+	}
+}
+
+// ublLegalEntity writes cac:PartyLegalEntity, whose company identifier is the
+// legal registration identifier (BT-30 for the seller, BT-47 for the buyer). A
+// tax registration number never belongs here: it describes a tax register, not
+// a company register, and UBL gives it its own element. A payee has no
+// registration name, so its element exists only to carry the identifier.
+func ublLegalEntity(x *xw, p Party, payee bool) {
+	reg := ""
 	if len(p.RegIDs) > 0 {
 		reg = p.RegIDs[0]
 	}
@@ -457,7 +479,7 @@ func ublLegalEntity(x *xw, p Party, otherID string, payee bool) {
 	if !payee {
 		x.mand("cbc:RegistrationName", p.Name)
 	}
-	x.opt("cbc:CompanyID", reg)
+	x.opt("cbc:CompanyID", reg, attr{"schemeID", p.RegScheme})
 	x.end("cac:PartyLegalEntity")
 }
 
@@ -636,6 +658,9 @@ func ublAccount(x *xw, a FinancialAcct, name bool) {
 	if id == "" {
 		id = a.OtherID
 	}
+	if a.IBAN != "" && a.OtherID != "" {
+		x.badf("a UBL bank account holds one identifier, so the private number %q is dropped", a.OtherID)
+	}
 	if id == "" {
 		x.bad("a bank account has no identifier")
 	} else {
@@ -669,8 +694,8 @@ func (x *xw) acBody(a AllowanceCharge, charge bool, basis float64, cur string, c
 	// The schema puts the amount before the amount it was taken from, so a
 	// percentage and its basis cannot be written as a pair of neighbours.
 	x.amt("cbc:Amount", cur, acAmount(a, basis))
-	if a.Percent != nil {
-		x.amt("cbc:BaseAmount", cur, basis)
+	if a.Percent != nil || a.Basis != nil {
+		x.amt("cbc:BaseAmount", cur, acBasisOf(a, basis))
 	}
 	if !tax {
 		return

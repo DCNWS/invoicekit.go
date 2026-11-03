@@ -563,9 +563,15 @@ func ciiVAT(x *xw, v VATRate) {
 func ciiAC(x *xw, a AllowanceCharge, charge bool, basis float64, tax bool) {
 	x.start("ram:SpecifiedTradeAllowanceCharge")
 	x.indicator(charge)
-	if a.Amount == 0 && a.Percent != nil {
+	// A percentage is written with the base it was taken on, whether or not
+	// the model also states the resolved amount: BT-94, BT-101, BT-93 and
+	// BT-100 are in the document to be read, and dropping them would make the
+	// next reader measure the percentage against a base it guessed.
+	if a.Percent != nil {
 		x.elem("ram:CalculationPercent", Rate(*a.Percent))
-		x.money("ram:BasisAmount", basis)
+		x.money("ram:BasisAmount", acBasisOf(a, basis))
+	} else if a.Basis != nil {
+		x.money("ram:BasisAmount", *a.Basis)
 	}
 	x.money("ram:ActualAmount", acAmount(a, basis))
 	x.opt("ram:ReasonCode", a.ReasonCode)
@@ -630,7 +636,7 @@ func ciiParty(x *xw, name string, p Party, trading string) {
 	if len(p.RegIDs) > 0 || trading != "" {
 		x.start("ram:SpecifiedLegalOrganization")
 		if len(p.RegIDs) > 0 {
-			x.mand("ram:ID", p.RegIDs[0])
+			x.mand("ram:ID", p.RegIDs[0], attr{"schemeID", p.RegScheme})
 			for _, extra := range p.RegIDs[1:] {
 				x.badf("CII has room for one legal registration identifier, not %q", extra)
 			}

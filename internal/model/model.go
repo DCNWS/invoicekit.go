@@ -94,15 +94,21 @@ type Party struct {
 	Name string `json:"name"` // BT-27 / BT-44
 	// Subdiv is the country subdivision, a second home for Address.Zone
 	// (BT-39 seller, BT-54 buyer). Zone wins when both are set.
-	Subdiv     string   `json:"subdivision,omitempty"`
-	Address    Address  `json:"address"`
-	Contact    *Contact `json:"contact,omitempty"`
-	TaxIDs     []TaxID  `json:"taxIds,omitempty"`   // BT-31, BT-32, BT-48
-	RegIDs     []string `json:"regIds,omitempty"`   // BT-30, BT-47
-	EAddress   string   `json:"eaddress,omitempty"` // BT-34, BT-49
-	EAScheme   string   `json:"easScheme,omitempty"`
-	Identifier string   `json:"identifier,omitempty"` // BT-29 seller, BT-46 buyer
-	IDScheme   string   `json:"idScheme,omitempty"`
+	Subdiv  string   `json:"subdivision,omitempty"`
+	Address Address  `json:"address"`
+	Contact *Contact `json:"contact,omitempty"`
+	TaxIDs  []TaxID  `json:"taxIds,omitempty"` // BT-31, BT-32, BT-48
+	RegIDs  []string `json:"regIds,omitempty"` // BT-30, BT-47
+	// RegScheme names the register the legal registration identifiers come
+	// from, as an ICD code: 0189 is the German commercial register, 0198 its
+	// handroll number. Both syntaxes carry it on the identifier itself, CII
+	// under SpecifiedLegalOrganization/ID/@schemeID and UBL under
+	// PartyLegalEntity/cbc:CompanyID/@schemeID.
+	RegScheme  string `json:"regScheme,omitempty"`
+	EAddress   string `json:"eaddress,omitempty"` // BT-34, BT-49
+	EAScheme   string `json:"easScheme,omitempty"`
+	Identifier string `json:"identifier,omitempty"` // BT-29 seller, BT-46 buyer
+	IDScheme   string `json:"idScheme,omitempty"`
 }
 
 // EASCode is the electronic address scheme to write with the electronic
@@ -146,8 +152,12 @@ type Contact struct {
 
 // TaxID is a VAT or other tax identifier with its scheme.
 type TaxID struct {
-	Value  string `json:"value"`
-	Scheme string `json:"scheme,omitempty"` // e.g. VAT for a VAT number
+	Value string `json:"value"`
+	// Scheme is the basis the number was issued against: VAT for a VAT
+	// number (CII writes that basis as VA), FC for a fiscal number, which a
+	// German profile uses where it has no VAT number. Empty means the source
+	// document did not say.
+	Scheme string `json:"scheme,omitempty"`
 }
 
 // FinancialAcct is a payment account: the payee's credit transfer account
@@ -238,12 +248,21 @@ type Period struct {
 // allowances and BG-21 charges on the invoice, BG-27 and BG-28 on a line. At
 // document level the amount is BT-92 for an allowance and BT-99 for a charge,
 // the percentage BT-94 and BT-101, the reason BT-97/BT-98 and BT-104/BT-105.
-// At line level they run BT-136 to BT-140 and BT-141 to BT-145. The base
-// amount (BT-93, BT-100, BT-137, BT-142) is no field of the model: it is
-// derived from the line net amount or the invoice total.
+// At line level they run BT-136 to BT-140 and BT-141 to BT-145.
 type AllowanceCharge struct {
-	Amount      float64  `json:"amount"`
-	Percent     *float64 `json:"percent,omitempty"`
+	// Amount is the amount taken off or added. Left at zero, the percentage
+	// says what it is: the writers resolve it and write the figure down,
+	// because both syntaxes require the amount.
+	Amount float64 `json:"amount"`
+	// Percent is BT-94, BT-101, BT-139 or BT-144.
+	Percent *float64 `json:"percent,omitempty"`
+	// Basis is the amount the percentage was taken on: BT-93, BT-100, BT-137
+	// or BT-142. A document states it, and a conversion has to carry it, since
+	// a percentage measured against a different base is different money. A
+	// model built by hand usually leaves it out; the writers then measure the
+	// percentage against the line net amount or the invoice total, which is
+	// what the standard says a document level percentage means.
+	Basis       *float64 `json:"basis,omitempty"`
 	Reason      string   `json:"reason,omitempty"`     // BT-97 / BT-104 free text
 	ReasonCode  string   `json:"reasonCode,omitempty"` // BT-98 / BT-105 UNTDID 5189
 	TaxCategory string   `json:"taxCategory,omitempty"`
@@ -643,13 +662,32 @@ func allowanceAmount(a AllowanceCharge, base *big.Rat) *big.Rat {
 	if a.Amount != 0 {
 		return ratOf(a.Amount)
 	}
-	if a.Percent != nil && base != nil {
-		r := new(big.Rat).Set(base)
+	if b := acBasis(a, base); b != nil && a.Percent != nil {
+		r := new(big.Rat).Set(b)
 		r.Mul(r, new(big.Rat).SetFloat64(*a.Percent))
 		r.Quo(r, big.NewRat(100, 1))
 		return round2(r)
 	}
 	return new(big.Rat)
+}
+
+// acBasis is the amount a percentage is measured against: the base the model
+// states (BT-93, BT-100, BT-137, BT-142) when it states one, and otherwise the
+// base the position implies, which the caller passes in.
+func acBasis(a AllowanceCharge, base *big.Rat) *big.Rat {
+	if a.Basis != nil {
+		return ratOf(*a.Basis)
+	}
+	return base
+}
+
+// acBasisOf is the same choice for a writer, which holds the implied base as a
+// plain figure: the base amount to write beside the percentage.
+func acBasisOf(a AllowanceCharge, derived float64) float64 {
+	if a.Basis != nil {
+		return *a.Basis
+	}
+	return derived
 }
 
 // priceParts resolves the price of a line into the three figures the syntaxes

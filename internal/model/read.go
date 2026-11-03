@@ -435,26 +435,24 @@ func finishPrice(ln *Line, pr priceRead) {
 }
 
 // readAC fills the halves an allowance or charge shares between the syntaxes.
-// The stated amount is recorded only when the document states no percentage:
-// the model treats an empty amount as "derive it from the percentage", so
-// writing the document's own figure back would put the model at odds with its
-// own arithmetic. The mismatch is reported instead.
+// Every figure the document states is kept: the amount (BT-92 or BT-99), the
+// percentage (BT-94 or BT-101) and the base the percentage was taken on
+// (BT-93 or BT-100). A document that states a percentage and an amount that
+// disagree is the document's problem, not the reader's: the figures are kept as
+// stated and the disagreement is reported, so a conversion says the same money
+// back and the reader is not left guessing which of the two the writer used.
 func (r *reader) readAC(n *vnode, ac *AllowanceCharge, percentName, amountName, basisName string) {
+	pct := r.numOf(n, percentName)
+	amt := r.numOf(n, amountName)
 	if b := r.numOf(n, basisName); b != nil {
-		amt := r.numOf(n, amountName)
-		ac.Percent = r.numOf(n, percentName)
-		if ac.Percent != nil && amt != nil {
-			r.checkAC(n, *ac.Percent, *b, *amt)
-		} else if amt != nil {
-			ac.Amount = *amt
+		ac.Basis = b
+		if pct != nil && amt != nil {
+			r.checkAC(n, *pct, *b, *amt)
 		}
-		return
 	}
-	if amt := r.numOf(n, amountName); amt != nil {
+	ac.Percent = pct
+	if amt != nil {
 		ac.Amount = *amt
-	}
-	if p := r.numOf(n, percentName); p != nil {
-		ac.Percent = p
 	}
 }
 
@@ -954,8 +952,9 @@ func (r *reader) ciiParty(n *vnode) (Party, string) {
 	r.into(n, "ram:Name", &p.Name)
 	if lo := r.find(n, "ram:SpecifiedLegalOrganization"); lo != nil {
 		r.take(lo)
-		if reg := r.str(lo, "ram:ID"); reg != "" {
-			p.RegIDs = []string{reg}
+		if id := r.takeChild(lo, "ram:ID"); id != nil && text(id) != "" {
+			p.RegIDs = []string{text(id)}
+			p.RegScheme = id.attr["schemeID"]
 		}
 		trading = r.str(lo, "ram:TradingBusinessName")
 	}
@@ -1155,11 +1154,20 @@ func (r *reader) ublParty(n *vnode, payee bool) (Party, string) {
 		},
 		"cac:PostalAddress": func(c *vnode) { p.Address = r.ublAddress(c) },
 		"cac:PartyTaxScheme": func(c *vnode) {
-			if v := r.str(c, "cbc:CompanyID"); v != "" {
-				// UBL holds a VAT registration in a tax scheme element, and
-				// the model names the scheme VAT.
-				p.TaxIDs = append(p.TaxIDs, TaxID{Value: v, Scheme: "VAT"})
+			// A party's tax registration lives in a tax scheme element whose
+			// scheme says the tax is VAT, so an unlabelled number is a VAT
+			// number; one from another register, a German fiscal number (FC)
+			// being the usual, carries its basis on the identifier.
+			id := r.takeChild(c, "cbc:CompanyID")
+			if id == nil || text(id) == "" {
+				r.ublScheme(r.find(c, "cac:TaxScheme"))
+				return
 			}
+			scheme := id.attr["schemeID"]
+			if scheme == "" || scheme == "VA" {
+				scheme = "VAT"
+			}
+			p.TaxIDs = append(p.TaxIDs, TaxID{Value: text(id), Scheme: scheme})
 			r.ublScheme(r.find(c, "cac:TaxScheme"))
 		},
 		"cac:PartyLegalEntity": func(c *vnode) {
@@ -1168,8 +1176,9 @@ func (r *reader) ublParty(n *vnode, payee bool) (Party, string) {
 			if name := r.str(c, "cbc:RegistrationName"); name != "" {
 				p.Name = name
 			}
-			if reg := r.str(c, "cbc:CompanyID"); reg != "" {
-				p.RegIDs = []string{reg}
+			if id := r.takeChild(c, "cbc:CompanyID"); id != nil && text(id) != "" {
+				p.RegIDs = []string{text(id)}
+				p.RegScheme = id.attr["schemeID"]
 			}
 		},
 		"cac:Contact": func(c *vnode) {

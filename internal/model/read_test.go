@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"slices"
 	"strings"
@@ -151,6 +152,17 @@ func expectFor(t *testing.T, inv Invoice, sx Syntax) Invoice {
 	for i := range out.Lines {
 		foldLine(&out.Lines[i])
 	}
+	// A percentage with no amount is written as both, and with no base as both
+	// plus the base its position implies, so a round trip comes back holding
+	// figures the caller did not type. That is the document saying what it
+	// means, not the reader inventing money.
+	docCharge, _ := lineTotalBasis(&out).Float64()
+	docAllow := docCharge
+	if out.Totals.ChargeTotal != nil {
+		docAllow += *out.Totals.ChargeTotal
+	}
+	foldAC(out.Charges, ratOf(docCharge))
+	foldAC(out.Allowances, ratOf(docAllow))
 	for i := range out.Lines {
 		ln := &out.Lines[i]
 		// A line allowance or charge takes the VAT of its line, so neither
@@ -161,6 +173,8 @@ func expectFor(t *testing.T, inv Invoice, sx Syntax) Invoice {
 		for j := range ln.Charges {
 			ln.Charges[j].TaxCategory, ln.Charges[j].TaxRate = "", nil
 		}
+		foldAC(ln.Allowances, lineBase(*ln))
+		foldAC(ln.Charges, lineBase(*ln))
 	}
 	if out.Payment != nil && out.Payment.Code == "" && out.Payment.Name == "" &&
 		out.Payment.RemitInfo == "" && out.Payment.Card == nil && out.Payment.Mandate == nil {
@@ -198,6 +212,13 @@ func expectFor(t *testing.T, inv Invoice, sx Syntax) Invoice {
 			if m := out.Payment.Mandate; m != nil && m.Bank != nil {
 				m.Bank.Name = ""
 			}
+			// UBL gives an account one identifier, and the reader sorts it by
+			// shape, so a redacted or private number comes home as the other
+			// identifier rather than as an IBAN.
+			foldAcct(out.SellerAccount)
+			if out.Payment != nil && out.Payment.Mandate != nil {
+				foldAcct(out.Payment.Mandate.Bank)
+			}
 			if d := out.Delivery; d != nil {
 				d.ShipTrade, d.ShipPlace, d.DepartureDate = "", "", ""
 			}
@@ -221,10 +242,57 @@ func expectFor(t *testing.T, inv Invoice, sx Syntax) Invoice {
 	return out
 }
 
+// foldAC fills in what a writer resolves for a list of allowances or charges:
+// the amount a percentage stands for, and the base it was measured against.
+func foldAC(list []AllowanceCharge, basis *big.Rat) {
+	for i := range list {
+		a := &list[i]
+		if a.Amount == 0 && a.Percent != nil {
+			f, _ := allowanceAmount(*a, basis).Float64()
+			a.Amount = f
+		}
+		if a.Basis == nil && a.Percent != nil {
+			f, _ := basis.Float64()
+			a.Basis = &f
+		}
+		// An exempt allowance or charge carries no rate: both syntaxes write
+		// the category and leave the percent out, so a round trip cannot
+		// carry a zero that Derive put there.
+		if a.TaxCategory == "O" {
+			a.TaxRate = nil
+		}
+	}
+}
+
+// foldAcct applies the single identifier UBL gives a bank account: the writer
+// prefers the IBAN, and the reader sorts whatever it reads by shape.
+func foldAcct(a *FinancialAcct) {
+	if a == nil {
+		return
+	}
+	id := a.IBAN
+	if id == "" {
+		id = a.OtherID
+	}
+	if id == "" {
+		return
+	}
+	if isIBAN(id) {
+		a.IBAN, a.OtherID = id, ""
+		return
+	}
+	a.IBAN, a.OtherID = "", id
+}
+
 // foldParty applies the party fields both syntaxes treat the same way.
 func foldParty(p *Party) {
 	if p.EAddress != "" {
 		p.EAScheme = p.EASCode()
+	} else {
+		// The scheme labels an electronic address, and a document with no
+		// address has nowhere to put a label: the CII sample that redacts the
+		// buyer's address leaves an empty URIID holding one.
+		p.EAScheme = ""
 	}
 	// One element carries the subdivision, and Zone is read back from it.
 	if p.Address.Zone == "" {
@@ -479,8 +547,7 @@ func TestReadThenConvertStaysStable(t *testing.T) {
 	// and the model becomes a UBL document that reads back as the same invoice.
 	first := readFor(t, SyntaxCII, sample(t, "cii-xrechnung.xml")).Invoice
 	second := readFor(t, SyntaxUBL, renderFor(t, SyntaxUBL, first)).Invoice
-	want := copyInvoice(t, second)
-	if d := modelDiff(want, second); d != "" {
+	if d := modelDiff(expectFor(t, first, SyntaxUBL), second); d != "" {
 		t.Errorf("CII to UBL changed the invoice: %s", d)
 	}
 	if second.ID != first.ID || second.Currency != first.Currency {
@@ -488,5 +555,117 @@ func TestReadThenConvertStaysStable(t *testing.T) {
 	}
 	if len(second.Lines) != len(first.Lines) {
 		t.Errorf("%d lines became %d", len(first.Lines), len(second.Lines))
+	}
+}
+
+// TestConversionKeepsTheStatedAmounts is the defect a customer's XRechnung
+// exposed. A charge that states a percentage, the amount it was taken on and
+// the resulting amount has said all three; rewriting the document in the other
+// syntax has to say them too. Deriving the amount from the percentage and a
+// base the document never named invents money, and it breaks BR-CO-12, because
+// the charge total the document states no longer matches the charges written.
+func TestConversionKeepsTheStatedAmounts(t *testing.T) {
+	first := readFor(t, SyntaxCII, sample(t, "cii-xrechnung.xml")).Invoice
+	second := readFor(t, SyntaxUBL, renderFor(t, SyntaxUBL, first)).Invoice
+
+	// BT-99 with BT-100: the amounts the document states, and the base each
+	// percentage was taken on.
+	want := []struct{ amount, basis float64 }{{15894.27, 83654.15}, {33349.38, 252646.80}}
+	if len(second.Charges) != len(want) {
+		t.Fatalf("%d document level charges, want %d", len(second.Charges), len(want))
+	}
+	for i, w := range want {
+		c := second.Charges[i]
+		if c.Amount != w.amount {
+			t.Errorf("charge %d: amount = %s, want the %s the document states", i, Money(c.Amount), Money(w.amount))
+		}
+		if c.Basis == nil || *c.Basis != w.basis {
+			t.Errorf("charge %d: basis = %v, want the %s the document states", i, c.Basis, Money(w.basis))
+		}
+	}
+	// BT-142 on the first line, which states the same charge at line level.
+	if len(second.Lines) == 0 || len(second.Lines[0].Charges) == 0 {
+		t.Fatalf("the first line lost its charge")
+	}
+	if got := second.Lines[0].Charges[0]; got.Amount != want[0].amount {
+		t.Errorf("line charge: amount = %s, want %s", Money(got.Amount), Money(want[0].amount))
+	}
+	// BR-CO-12: what was written has to add up to the stated total.
+	ct := second.Totals.ChargeTotal
+	if ct == nil || *ct != 49243.65 {
+		t.Fatalf("charge total = %v, want 49243.65", ct)
+	}
+	var sum float64
+	for _, c := range second.Charges {
+		sum += c.Amount
+	}
+	if Money(sum) != Money(*ct) {
+		t.Errorf("charges sum to %s, but BT-108 says %s", Money(sum), Money(*ct))
+	}
+}
+
+// TestConversionKeepsTheRegistrations is the third thing the same customer's
+// XRechnung exposed. Its seller has no VAT number: it holds a fiscal number
+// (BT-31 on the FC basis) and a commercial register entry (BT-30, with the
+// register named by BT-29's scheme). The old writer filed the tax number under
+// the legal entity, then overwrote it with the register entry, so the invoice
+// came back with no tax registration at all - and BR-21 and friends are read
+// from that element. Both syntaxes have to keep both numbers, and UBL has to
+// say which register the tax number came from, because its only tax
+// registration element is otherwise read as a VAT identifier.
+func TestConversionKeepsTheRegistrations(t *testing.T) {
+	first := readFor(t, SyntaxCII, sample(t, "cii-xrechnung.xml")).Invoice
+	for _, sx := range syntaxes {
+		doc := renderFor(t, sx, first)
+		s := readFor(t, sx, doc).Invoice.Seller.Party
+		want := TaxID{Value: "XX", Scheme: "FC"}
+		if len(s.TaxIDs) != 1 || s.TaxIDs[0] != want {
+			t.Errorf("%s: seller tax registrations = %+v, want the %v the document states", sx, s.TaxIDs, want)
+		}
+		if len(s.RegIDs) != 1 || s.RegIDs[0] != "XX" || s.RegScheme != "0189" {
+			t.Errorf("%s: seller registration = %v on register %q, want XX on 0189", sx, s.RegIDs, s.RegScheme)
+		}
+	}
+	ubl := string(renderFor(t, SyntaxUBL, first))
+	if !strings.Contains(ubl, `<cbc:CompanyID schemeID="FC">`) {
+		t.Errorf("the UBL tax registration carries no basis, so a reader has to take a fiscal number for a VAT number")
+	}
+	if !strings.Contains(ubl, `<cbc:CompanyID schemeID="0189">`) {
+		t.Errorf("the UBL legal registration names no register")
+	}
+}
+
+// TestUBLRefusesASecondTaxRegistration: EN 16931 gives a party one tax
+// registration term, so a document holding both a VAT number and a fiscal
+// number cannot become a UBL document without inventing or losing a number.
+// UBL can only name the VAT one, so the other is an error a caller can act on,
+// not something that quietly disappears. CII has room for both and says which
+// is which.
+func TestUBLRefusesASecondTaxRegistration(t *testing.T) {
+	inv := fixture(t, "invoice-model.json")
+	inv.Seller.TaxIDs = []TaxID{{Value: "GB123456789", Scheme: "VAT"}, {Value: "30/123/4567", Scheme: "FC"}}
+	if _, err := RenderUBL(inv); err == nil || !strings.Contains(err.Error(), "30/123/4567") {
+		t.Errorf("two tax registrations: %v, want an error naming the number with no term", err)
+	}
+	data, err := RenderCII(inv)
+	if err != nil {
+		t.Fatalf("cii: %v", err)
+	}
+	back := readFor(t, SyntaxCII, data).Invoice
+	for _, want := range inv.Seller.TaxIDs {
+		if !slices.Contains(back.Seller.TaxIDs, want) {
+			t.Errorf("cii lost %v: %+v", want, back.Seller.TaxIDs)
+		}
+	}
+}
+
+// TestUBLRefusesTwoAccountIdentifiers: UBL gives a bank account one identifier
+// where CII separates an IBAN from a private account number. Writing only the
+// IBAN would drop a number the sender stated, so it is reported.
+func TestUBLRefusesTwoAccountIdentifiers(t *testing.T) {
+	inv := fixture(t, "invoice-model.json")
+	inv.SellerAccount.OtherID = "1234567"
+	if _, err := RenderUBL(inv); err == nil || !strings.Contains(err.Error(), "1234567") {
+		t.Errorf("an IBAN and a private number: %v, want an error naming the private one", err)
 	}
 }
