@@ -22,8 +22,12 @@ const (
 	// UBLProfile is the default specification identifier (BT-24, BR-01).
 	UBLProfile = "urn:cen.eu:en16931:2017"
 
-	// ublTaxSchemeID is the only content UBL allows inside a tax scheme.
+	// ublTaxSchemeID is the tax scheme every VAT term in a document carries.
 	ublTaxSchemeID = "VAT"
+	// ublFiscalSchemeID is the tax scheme of a registration number that is
+	// not a VAT number: BT-32, a country's own number for the trader, which
+	// CII labels FC and a German invoice fills with its Steuernummer.
+	ublFiscalSchemeID = "TAX"
 )
 
 // ublCreditCodes holds the UNTDID 1001 codes that BR-CL-01 allows only in a
@@ -90,9 +94,13 @@ func leaf(x *xw, wrap, name, v string, a ...attr) {
 
 // ublTaxScheme writes the tax scheme of a category. UBL-CR-484 and its
 // siblings allow nothing but the identifier inside the scheme.
-func (x *xw) ublTaxScheme() {
+func (x *xw) ublTaxScheme() { x.ublTaxSchemeKind(ublTaxSchemeID) }
+
+// ublTaxSchemeKind writes the tax scheme that says which register the
+// identifier around it came from.
+func (x *xw) ublTaxSchemeKind(id string) {
 	x.start("cac:TaxScheme")
-	x.elem("cbc:ID", ublTaxSchemeID)
+	x.elem("cbc:ID", id)
 	x.end("cac:TaxScheme")
 }
 
@@ -384,14 +392,14 @@ func ublParty(x *xw, p Party, tradingName string, payee bool, seen map[string]bo
 		ublAddress(x, "cac:PostalAddress", p.Address, p.Subdiv)
 	}
 	for _, t := range ublTaxRegistrations(x, p) {
-		// UBL-SR-53: the tax registration is only accepted together with the
-		// tax scheme, and the scheme may carry nothing but its identifier.
-		// That scheme says the tax is VAT, so a VAT number needs no label; a
-		// number from another register carries its basis on the identifier,
-		// the way UBL labels an identifier anywhere else.
+		// UBL-SR-53: a tax registration is accepted only together with the
+		// tax scheme element, and that scheme may carry nothing but its
+		// identifier. The identifier itself goes unlabelled: UBL-CR-652 warns
+		// away a scheme identifier on it, and the scheme around it already
+		// names the register the number came from.
 		x.start("cac:PartyTaxScheme")
-		x.elem("cbc:CompanyID", t.Value, attr{"schemeID", ublRegBasis(t.Scheme)})
-		x.ublTaxScheme()
+		x.elem("cbc:CompanyID", t.id.Value)
+		x.ublTaxSchemeKind(t.scheme)
 		x.end("cac:PartyTaxScheme")
 	}
 	ublLegalEntity(x, p, payee)
@@ -412,20 +420,27 @@ func ublPartyName(x *xw, p Party, tradingName string, payee bool, seen map[strin
 	}
 }
 
-// ublTaxRegistrations returns the registration numbers a party has, which UBL
-// writes into cac:PartyTaxScheme: BT-31 for the seller, BT-48 for the buyer.
-// CII says which register a number comes from (VA is the VAT number, FC the
-// fiscal number a German profile uses in its place) and its rules key on that
-// label, while UBL has one tax registration element whose number IS the VAT
-// identifier - BR-CO-09 wants an ISO country prefix in it and BR-O-02 and
-// BR-O-04 forbid it outright when anything is category O. The number therefore
-// goes into that one element whatever its basis is, keeping the basis as the
-// identifier's label so the distinction survives being read back, and the
-// validator reports the collision rather than the writer hiding the number.
-// EN 16931 gives a party one tax registration term, so a second number has no
-// term at all: the VAT registration wins and the rest are reported.
-func ublTaxRegistrations(x *xw, p Party) []TaxID {
-	vat, rest := []TaxID{}, []TaxID{}
+// ublTaxReg is one registration number and the tax scheme naming the register
+// that issued it.
+type ublTaxReg struct {
+	id     TaxID
+	scheme string
+}
+
+// ublTaxRegistrations returns the tax registration numbers a party has, which
+// UBL writes into cac:PartyTaxScheme: BT-31 for the seller and BT-48 for the
+// buyer under the VAT scheme, BT-32 under the TAX scheme. CII labels each
+// number with its register instead (VA is the VAT number, FC the fiscal number
+// a German profile uses in its place), and UBL's rules read the scheme, not a
+// label: BR-CO-09 wants an ISO country prefix in a VAT-schemed identifier,
+// BR-O-02 and BR-O-04 forbid a VAT-schemed identifier outright whenever
+// anything is category O, and UBL-SR-12 allows only one of them. A fiscal
+// number written under VAT is therefore taken for a VAT number by everything
+// that checks those rules, so it goes into the TAX scheme instead. UBL-SR-42
+// gives a party two tax scheme elements in total, so a number beyond those two
+// has nowhere to go and the render says so rather than choosing one.
+func ublTaxRegistrations(x *xw, p Party) []ublTaxReg {
+	vat, fiscal := []TaxID{}, []TaxID{}
 	for _, t := range p.TaxIDs {
 		if t.Value == "" {
 			continue
@@ -434,26 +449,23 @@ func ublTaxRegistrations(x *xw, p Party) []TaxID {
 			vat = append(vat, t)
 			continue
 		}
-		rest = append(rest, t)
+		fiscal = append(fiscal, t)
 	}
-	ids := append(vat, rest...)
-	if len(ids) > 1 {
-		x.badf("a UBL party has room for one tax registration, not %q", ids[1:])
-		ids = ids[:1]
+	out := []ublTaxReg{}
+	for _, t := range vat {
+		if len(out) > 0 {
+			x.badf("a UBL party has room for one VAT registration, not %q", t.Value)
+			continue
+		}
+		out = append(out, ublTaxReg{id: t, scheme: ublTaxSchemeID})
 	}
-	return ids
-}
-
-// ublRegBasis is the basis to label a tax registration number with. A VAT
-// number goes unlabelled, because the tax scheme element around it already
-// names the tax; anything else says which register issued it.
-func ublRegBasis(scheme string) string {
-	switch scheme {
-	case "", "VA", "VAT":
-		return ""
-	default:
-		return scheme
+	if len(fiscal) > 0 {
+		if len(fiscal) > 1 {
+			x.badf("a UBL party has room for one tax registration, not %q", fiscal[1:])
+		}
+		out = append(out, ublTaxReg{id: fiscal[0], scheme: ublFiscalSchemeID})
 	}
+	return out
 }
 
 // ublLegalEntity writes cac:PartyLegalEntity, whose company identifier is the
@@ -735,11 +747,12 @@ func ublVAT(x *xw, in *Invoice, cur string, seen map[string]bool) {
 		// category, as the Peppol mapping does.
 		x.start("cac:TaxCategory")
 		x.mand("cbc:ID", b.Category)
-		if b.Category != "O" {
-			// A zero rate still has to be written: BR-48 only excuses
-			// category O.
-			x.elem("cbc:Percent", Rate(b.Percent))
-		}
+		// The rate belongs in the category whatever the category is. BR-48
+		// excuses it only for a document with no VAT at all, and the German
+		// rules ask for BT-119 under category O too (BR-DE-14). UBL-CR-499
+		// warns away a percent on the subtotal itself, which is why it sits
+		// here next to the exemption reason.
+		x.elem("cbc:Percent", Rate(b.Percent))
 		if e := b.Exempt; e != nil {
 			x.opt("cbc:TaxExemptionReasonCode", e.ReasonCode)
 			if e.Reason != "" {

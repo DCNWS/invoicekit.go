@@ -1154,21 +1154,25 @@ func (r *reader) ublParty(n *vnode, payee bool) (Party, string) {
 		},
 		"cac:PostalAddress": func(c *vnode) { p.Address = r.ublAddress(c) },
 		"cac:PartyTaxScheme": func(c *vnode) {
-			// A party's tax registration lives in a tax scheme element whose
-			// scheme says the tax is VAT, so an unlabelled number is a VAT
-			// number; one from another register, a German fiscal number (FC)
-			// being the usual, carries its basis on the identifier.
+			// UBL names the register a registration number came from on the
+			// tax scheme element around it: VAT holds the VAT number (BT-31,
+			// BT-48) and TAX a number from the country's own register (BT-32),
+			// which CII labels FC. A schemeID attribute on the identifier says
+			// the same thing more precisely where it is present, even though
+			// UBL-CR-652 warns a writer away from putting one there.
+			ts := r.find(c, "cac:TaxScheme")
+			kind := r.str(ts, "cbc:ID")
 			id := r.takeChild(c, "cbc:CompanyID")
 			if id == nil || text(id) == "" {
-				r.ublScheme(r.find(c, "cac:TaxScheme"))
+				r.ublTaxRegistration(ts)
 				return
 			}
 			scheme := id.attr["schemeID"]
 			if scheme == "" || scheme == "VA" {
-				scheme = "VAT"
+				scheme = ublRegScheme(kind)
 			}
 			p.TaxIDs = append(p.TaxIDs, TaxID{Value: text(id), Scheme: scheme})
-			r.ublScheme(r.find(c, "cac:TaxScheme"))
+			r.ublTaxRegistration(ts)
 		},
 		"cac:PartyLegalEntity": func(c *vnode) {
 			// A payee's legal entity element carries only its registration,
@@ -1214,6 +1218,30 @@ func (r *reader) ublAddress(n *vnode) Address {
 // ublScheme accounts for the tax scheme of a category. UBL allows nothing but
 // VAT inside it (UBL-CR-484 and its siblings), so a document that names another
 // tax carries something the EN 16931 model has no term for.
+// ublRegScheme is the model's label for a registration number held in a tax
+// scheme of the given kind. The TAX scheme carries the number CII labels FC.
+func ublRegScheme(kind string) string {
+	switch kind {
+	case "", ublTaxSchemeID:
+		return "VAT"
+	case ublFiscalSchemeID:
+		return "FC"
+	default:
+		return kind
+	}
+}
+
+// ublTaxRegistration reads the tax scheme around a registration number. VAT
+// and TAX are the model's own vocabulary; any other tax type has no term in
+// EN 16931, and the document says so in an issue rather than the reader
+// guessing which register the number belongs to.
+func (r *reader) ublTaxRegistration(ts *vnode) {
+	if id := r.str(ts, "cbc:ID"); id != "" && id != ublTaxSchemeID && id != ublFiscalSchemeID {
+		r.issues = append(r.issues, fmt.Sprintf("%s: a tax type of %s has no place in the EN 16931 model, which knows only VAT", pathOf(ts), id))
+	}
+	r.consume(ts)
+}
+
 func (r *reader) ublScheme(n *vnode) {
 	if id := r.str(n, "cbc:ID"); id != "" && id != ublTaxSchemeID {
 		r.issues = append(r.issues, fmt.Sprintf("%s: a tax type of %s has no place in the EN 16931 model, which knows only VAT", pathOf(n), id))

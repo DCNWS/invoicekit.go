@@ -611,8 +611,10 @@ func TestConversionKeepsTheStatedAmounts(t *testing.T) {
 // the legal entity, then overwrote it with the register entry, so the invoice
 // came back with no tax registration at all - and BR-21 and friends are read
 // from that element. Both syntaxes have to keep both numbers, and UBL has to
-// say which register the tax number came from, because its only tax
-// registration element is otherwise read as a VAT identifier.
+// say which register the tax number came from, because a number sitting under
+// the VAT tax scheme is read as a VAT identifier: BR-CO-09 then wants an ISO
+// country prefix in it, and BR-O-02 and BR-O-04 reject the invoice outright
+// whenever a line is not subject to VAT.
 func TestConversionKeepsTheRegistrations(t *testing.T) {
 	first := readFor(t, SyntaxCII, sample(t, "cii-xrechnung.xml")).Invoice
 	for _, sx := range syntaxes {
@@ -627,31 +629,49 @@ func TestConversionKeepsTheRegistrations(t *testing.T) {
 		}
 	}
 	ubl := string(renderFor(t, SyntaxUBL, first))
-	if !strings.Contains(ubl, `<cbc:CompanyID schemeID="FC">`) {
-		t.Errorf("the UBL tax registration carries no basis, so a reader has to take a fiscal number for a VAT number")
+	// UBL names the register on the tax scheme element around the number, not
+	// on the number itself: UBL-CR-652 warns away a scheme identifier there.
+	if !strings.Contains(ubl, "<cbc:ID>"+ublFiscalSchemeID+"</cbc:ID>") {
+		t.Errorf("the UBL tax registration is not in the TAX scheme, so a reader has to take a fiscal number for a VAT number:\n%s",
+			span(ubl, "<cac:PartyTaxScheme>", "</cac:PartyTaxScheme>"))
+	}
+	if strings.Contains(ubl, `<cbc:CompanyID schemeID="FC">`) {
+		t.Errorf("the UBL tax registration labels the identifier, which UBL-CR-652 warns away:\n%s",
+			span(ubl, "<cac:PartyTaxScheme>", "</cac:PartyTaxScheme>"))
 	}
 	if !strings.Contains(ubl, `<cbc:CompanyID schemeID="0189">`) {
 		t.Errorf("the UBL legal registration names no register")
 	}
 }
 
-// TestUBLRefusesASecondTaxRegistration: EN 16931 gives a party one tax
-// registration term, so a document holding both a VAT number and a fiscal
-// number cannot become a UBL document without inventing or losing a number.
-// UBL can only name the VAT one, so the other is an error a caller can act on,
-// not something that quietly disappears. CII has room for both and says which
-// is which.
-func TestUBLRefusesASecondTaxRegistration(t *testing.T) {
+// TestUBLKeepsAVATNumberBesideAFiscalNumber: a seller can hold both a VAT
+// number (BT-31) and a number from the country's own register (BT-32), and UBL
+// has room for both: UBL-SR-42 allows a party two tax scheme elements, one
+// naming VAT and one naming TAX. A third number has nowhere to go, so it is an
+// error a caller can act on rather than something that quietly disappears. CII
+// has room for every number and labels each one.
+func TestUBLKeepsAVATNumberBesideAFiscalNumber(t *testing.T) {
 	inv := fixture(t, "invoice-model.json")
 	inv.Seller.TaxIDs = []TaxID{{Value: "GB123456789", Scheme: "VAT"}, {Value: "30/123/4567", Scheme: "FC"}}
-	if _, err := RenderUBL(inv); err == nil || !strings.Contains(err.Error(), "30/123/4567") {
-		t.Errorf("two tax registrations: %v, want an error naming the number with no term", err)
+	data, err := RenderUBL(inv)
+	if err != nil {
+		t.Fatalf("ubl: %v", err)
 	}
-	data, err := RenderCII(inv)
+	back := readFor(t, SyntaxUBL, data).Invoice
+	for _, want := range inv.Seller.TaxIDs {
+		if !slices.Contains(back.Seller.TaxIDs, want) {
+			t.Errorf("ubl lost %v: %+v", want, back.Seller.TaxIDs)
+		}
+	}
+	inv.Seller.TaxIDs = append(inv.Seller.TaxIDs, TaxID{Value: "99/123/456", Scheme: "FC"})
+	if _, err := RenderUBL(inv); err == nil || !strings.Contains(err.Error(), "99/123/456") {
+		t.Errorf("three tax registrations: %v, want an error naming the number with no term", err)
+	}
+	data, err = RenderCII(inv)
 	if err != nil {
 		t.Fatalf("cii: %v", err)
 	}
-	back := readFor(t, SyntaxCII, data).Invoice
+	back = readFor(t, SyntaxCII, data).Invoice
 	for _, want := range inv.Seller.TaxIDs {
 		if !slices.Contains(back.Seller.TaxIDs, want) {
 			t.Errorf("cii lost %v: %+v", want, back.Seller.TaxIDs)

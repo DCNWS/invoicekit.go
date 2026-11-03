@@ -134,6 +134,62 @@ func TestParseSurvivesARoundTrip(t *testing.T) {
 	}
 }
 
+// A converted document has to carry its own rule set with it. The German rules
+// run against UBL just as they do against CII, and a document that arrives at
+// the other syntax missing an element or holding one in the wrong place fails
+// at the receiving end, which is the last place anyone wants to find that out.
+// Conversion may therefore not introduce a finding the source document did not
+// already have, and may not hide one either.
+func TestConversionIntroducesNoNewBreach(t *testing.T) {
+	for _, tc := range []struct {
+		file  string
+		asCII bool
+		opt   einvoice.Options
+	}{
+		{"testdata/samples/cii-xrechnung.xml", false, einvoice.Options{CIUS: einvoice.CIUSXRechnung}},
+		{"testdata/samples/ubl-peppol.xml", true, einvoice.Options{Profile: einvoice.ProfilePeppol}},
+	} {
+		data := read(t, tc.file)
+		first, err := einvoice.Parse(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out, err := einvoice.GenerateCII(first.Invoice)
+		if !tc.asCII {
+			out, err = einvoice.GenerateUBL(first.Invoice)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		before, err := einvoice.Validate(data, tc.opt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		after, err := einvoice.Validate(out, tc.opt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if after.Internal > 0 {
+			t.Fatalf("%s: the converted document could not be evaluated: %+v", tc.file, after)
+		}
+		had, have := map[string]bool{}, map[string]bool{}
+		for _, f := range before.Findings {
+			had[f.ID] = true
+		}
+		for _, f := range after.Findings {
+			have[f.ID] = true
+			if !had[f.ID] {
+				t.Errorf("%s: conversion introduced %s at %s: %s", tc.file, f.ID, f.Context, f.Message)
+			}
+		}
+		for _, f := range before.Findings {
+			if !have[f.ID] {
+				t.Errorf("%s: conversion lost %s: %s", tc.file, f.ID, f.Message)
+			}
+		}
+	}
+}
+
 // The wasm layer hands ParseResult to JavaScript as JSON, where a nil slice is
 // null and an empty one is []. A page should not have to test for two kinds of
 // "nothing found", so a document that fits the model encodes an empty array.
