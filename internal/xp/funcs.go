@@ -295,7 +295,18 @@ var builtins = map[string]builtin{
 
 	"name":              func(a argv) (any, error) { return nameOf(a.focus(0), true), nil },
 	"local-name":        func(a argv) (any, error) { return nameOf(a.focus(0), false), nil },
-	"prefix-from-QName": func(a argv) (any, error) { return nameOf(a.arg(0), false), nil },
+	"namespace-uri":     func(a argv) (any, error) { return nsOf(a.focus(0)), nil },
+	"prefix-from-QName": func(a argv) (any, error) { return qNamePrefix(a.arg(0)), nil },
+}
+
+// qNamePrefix returns the prefix of a QName: the part before the colon of a
+// prefixed name, empty for a node or string written without one.
+func qNamePrefix(v any) string {
+	p, _, found := strings.Cut(str(nameOf(v, true)), ":")
+	if !found {
+		return ""
+	}
+	return p
 }
 
 // fnAlias marks names that share an implementation with another entry.
@@ -493,12 +504,29 @@ func nameOf(v any, prefixed bool) any {
 		}
 		return n.Name
 	case *attrNode:
-		if prefixed && n.a.NS != "" {
-			return n.a.Name
+		if prefixed && n.a.Prefix != "" {
+			return n.a.Prefix + ":" + n.a.Name
 		}
 		return n.a.Name
 	}
 	return stringOf(s[0])
+}
+
+// nsOf returns the namespace URI of a node: empty for a node in no namespace
+// and for a document or text node, which have none.
+func nsOf(v any) string {
+	s := seqOf(v)
+	if len(s) == 0 {
+		return ""
+	}
+	switch n := s[0].(type) {
+	case *Node:
+		return n.NS
+	case *attrNode:
+		return n.a.NS
+	default:
+		return ""
+	}
 }
 
 func minmax(v any, want int) (any, error) {

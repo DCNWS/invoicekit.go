@@ -39,6 +39,23 @@ func prefixOf(cur map[string]string, uri string) string {
 	return ""
 }
 
+// xmlNS is the namespace of the xml: prefix, the only one that needs no
+// declaration.
+const xmlNS = "http://www.w3.org/XML/1998/namespace"
+
+// attrPrefix recovers the prefix an attribute was written with. The encoder
+// hands over the resolved namespace URI instead of the prefix, so this looks
+// for a prefix bound to that URI and falls back to "xml".
+func attrPrefix(cur map[string]string, uri string) string {
+	if p := prefixOf(cur, uri); p != "" {
+		return p
+	}
+	if uri == xmlNS {
+		return "xml"
+	}
+	return ""
+}
+
 // lookup resolves a prefix, tolerating encoders that already replaced it with
 // the namespace URI.
 func lookup(cur map[string]string, pfx string) (string, bool) {
@@ -56,9 +73,14 @@ func lookup(cur map[string]string, pfx string) (string, bool) {
 
 // Attr is an attribute; no namespace unless a prefix was used explicitly.
 type Attr struct {
-	Name  string
-	NS    string
-	Value string
+	Name string
+	NS   string
+	// Prefix is the prefix as written in the document, empty when the
+	// attribute is unprefixed. name() and local-name() need it: an attribute
+	// keeps the prefix it was written with, unlike an element, whose prefix
+	// only carries its namespace.
+	Prefix string
+	Value  string
 }
 
 // StringValue is the string value of a node: the concatenation of all the
@@ -187,7 +209,7 @@ Loop:
 					if !ok {
 						return nil, fmt.Errorf("xml: undefined namespace prefix %q in attribute %s", as, an)
 					}
-					real = append(real, Attr{Name: an, NS: ans, Value: a.Value})
+					real = append(real, Attr{Name: an, NS: ans, Prefix: attrPrefix(cur, ans), Value: a.Value})
 				}
 			}
 			n.Attrs = real

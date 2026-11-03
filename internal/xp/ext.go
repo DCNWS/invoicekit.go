@@ -56,9 +56,6 @@ func NewCompiler(ns map[string]string) *Compiler {
 	return &Compiler{ns: ns, fns: map[string]*FuncDecl{}}
 }
 
-// NS returns the prefix to URI bindings the compiler resolves names with.
-func (c *Compiler) NS() map[string]string { return c.ns }
-
 // extKey maps a written name to the expanded-name key it is stored under. A
 // name without a prefix, or with an undeclared prefix, is not an extension
 // function name and reports false.

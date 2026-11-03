@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/big"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -131,23 +130,6 @@ func errf(f string, a ...any) error { return fmt.Errorf("xp: "+f, a...) }
 // ---------- value helpers ----------
 
 func isSeq(v any) bool { _, ok := v.([]any); return ok }
-
-func nodes(v any) []*Node {
-	s, ok := v.([]any)
-	if !ok {
-		if n, ok := v.(*Node); ok {
-			return []*Node{n}
-		}
-		return nil
-	}
-	var out []*Node
-	for _, x := range s {
-		if n, ok := x.(*Node); ok {
-			out = append(out, n)
-		}
-	}
-	return out
-}
 
 func stringOf(v any) string {
 	switch t := v.(type) {
@@ -483,6 +465,11 @@ func allNodes(s []any) bool {
 	return true
 }
 
+// sameNode reports XPath node identity. A step builds a fresh attrNode or
+// textNode each time it runs, so those two compare the node they stand for -
+// the attribute of a given element, the text of a given element - rather than
+// the pointer that carries it. Without that, "@id | @id" counts the same
+// attribute twice and "a[1]/text() is a[1]/text()" is false.
 func sameNode(a, b any) bool {
 	switch x := a.(type) {
 	case *Node:
@@ -490,10 +477,32 @@ func sameNode(a, b any) bool {
 		return ok && x == y
 	case *attrNode:
 		y, ok := b.(*attrNode)
-		return ok && x == y
+		return ok && x.parent == y.parent && x.idx == y.idx
+	case *textNode:
+		y, ok := b.(*textNode)
+		return ok && x.parent == y.parent
 	}
 	return false
 }
+
+// nodeKey returns a comparable value that is equal exactly for the same node,
+// for the dedup tables that hash their items.
+func nodeKey(v any) any {
+	switch n := v.(type) {
+	case *attrNode:
+		return attrKey{n.parent, n.idx}
+	case *textNode:
+		return textKey{n.parent}
+	}
+	return v
+}
+
+type attrKey struct {
+	p *Node
+	i int
+}
+
+type textKey struct{ p *Node }
 
 func cmpAtom(op string, a, b any) bool {
 	if isNaN(a) || isNaN(b) {
@@ -1435,10 +1444,11 @@ func dedupSort(s []any) []any {
 	u := make([]any, 0, len(s))
 	for _, x := range s {
 		if isNode(x) {
-			if seen[x] {
+			k := nodeKey(x)
+			if seen[k] {
 				continue
 			}
-			seen[x] = true
+			seen[k] = true
 		}
 		u = append(u, x)
 	}
@@ -1458,8 +1468,9 @@ func dedupNodes(s []any) []any {
 	} else {
 		seen := make(map[any]bool, len(s))
 		for _, x := range s {
-			if !seen[x] {
-				seen[x] = true
+			k := nodeKey(x)
+			if !seen[k] {
+				seen[k] = true
 				u = append(u, x)
 			}
 		}
@@ -1470,14 +1481,21 @@ func dedupNodes(s []any) []any {
 
 // holds reports whether u already contains x. Nodes are compared by identity,
 // which is what membership of an XPath node-set means.
-func holds(u []any, x any) bool { return slices.Contains(u, x) }
+func holds(u []any, x any) bool {
+	for _, y := range u {
+		if sameNode(y, x) {
+			return true
+		}
+	}
+	return false
+}
 
 // sortedUnique reports whether s holds distinct nodes in document order, the
 // sequence dedupSort would return unchanged. It is only called when every item
 // is a node, so == compares pointers rather than hashing them.
 func sortedUnique(s []any) bool {
 	for i := 1; i < len(s); i++ {
-		if s[i-1] == s[i] {
+		if sameNode(s[i-1], s[i]) {
 			return false
 		}
 		a1, a2 := ordOf(s[i])
