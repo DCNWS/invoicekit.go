@@ -150,6 +150,9 @@ func ParseNextElement(dec *xml.Decoder) (*Doc, *xml.StartElement, error) {
 // document node. Rule contexts are evaluated at the document node, but callers
 // that want the invoice element itself use this.
 func (d *Doc) RootElem() *Node {
+	if d == nil || d.Root == nil {
+		return nil
+	}
 	if d.Root.IsDoc && len(d.Root.Children) > 0 {
 		return d.Root.Children[0]
 	}

@@ -10,6 +10,12 @@ import (
 
 // TestNodeAttrLookup covers the exported attribute lookup, which a caller
 // outside this package uses to read a schema attribute without walking Attrs.
+func TestRootElemOfEmptyDoc(t *testing.T) {
+	if (&Doc{}).RootElem() != nil {
+		t.Error("a document with no root element reports one")
+	}
+}
+
 func TestNodeAttrLookup(t *testing.T) {
 	d := doc(t)
 	var b *Node
