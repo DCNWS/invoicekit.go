@@ -14,6 +14,7 @@ import (
 	"cmp"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -46,6 +47,14 @@ type attrSpan struct {
 	tagStart   int
 	tagEnd     int
 }
+
+// stdout, stderr and exit are seams: only main() and fail() write the process
+// streams and status directly, so a whole coverage pass can be run from a test.
+var (
+	stdout io.Writer = os.Stdout
+	stderr io.Writer = os.Stderr
+	exit             = os.Exit
+)
 
 // spans walks b and returns every element with the offsets needed for text
 // level edits. offsets come from xml.Decoder.InputOffset.
@@ -393,7 +402,7 @@ func (u *universe) loadSyntax(sy en16931.Syntax) error {
 	}
 	for _, pat := range s.Patterns {
 		if !referenced[pat.ID] {
-			fmt.Fprintf(os.Stderr, "%s: pattern %s (%d asserts) is referenced by no phase but runs by default\n",
+			fmt.Fprintf(stderr, "%s: pattern %s (%d asserts) is referenced by no phase but runs by default\n",
 				sy, pat.ID, countAsserts(pat))
 		}
 		for _, r := range pat.Rules {
@@ -543,7 +552,7 @@ func runTestSets(ref string, u *universe) (testSetStats, error) {
 	for _, p := range pts {
 		rep, err := en16931.ValidateDoc(p.sy, p.doc, nil)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", p.file, err)
+			fmt.Fprintf(stderr, "%s: %v\n", p.file, err)
 			continue
 		}
 		st.cases++
@@ -629,7 +638,7 @@ func replayMutant(path string, sy en16931.Syntax, man map[string]source, u *univ
 	base := filepath.Base(path)
 	rep, err := en16931.Validate(data, en16931.Options{Syntax: sy})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %v\n", base, err)
+		fmt.Fprintf(stderr, "%s: %v\n", base, err)
 		return nil
 	}
 	for _, fi := range rep.Findings {
@@ -854,28 +863,28 @@ func saveMutant(corpus string, j job, ids []string) error {
 // printRun writes the console report: what each pass proved, and what nothing
 // ever fired.
 func printRun(u *universe, cov coverage, rs runStats) {
-	fmt.Printf("\nofficial test-set payloads: %d, must-fire expectations: %d, not fired: %d\n",
+	fmt.Fprintf(stdout, "\nofficial test-set payloads: %d, must-fire expectations: %d, not fired: %d\n",
 		rs.ts.cases, rs.ts.expect, rs.ts.missed)
 	for _, l := range rs.ts.missList {
-		fmt.Println("  missing:", l)
+		fmt.Fprintln(stdout, "  missing:", l)
 	}
 	if rs.ts.missed > len(rs.ts.missList) {
-		fmt.Printf("  ... %d more\n", rs.ts.missed-len(rs.ts.missList))
+		fmt.Fprintf(stdout, "  ... %d more\n", rs.ts.missed-len(rs.ts.missList))
 	}
-	fmt.Printf("mutants: %d generated, %d produced findings, %d rejected\n", rs.ms.generated, rs.ms.hits, rs.ms.rejected)
+	fmt.Fprintf(stdout, "mutants: %d generated, %d produced findings, %d rejected\n", rs.ms.generated, rs.ms.hits, rs.ms.rejected)
 	printRejections(rs.ms)
 	for _, sy := range syntaxNames {
 		if st, ok := rs.tg[sy]; ok {
-			fmt.Printf("targeted %s: %d candidate asserts, %d insertion mutants, %d still silent\n",
+			fmt.Fprintf(stdout, "targeted %s: %d candidate asserts, %d insertion mutants, %d still silent\n",
 				sy, st.rules, st.made, st.nofire)
 		}
 	}
-	fmt.Println()
+	fmt.Fprintln(stdout)
 	for _, sy := range syntaxNames {
-		fmt.Printf("%s: %d/%d active asserts proven (%s)\n",
+		fmt.Fprintf(stdout, "%s: %d/%d active asserts proven (%s)\n",
 			sy, len(u.covered[sy]), cov.totals[sy], srcString(cov.bySrc[sy]))
 		for _, id := range cov.missing[sy] {
-			fmt.Printf("  never fired: %-12s [%s] %s / %s\n",
+			fmt.Fprintf(stdout, "  never fired: %-12s [%s] %s / %s\n",
 				id, u.asserts[sy][id], u.pattern[sy][id], strings.Join(u.phases[sy][id], ","))
 		}
 	}
@@ -893,7 +902,7 @@ func printRejections(ms mutantStats) {
 		if i >= 12 {
 			break
 		}
-		fmt.Printf("  %6d  %s   e.g. %s\n", ms.why[k], k, ms.example[k])
+		fmt.Fprintf(stdout, "  %6d  %s   e.g. %s\n", ms.why[k], k, ms.example[k])
 	}
 }
 
@@ -901,14 +910,14 @@ func printRejections(ms mutantStats) {
 // one part of the model becomes visible.
 func printPerPattern(u *universe, cov coverage) {
 	for _, sy := range syntaxNames {
-		fmt.Printf("\n%s per pattern:\n", sy)
+		fmt.Fprintf(stdout, "\n%s per pattern:\n", sy)
 		var pids []string
 		for pid := range u.patCount[sy] {
 			pids = append(pids, pid)
 		}
 		sort.Strings(pids)
 		for _, pid := range pids {
-			fmt.Printf("  %-22s %-22s %d/%d\n", pid, phaseOf(u.phases[sy], u.pattern[sy], pid),
+			fmt.Fprintf(stdout, "  %-22s %-22s %d/%d\n", pid, phaseOf(u.phases[sy], u.pattern[sy], pid),
 				cov.hits[sy][pid], u.patCount[sy][pid])
 		}
 	}
@@ -1014,66 +1023,91 @@ func writeMarkdown(path string, u *universe, cov coverage, rs runStats) error {
 	return os.WriteFile(path, []byte(sb.String()), 0o644)
 }
 
-func main() {
-	corpus := flag.String("corpus", "testdata/mutations", "where to write harvested mutants")
-	report := flag.String("report", "", "markdown report to write")
-	jsonOut := flag.String("json", "", "machine readable summary to write")
-	bases := flag.String("bases", "", "comma separated reference documents (default: all clean docs in the corpus)")
-	ref := flag.String("ref", envOr("EINVOICE_REF", "../ref-en16931"), "CEF eInvoicing-EN16931 checkout")
-	limit := flag.Int("limit", 0, "max bases per syntax (0 = no limit)")
-	nomut := flag.Bool("no-mutate", false, "skip the mutation sweep")
-	targ := flag.Bool("targeted", false, "build insertion mutants for asserts nothing else ever fired")
-	jobs := flag.Int("jobs", 0, "parallel validations (default GOMAXPROCS)")
-	flag.Parse()
+// config is one coverage run: where its inputs come from and what it writes.
+type config struct {
+	corpus   string
+	report   string
+	jsonOut  string
+	bases    string
+	ref      string
+	limit    int
+	noMutate bool
+	targeted bool
+	jobs     int
+}
 
+// parseFlags reads a command line. A private FlagSet rather than the global
+// one, so a test can parse a command line without disturbing the process's.
+func parseFlags(args []string) (config, error) {
+	var cfg config
+	fs := flag.NewFlagSet("cov", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	fs.StringVar(&cfg.corpus, "corpus", "testdata/mutations", "where to write harvested mutants")
+	fs.StringVar(&cfg.report, "report", "", "markdown report to write")
+	fs.StringVar(&cfg.jsonOut, "json", "", "machine readable summary to write")
+	fs.StringVar(&cfg.bases, "bases", "", "comma separated reference documents (default: all clean docs in the corpus)")
+	fs.StringVar(&cfg.ref, "ref", envOr("EINVOICE_REF", "../ref-en16931"), "CEF eInvoicing-EN16931 checkout")
+	fs.IntVar(&cfg.limit, "limit", 0, "max bases per syntax (0 = no limit)")
+	fs.BoolVar(&cfg.noMutate, "no-mutate", false, "skip the mutation sweep")
+	fs.BoolVar(&cfg.targeted, "targeted", false, "build insertion mutants for asserts nothing else ever fired")
+	fs.IntVar(&cfg.jobs, "jobs", 0, "parallel validations (default GOMAXPROCS)")
+	if err := fs.Parse(args); err != nil {
+		return config{}, err
+	}
+	return cfg, nil
+}
+
+// run is the whole coverage pass, streams included, so a test can drive it the
+// way the shell does and read what it said.
+func run(cfg config) error {
 	u := newUniverse()
 	for _, sy := range []en16931.Syntax{en16931.SyntaxCII, en16931.SyntaxUBL} {
 		if err := u.loadSyntax(sy); err != nil {
-			fail(err)
+			return err
 		}
 	}
 
-	ts, err := runTestSets(*ref, u)
+	ts, err := runTestSets(cfg.ref, u)
 	if err != nil {
-		fail(err)
+		return err
 	}
-	fmt.Fprintf(os.Stderr, "official test sets: %d payload documents, %d must-fire expectations\n", ts.cases, ts.expect)
+	fmt.Fprintf(stderr, "official test sets: %d payload documents, %d must-fire expectations\n", ts.cases, ts.expect)
 
-	cr, err := replayCorpus(*corpus, u)
+	cr, err := replayCorpus(cfg.corpus, u)
 	if err != nil {
-		fail(err)
+		return err
 	}
-	fmt.Printf("corpus replay: %d mutants, %d expected firings, %d did not fire, %d could not be evaluated\n",
+	fmt.Fprintf(stdout, "corpus replay: %d mutants, %d expected firings, %d did not fire, %d could not be evaluated\n",
 		cr.files, cr.expect, cr.missed, cr.evalErrs)
 	for _, l := range cr.missList {
-		fmt.Println("  not fired:", l)
+		fmt.Fprintln(stdout, "  not fired:", l)
 	}
 
-	refs, err := basesOf(*ref, *bases, *limit)
+	refs, err := basesOf(cfg.ref, cfg.bases, cfg.limit)
 	if err != nil {
-		fail(err)
+		return err
 	}
-	work, err := mutantJobs(refs, !*nomut)
+	work, err := mutantJobs(refs, !cfg.noMutate)
 	if err != nil {
-		fail(err)
+		return err
 	}
-	fmt.Fprintf(os.Stderr, "%d clean bases, %d mutants\n", len(refs), len(work))
+	fmt.Fprintf(stderr, "%d clean bases, %d mutants\n", len(refs), len(work))
 
-	rs := runStats{ts: ts, cr: cr, ms: harvest(work, workers(*jobs), *corpus, u), refs: len(refs)}
+	rs := runStats{ts: ts, cr: cr, ms: harvest(work, workers(cfg.jobs), cfg.corpus, u), refs: len(refs)}
 	cov := u.coverage()
 
 	// The targeted pass runs last: it only has something to do for asserts the
 	// test sets, the corpus and the sweep all failed to prove.
-	if *targ {
+	if cfg.targeted {
 		rs.tg = map[string]targetStats{}
 		for _, sy := range []en16931.Syntax{en16931.SyntaxCII, en16931.SyntaxUBL} {
 			doc, err := targetedBase(refs, sy)
 			if err != nil {
-				fail(err)
+				return err
 			}
-			st, err := targeted(sy, doc, setOf(cov.missing[string(sy)]), workers(*jobs), *corpus, u)
+			st, err := targeted(sy, doc, setOf(cov.missing[string(sy)]), workers(cfg.jobs), cfg.corpus, u)
 			if err != nil {
-				fail(err)
+				return err
 			}
 			rs.tg[string(sy)] = st
 		}
@@ -1081,16 +1115,32 @@ func main() {
 	}
 	printRun(u, cov, rs)
 
-	if err := writeManifests(*corpus, u); err != nil {
-		fail(err)
+	if err := writeManifests(cfg.corpus, u); err != nil {
+		return err
 	}
-	if *jsonOut != "" {
-		if err := writeJSONSummary(*jsonOut, u, cov, rs); err != nil {
-			fail(err)
+	if cfg.jsonOut != "" {
+		if err := writeJSONSummary(cfg.jsonOut, u, cov, rs); err != nil {
+			return err
 		}
 	}
-	if *report != "" {
-		if err := writeMarkdown(*report, u, cov, rs); err != nil {
+	if cfg.report != "" {
+		if err := writeMarkdown(cfg.report, u, cov, rs); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func main() {
+	cfg, err := parseFlags(os.Args[1:])
+	switch {
+	// -h prints its own usage and is not a mistake; every other parse error is.
+	case errors.Is(err, flag.ErrHelp):
+		exit(0)
+	case err != nil:
+		exit(2)
+	default:
+		if err := run(cfg); err != nil {
 			fail(err)
 		}
 	}
@@ -1172,7 +1222,9 @@ func sanitize(s string) string {
 	return strings.NewReplacer("/", "_", " ", "_", "<", "", ">", "", "#", "").Replace(s)
 }
 
+// fail reports a fatal problem and stops the process: a coverage run that
+// could not read its inputs has nothing worth reporting.
 func fail(err error) {
-	fmt.Fprintln(os.Stderr, "cov:", err)
-	os.Exit(1)
+	fmt.Fprintln(stderr, "cov:", err)
+	exit(1)
 }
