@@ -39,17 +39,10 @@ func (f *File) decodeStream(s *Stream) ([]byte, error) {
 			}
 		}
 	}
-	if filters.len() == 0 && len(parms) > 0 {
-		if p := parms[0]; p != nil && p.Has("Predictor") {
-			return applyPredictor(out, p)
-		}
-	}
 	return out, nil
 }
 
 type nameList []string
-
-func (n nameList) len() int { return len(n) }
 
 func filterList(v Object) nameList {
 	switch v := v.(type) {
@@ -136,7 +129,7 @@ func asciiHexDecode(data []byte) ([]byte, error) {
 func ascii85Decode(data []byte) ([]byte, error) {
 	// The PDF ASCII85 alphabet is every printable byte from "!" to "~".
 	var out []byte
-	var acc uint32
+	var acc uint64
 	n := 0
 	// Adobe-style delimiters: <~ starts and ~> ends the data.
 	i := 0
@@ -164,7 +157,7 @@ func ascii85Decode(data []byte) ([]byte, error) {
 		if c < '!' || c > '~' {
 			return nil, fmt.Errorf("bad ascii85 character %q", c)
 		}
-		acc = acc*85 + uint32(c-'!')
+		acc = acc*85 + uint64(c-'!')
 		n++
 		if n == 5 {
 			out = append(out, byte(acc>>24), byte(acc>>16), byte(acc>>8), byte(acc))
@@ -172,16 +165,25 @@ func ascii85Decode(data []byte) ([]byte, error) {
 		}
 	}
 	if n > 1 {
+		// The writer cut a five-character group short, so the digits that
+		// would have followed are unknown. Padding them with the largest
+		// digit recovers the leading n-1 bytes exactly; padding with zeros
+		// can round a byte down. A padded group can exceed 2^32, hence the
+		// wider accumulator here.
+		pad := acc
 		for range 5 - n {
-			acc *= 85
+			pad = pad*85 + 84
 		}
 		for i := range n - 1 {
-			out = append(out, byte(acc>>uint(24-8*i)))
+			out = append(out, byte(pad>>uint(24-8*i)))
 		}
 	}
 	return out, nil
 }
 
+// runLengthDecode undoes the RunLengthDecode filter (ISO 32000-1 7.4.5): a
+// length byte of 0..127 introduces length+1 literal bytes, 128 marks the end
+// of the data, and 129..254 repeats the byte that follows it 257-length times.
 func runLengthDecode(data []byte) ([]byte, error) {
 	var out []byte
 	for i := 0; i < len(data); {
@@ -194,14 +196,14 @@ func runLengthDecode(data []byte) ([]byte, error) {
 			if i+length+1 > len(data) {
 				return nil, fmt.Errorf("truncated runlength data")
 			}
-			out = append(out, data[i+1:i+1+length]...)
+			out = append(out, data[i:i+length+1]...)
 			i += length + 1
 			continue
 		}
 		if i >= len(data) {
 			return nil, fmt.Errorf("truncated runlength data")
 		}
-		for k := 0; k <= 128-length; k++ {
+		for k := 0; k < 257-length; k++ {
 			out = append(out, data[i])
 		}
 		i++

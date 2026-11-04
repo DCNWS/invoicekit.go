@@ -64,9 +64,7 @@ func (f *File) Bytes() ([]byte, error) {
 	trailer.Delete("Prev")
 	trailer.Delete("XRefStm")
 	trailer.Set("Size", Int(max+1))
-	if !trailer.Has("Root") {
-		return nil, fmt.Errorf("pdf: trailer has no /Root")
-	}
+	// /Root is certain to exist: Root() above would have failed without it.
 	if !trailer.Has("ID") {
 		sum := md5.Sum(append(out.Bytes(), byte(max)))
 		trailer.Set("ID", Array{String(sum[:]), String(sum[:])})
