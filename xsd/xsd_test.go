@@ -192,7 +192,7 @@ func TestUndeclaredRoot(t *testing.T) {
 // on. The CII and UBL corpora are checked against the written form, not the
 // original schema tree.
 func TestRoundTrip(t *testing.T) {
-	for _, src := range []string{seqSrc, refSrc, extSrc, dsSrc} {
+	for _, src := range []string{seqSrc, refSrc, extSrc, dsSrc, anySrc} {
 		m := model(t, src)
 		var sb strings.Builder
 		if err := m.Write(&sb); err != nil {
@@ -207,6 +207,7 @@ func TestRoundTrip(t *testing.T) {
 			refSrc: `<root xmlns="urn:t"><d2/><d1/><d1/></root>`,
 			extSrc: `<root xmlns="urn:t"><q/><p/></root>`,
 			dsSrc:  `<root xmlns="http://example.com/ds"><other/></root>`,
+			anySrc: `<root xmlns="urn:t"><a/></root>`,
 		}
 		body := docs[src]
 		a, b := check(t, m, body), check(t, m2, body)

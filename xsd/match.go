@@ -293,6 +293,12 @@ func (m *Model) check(el *xp.Node, ct *Type, path string, out *[]Finding) {
 			continue
 		}
 		cur = closure(raw)
+		if matched.Kind == Any {
+			// A wildcard stands for content the schema does not describe,
+			// so its subtree is nobody's business here: descending into
+			// it would report a foreign element's own children as defects.
+			continue
+		}
 		m.check(ch, matched.content(), path+"/"+ch.Name, out)
 	}
 	if !contains(cur, f.end) {

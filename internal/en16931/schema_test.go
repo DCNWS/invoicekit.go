@@ -357,3 +357,53 @@ func TestSchemaCardinalityFollowsTheSchema(t *testing.T) {
 		t.Errorf("the schema allows a repeated LineTotalAmount, but we reported %v", rep.Schema)
 	}
 }
+
+// TestSchemaExtensionContent checks the one place in the UBL schemas where a
+// document may carry elements the schema cannot name: cac:ExtensionContent is
+// an xs:any wildcard, and most national and community profiles put their own
+// business content there. A checker that rejects it rejects valid invoices, so
+// this case belongs with the corpora even though no official instance uses it.
+func TestSchemaExtensionContent(t *testing.T) {
+	const (
+		file  = "test/testfiles/Invoice-Max_content.xml"
+		mark  = "<cbc:UBLVersionID"
+		block = `<ext:UBLExtensions xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2` +
+			`" xmlns:eext="urn:example:ext">` +
+			`<ext:UBLExtension><ext:ExtensionContent>` +
+			`<eext:Pay><eext:Amount>1.00</eext:Amount><eext:Ref>x</eext:Ref></eext:Pay>` +
+			`</ext:ExtensionContent></ext:UBLExtension>` +
+			`</ext:UBLExtensions>`
+	)
+	src := string(read(t, filepath.Join(refDir(t), file)))
+	doc := strings.Replace(src, mark, block+mark, 1)
+	if doc == src {
+		t.Fatalf("%s does not contain %s", file, mark)
+	}
+	xd, err := xp.ParseXML(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fs, err := SchemaFindings(SyntaxUBL, xd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fs) > 0 {
+		t.Fatalf("extension content produced %d schema findings: %v", len(fs), fs)
+	}
+	// An empty extension holds no content element, which the wildcard
+	// requires, so it is still a defect worth reporting.
+	empty := strings.Replace(src, mark,
+		`<ext:UBLExtensions xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">`+
+			`<ext:UBLExtension><ext:ExtensionContent/></ext:UBLExtension></ext:UBLExtensions>`+mark, 1)
+	ed, err := xp.ParseXML(empty)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fs, err = SchemaFindings(SyntaxUBL, ed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fs) != 1 || !strings.Contains(fs[0].Message, "missing required content") {
+		t.Errorf("empty ExtensionContent: want one finding about missing content, got %v", fs)
+	}
+}

@@ -291,7 +291,7 @@ func (r *reader) container(n *xnode, kind Kind, tns, efd string, scope map[strin
 		case xs("choice"):
 			p, perr = r.container(k, Choice, tns, efd, scope)
 		case xs("any"):
-			p = &Term{Kind: Any, AnyNS: k.attrs["namespace"]}
+			p, perr = r.anyTerm(k)
 		case xs("all"):
 			return nil, fmt.Errorf("xs:all is not supported")
 		case xs("group"):
@@ -307,6 +307,18 @@ func (r *reader) container(n *xnode, kind Kind, tns, efd string, scope map[strin
 		}
 	}
 	return t, nil
+}
+
+// anyTerm reads an xs:any wildcard. Its occurrence attributes are its own, so
+// a bare xs:any accepts exactly one element of any name: that is what UBL's
+// ExtensionContentType declares, and reading the counts as zero would make the
+// position reject every extension content element.
+func (r *reader) anyTerm(n *xnode) (*Term, error) {
+	min, max, err := occ(n)
+	if err != nil {
+		return nil, err
+	}
+	return &Term{Kind: Any, Min: min, Max: max, AnyNS: n.attrs["namespace"]}, nil
 }
 
 func (r *reader) element(n *xnode, tns, efd string, scope map[string]string) (*Term, error) {
