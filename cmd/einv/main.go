@@ -18,6 +18,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -37,52 +38,80 @@ import (
 // prints always name the same artefacts.
 const version = einvoice.Version
 
-func main() {
-	if len(os.Args) < 2 {
+// stdout and exit are seams so the run* command functions can be exercised
+// from tests; only main() touches the process stream and status directly.
+var (
+	stdout io.Writer = os.Stdout
+	exit             = os.Exit
+)
+
+// errUsage marks a command line the shell got wrong. It travels with the
+// usage text that was already printed, so main knows not to repeat itself.
+var errUsage = errors.New("usage")
+
+// commands maps every name a user can type, aliases included, to the function
+// that runs it. A table beats a switch: one place to read, one line per command.
+var commands = map[string]func([]string) error{
+	"validate":  runValidate,
+	"v":         runValidate,
+	"gen":       runGen,
+	"g":         runGen,
+	"parse":     runParse,
+	"read":      runParse,
+	"detect":    runDetect,
+	"d":         runDetect,
+	"phases":    runPhases,
+	"p":         runPhases,
+	"rules":     runRules,
+	"list":      runRules,
+	"artefacts": runArtefacts,
+	"artefact":  runArtefacts,
+	"cius":      runCius,
+	"profile":   runProfile,
+	"embed":     runEmbed,
+	"e":         runEmbed,
+	"extract":   runExtract,
+	"x":         runExtract,
+	"check":     runCheck,
+	"c":         runCheck,
+}
+
+// run is main with the process's own input and output left out: it takes the
+// command line os.Args style and returns the error main reports. A command that
+// settles the exit status for a verdict of its own calls exit, which tests
+// record instead of obeying.
+func run(argv []string) error {
+	if len(argv) < 2 {
 		usage()
-		os.Exit(2)
+		return errUsage
 	}
-	var err error
-	switch os.Args[1] {
-	case "validate", "v":
-		err = runValidate(os.Args[2:])
-	case "gen", "g":
-		err = runGen(os.Args[2:])
-	case "parse", "read":
-		err = runParse(os.Args[2:])
-	case "detect", "d":
-		err = runDetect(os.Args[2:])
-	case "phases", "p":
-		err = runPhases(os.Args[2:])
-	case "rules", "list":
-		err = runRules(os.Args[2:])
-	case "artefacts", "artefact":
-		err = runArtefacts(os.Args[2:])
-	case "cius":
-		err = runCius(os.Args[2:])
-	case "profile":
-		err = runProfile(os.Args[2:])
-	case "embed", "e":
-		err = runEmbed(os.Args[2:])
-	case "extract", "x":
-		err = runExtract(os.Args[2:])
-	case "check", "c":
-		err = runCheck(os.Args[2:])
+	name, args := argv[1], argv[2:]
+	switch name {
 	case "-h", "--help", "help":
 		usage()
-		return
+		return nil
 	case "-V", "--version":
-		fmt.Println("einv " + version)
-		return
-	default:
-		fmt.Fprintf(os.Stderr, "einv: unknown command %q\n", os.Args[1])
+		fmt.Fprintln(stdout, "einv "+version)
+		return nil
+	}
+	cmd, ok := commands[name]
+	if !ok {
+		fmt.Fprintf(os.Stderr, "einv: unknown command %q\n", name)
 		usage()
-		os.Exit(2)
+		return errUsage
 	}
-	if err != nil {
+	return cmd(args)
+}
+
+func main() {
+	err := run(os.Args)
+	if err == nil {
+		return
+	}
+	if !errors.Is(err, errUsage) {
 		fmt.Fprintln(os.Stderr, "einv:", err)
-		os.Exit(2)
 	}
+	os.Exit(2)
 }
 
 func usage() {
@@ -229,14 +258,14 @@ func runValidate(args []string) error {
 		reportVerdicts(all)
 	}
 	if code := exitCodeFor(all); code != 0 {
-		os.Exit(code)
+		exit(code)
 	}
 	return nil
 }
 
 // reportVerdictsJSON writes the machine-readable form, an array of verdicts.
 func reportVerdictsJSON(all []verdict) error {
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(stdout)
 	enc.SetIndent("", "  ")
 	return enc.Encode(all)
 }
@@ -252,28 +281,28 @@ func reportVerdicts(all []verdict) {
 // findings and the rule breaches that explain it.
 func reportVerdict(v verdict) {
 	if v.Error != "" {
-		fmt.Printf("%s: ERROR: %s\n", v.Name, v.Error)
+		fmt.Fprintf(stdout, "%s: ERROR: %s\n", v.Name, v.Error)
 		return
 	}
 	label := ruleSetLabel(v)
 	if v.Valid {
-		fmt.Printf("%s: valid %s%s document\n", v.Name, v.Syntax, label)
+		fmt.Fprintf(stdout, "%s: valid %s%s document\n", v.Name, v.Syntax, label)
 		return
 	}
-	fmt.Printf("%s: INVALID %s%s invoice (%d fatal, %d warning, %d structural)\n",
+	fmt.Fprintf(stdout, "%s: INVALID %s%s invoice (%d fatal, %d warning, %d structural)\n",
 		v.Name, v.Syntax, label, v.Fatal, v.Warn, len(v.Schema))
 	for _, f := range v.Schema {
-		fmt.Printf("  %-12s %s at %s\n", "SCHEMA", f.Message, f.Location)
+		fmt.Fprintf(stdout, "  %-12s %s at %s\n", "SCHEMA", f.Message, f.Location)
 	}
 	for _, f := range v.Findings {
 		loc := ""
 		if f.Context != "" {
 			loc = " at " + f.Context
 		}
-		fmt.Printf("  %-12s %s%s\n", f.ID, f.Message, loc)
+		fmt.Fprintf(stdout, "  %-12s %s%s\n", f.ID, f.Message, loc)
 	}
 	if v.Truncated > 0 {
-		fmt.Printf("  ... and %d more (use -max -1 to list all)\n", v.Truncated)
+		fmt.Fprintf(stdout, "  ... and %d more (use -max -1 to list all)\n", v.Truncated)
 	}
 }
 
@@ -353,7 +382,7 @@ func runGen(args []string) error {
 		return err
 	}
 	if *out == "" || *out == "-" {
-		if _, err := os.Stdout.Write(doc); err != nil {
+		if _, err := stdout.Write(doc); err != nil {
 			return err
 		}
 	} else if err := os.WriteFile(*out, doc, 0o644); err != nil {
@@ -381,7 +410,7 @@ func runGen(args []string) error {
 				fmt.Fprintf(os.Stderr, "  %-12s %s at %s\n", f.ID, f.Message, f.Context)
 			}
 		}
-		os.Exit(1)
+		exit(1)
 	}
 	fmt.Fprintf(os.Stderr, "einv: %s: %s document, %d advisory\n", name, sx, res.Warn)
 	return nil
@@ -424,7 +453,7 @@ func runParse(args []string) error {
 	doc = append(doc, '\n')
 	switch *out {
 	case "", "-":
-		if _, err := os.Stdout.Write(doc); err != nil {
+		if _, err := stdout.Write(doc); err != nil {
 			return err
 		}
 	default:
@@ -459,7 +488,7 @@ func runDetect(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s: %s\n", filepath.Base(args[0]), sx)
+	fmt.Fprintf(stdout, "%s: %s\n", filepath.Base(args[0]), sx)
 	return nil
 }
 
@@ -475,9 +504,9 @@ func runPhases(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(sx)
+	fmt.Fprintln(stdout, sx)
 	for _, id := range ids {
-		fmt.Println(" ", id)
+		fmt.Fprintln(stdout, " ", id)
 	}
 	return nil
 }
@@ -506,7 +535,7 @@ func runArtefacts(args []string) error {
 	if err := einvoice.CheckRuleSets(opt); err != nil {
 		return err
 	}
-	return writeArtefacts(os.Stdout, *asJSON, opt)
+	return writeArtefacts(stdout, *asJSON, opt)
 }
 
 // writeArtefacts renders the same report in either form. The text lines are
@@ -616,12 +645,12 @@ func runRules(args []string) error {
 		}
 	}
 	if *asJSON {
-		enc := json.NewEncoder(os.Stdout)
+		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
 		return enc.Encode(list)
 	}
 	for _, r := range list {
-		fmt.Println(ruleLine(r))
+		fmt.Fprintln(stdout, ruleLine(r))
 	}
 	return nil
 }
@@ -664,7 +693,7 @@ type ruleSet struct {
 func listRuleSet(rs ruleSet, args []string) error {
 	if len(args) == 0 {
 		for _, n := range rs.names() {
-			fmt.Printf("%s\t%s\n", n, rs.version(n))
+			fmt.Fprintf(stdout, "%s\t%s\n", n, rs.version(n))
 		}
 		return nil
 	}
@@ -673,15 +702,15 @@ func listRuleSet(rs ruleSet, args []string) error {
 	if v == "" {
 		return fmt.Errorf("unknown %s %q (available: %s)", rs.noun, name, strings.Join(rs.names(), ", "))
 	}
-	fmt.Printf("%s (%s)\n", name, v)
+	fmt.Fprintf(stdout, "%s (%s)\n", name, v)
 	for _, sx := range []einvoice.Syntax{einvoice.SyntaxCII, einvoice.SyntaxUBL} {
 		ids, err := rs.phases(name, sx)
 		if err != nil {
 			return err
 		}
-		fmt.Printf(" %s\n", sx)
+		fmt.Fprintf(stdout, " %s\n", sx)
 		for _, id := range ids {
-			fmt.Println("   ", id)
+			fmt.Fprintln(stdout, "   ", id)
 		}
 	}
 	return nil
@@ -789,7 +818,7 @@ func runEmbed(args []string) error {
 	name := *out
 	if name == "" || name == "-" {
 		name = "stdout"
-		if _, err := os.Stdout.Write(wrapped); err != nil {
+		if _, err := stdout.Write(wrapped); err != nil {
 			return err
 		}
 	} else if err := os.WriteFile(name, wrapped, 0o644); err != nil {
@@ -809,7 +838,7 @@ func runEmbed(args []string) error {
 	}
 	fmt.Fprintf(os.Stderr, "einv: %s: written, but a validator will reject it:\n%s", name, rep)
 	if !*force {
-		os.Exit(1)
+		exit(1)
 	}
 	return nil
 }
@@ -850,7 +879,7 @@ func runExtract(args []string) error {
 		}
 	}
 	if *out == "" || *out == "-" {
-		_, err := os.Stdout.Write(doc.XML)
+		_, err := stdout.Write(doc.XML)
 		return err
 	}
 	return os.WriteFile(*out, doc.XML, 0o644)
@@ -913,7 +942,7 @@ func runCheck(args []string) error {
 	}
 
 	if *asJSON {
-		enc := json.NewEncoder(os.Stdout)
+		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(all); err != nil {
 			return err
@@ -921,29 +950,29 @@ func runCheck(args []string) error {
 	} else {
 		for _, e := range all {
 			if e.Error != "" {
-				fmt.Printf("%s: ERROR: %s\n", e.Name, e.Error)
+				fmt.Fprintf(stdout, "%s: ERROR: %s\n", e.Name, e.Error)
 				continue
 			}
 			if e.Envelope == "" || e.Payload == "" {
-				fmt.Printf("%s: no invoice envelope, %d page(s)\n", e.Name, e.Pages)
+				fmt.Fprintf(stdout, "%s: no invoice envelope, %d page(s)\n", e.Name, e.Pages)
 			} else {
-				fmt.Printf("%s: %s envelope, payload %s (XML says %s), %d page(s)\n",
+				fmt.Fprintf(stdout, "%s: %s envelope, payload %s (XML says %s), %d page(s)\n",
 					e.Name, e.Envelope, e.Payload, e.Declared, e.Pages)
 			}
 			if len(e.Findings) == 0 {
-				fmt.Println("  no findings")
+				fmt.Fprintln(stdout, "  no findings")
 			}
 			for _, f := range e.Findings {
-				fmt.Printf("  %-7s %-22s %s\n", f.Severity, f.Rule, f.Message)
+				fmt.Fprintf(stdout, "  %-7s %-22s %s\n", f.Severity, f.Rule, f.Message)
 			}
 			printRules(e.Rules, *max)
 		}
 	}
 	switch {
 	case anyBad:
-		os.Exit(1)
+		exit(1)
 	case anyErr:
-		os.Exit(2)
+		exit(2)
 	}
 	return nil
 }
@@ -978,27 +1007,27 @@ func printRules(res *einvoice.Result, max int) {
 		layers += " + " + string(res.CIUS)
 	}
 	if res.Valid {
-		fmt.Printf("  invoice inside: valid %s document\n", layers)
+		fmt.Fprintf(stdout, "  invoice inside: valid %s document\n", layers)
 		return
 	}
-	fmt.Printf("  invoice inside: INVALID %s invoice (%d fatal, %d warning, %d structural)\n",
+	fmt.Fprintf(stdout, "  invoice inside: INVALID %s invoice (%d fatal, %d warning, %d structural)\n",
 		layers, res.Fatal, res.Warn, len(res.Schema))
 	shown := res.Findings
 	if max >= 0 && len(shown) > max {
 		shown = shown[:max]
 	}
 	for _, f := range res.Schema {
-		fmt.Printf("    %-12s %s at %s\n", "SCHEMA", f.Message, f.Location)
+		fmt.Fprintf(stdout, "    %-12s %s at %s\n", "SCHEMA", f.Message, f.Location)
 	}
 	for _, f := range shown {
 		loc := ""
 		if f.Context != "" {
 			loc = " at " + f.Context
 		}
-		fmt.Printf("    %-12s %s%s\n", f.ID, f.Message, loc)
+		fmt.Fprintf(stdout, "    %-12s %s%s\n", f.ID, f.Message, loc)
 	}
 	if extra := len(res.Findings) - len(shown); extra > 0 {
-		fmt.Printf("    ... and %d more (use -max -1 to list all)\n", extra)
+		fmt.Fprintf(stdout, "    ... and %d more (use -max -1 to list all)\n", extra)
 	}
 }
 
