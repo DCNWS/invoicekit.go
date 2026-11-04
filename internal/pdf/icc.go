@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"math"
+	"slices"
 )
 
 // sRGBProfile returns a self-generated ICC profile for the sRGB colour space
@@ -18,6 +19,11 @@ import (
 // transform. The tone reproduction curves are exact lookup tables of the
 // sRGB companding function, which is more accurate than the parametric
 // approximations and universally supported.
+// iccVersion is the format version recorded in the header: ICC.1:2022, that is
+// 4.3.0. PDF/A-2 and later require a v4 profile, and the desc tag written below
+// uses the 4.3 structure with its empty Script code name.
+const iccVersion = 0x04300000
+
 func sRGBProfile() []byte {
 	const (
 		// IEC 61966-2-1 chromaticity coordinates.
@@ -48,11 +54,11 @@ func sRGBProfile() []byte {
 	}
 	wd65 := [3]float64{wx / wy, 1, (1 - wx - wy) / wy}
 	wd50 := [3]float64{0.9642, 1.0000, 0.8249} // D50 PCS illuminant
-	a := adapt(bradford, wd65, wd50)
+	adaptation := adapt(bradford, wd65, wd50)
 	var adapted [3][3]float64
 	for c := range 3 {
 		for r := range 3 {
-			adapted[c][r] = a[r][0]*cols[c][0] + a[r][1]*cols[c][1] + a[r][2]*cols[c][2]
+			adapted[c][r] = adaptation[r][0]*cols[c][0] + adaptation[r][1]*cols[c][1] + adaptation[r][2]*cols[c][2]
 		}
 	}
 
@@ -77,12 +83,19 @@ func sRGBProfile() []byte {
 		{"bXYZ", xyzTag(adapted[2])},
 		{"bkpt", xyzTag([3]float64{0, 0, 0})},
 		{"bTRC", trc},
+		{"chad", s15Tag(adaptation)},
 		{"cprt", cprt},
 		{"desc", desc},
+		{"gTRC", trc},
 		{"gXYZ", xyzTag(adapted[1])},
 		{"wtpt", xyzTag(wd50)},
 		{"rXYZ", xyzTag(adapted[0])},
 		{"rTRC", trc},
+	}
+	// Every tag's data has to start on a 4-byte boundary, and the length
+	// recorded in the table includes that padding.
+	for i := range tags {
+		tags[i].data = pad4(tags[i].data)
 	}
 	// ICC requires the tag table to be sorted by signature.
 	sortTags(tags)
@@ -98,21 +111,20 @@ func sRGBProfile() []byte {
 	place := make(map[string]int)
 	placed := make(map[int][]byte) // offset -> data, to share identical blocks
 	for _, t := range tags {
-		off := size
-		if prev, ok := findPlaced(placed, t.data); ok {
+		data := t.data
+		if prev, ok := findPlaced(placed, data); ok {
 			place[t.sig] = prev
-			size += 0
 			continue
 		}
-		place[t.sig] = off
-		placed[off] = t.data
-		size += len(t.data)
+		place[t.sig] = size
+		placed[size] = data
+		size += len(data)
 	}
 
 	p := make([]byte, size)
 	binary.BigEndian.PutUint32(p[0:], uint32(size))
 	copy(p[4:], "\x00\x00\x00\x00") // preferred CMM: none
-	binary.BigEndian.PutUint32(p[8:], 0x04000000)
+	binary.BigEndian.PutUint32(p[8:], iccVersion)
 	copy(p[12:], "mntr")
 	copy(p[16:], "RGB ")
 	copy(p[20:], "XYZ ")
@@ -121,9 +133,14 @@ func sRGBProfile() []byte {
 	p[28], p[29], p[30] = 0x00, 0x00, 0x00
 	copy(p[36:], "acsp")
 	binary.BigEndian.PutUint32(p[64:], 0) // rendering intent: perceptual
-	binary.BigEndian.PutUint32(p[68:], 0x04000000)
-	copy(p[72:], "Kit ")
-	// Profile ID and flags left zero, as permitted by the specification.
+	// PCS illuminant: the D50 connection space in s15Fixed16. The header
+	// states which illuminant the XYZ tags are referred to, so it has to agree
+	// with wtpt and with the adaptation matrix below.
+	for i, f := range wd50 {
+		binary.BigEndian.PutUint32(p[68+4*i:], uint32(int64(math.Round(f*65536))))
+	}
+	copy(p[80:], "Kit ") // creator
+	// Profile ID left zero, as permitted by the specification.
 
 	binary.BigEndian.PutUint32(p[128:], uint32(len(tags)))
 	off := 132
@@ -137,6 +154,15 @@ func sRGBProfile() []byte {
 		copy(p[offset:], data)
 	}
 	return p
+}
+
+// pad4 appends the NUL padding that lets ICC tag data start on a 4-byte
+// boundary; the tag's recorded length includes the padding.
+func pad4(data []byte) []byte {
+	if pad := len(data) % 4; pad != 0 {
+		return append(slices.Clip(data), make([]byte, 4-pad)...)
+	}
+	return data
 }
 
 func findPlaced(placed map[int][]byte, data []byte) (int, bool) {
@@ -177,27 +203,42 @@ func xyzTag(v [3]float64) []byte {
 	return b
 }
 
-// descriptionTag builds a descType structure holding one ASCII string.
-func descriptionTag(s string) []byte {
-	b := make([]byte, 12+len(s)+1)
-	copy(b, "desc")
-	off := 8
-	b[off] = 1 // one record
-	// ASCII record: language code, country code, then null-terminated text.
-	b[off+1], b[off+2], b[off+3] = 0, 0, 0 // reserved
-	b[off+4], b[off+5] = 'e', 'n'
-	b[off+6], b[off+7] = 'U', 'S'
-	binary.BigEndian.PutUint32(b[off+8:], uint32(len(s)+1))
-	copy(b[off+12:], s)
+// s15Tag builds an sf32Type structure holding a 3x3 matrix in s15Fixed16,
+// the form ICC uses for the chad (chromatic adaptation) tag.
+func s15Tag(m [3][3]float64) []byte {
+	b := make([]byte, 8+9*4)
+	copy(b, "sf32")
+	i := 0
+	for r := range 3 {
+		for c := range 3 {
+			binary.BigEndian.PutUint32(b[8+4*i:], uint32(int64(math.Round(m[r][c]*65536))))
+			i++
+		}
+	}
 	return b
 }
 
-// textTag builds a textType structure holding one ASCII string.
+// descriptionTag builds a "desc" tag as specified by ICC.1:2022 clause 8.4.2:
+// an ASCII count, a reserved field, a Unicode count, two more reserved fields,
+// the NUL-terminated ASCII text and a Script code name. The Unicode text and
+// the Script code name are both empty, which the specification allows.
+func descriptionTag(text string) []byte {
+	// sig(4) + ASCII count(4) + reserved(4) + Unicode count(4) +
+	// reserved(4) + reserved(4) + ASCII text and NUL + script code(6)
+	buf := make([]byte, 24+len(text)+1+6)
+	copy(buf, "desc")
+	binary.BigEndian.PutUint32(buf[4:], uint32(len(text)+1)) // includes the NUL
+	copy(buf[24:], text)
+	buf[24+len(text)] = 0
+	return buf
+}
+
+// textTag builds a textType structure: a signature, a reserved field and a
+// NUL-terminated ASCII string. The string is not length-prefixed.
 func textTag(s string) []byte {
-	b := make([]byte, 12+len(s)+1)
+	b := make([]byte, 8+len(s)+1)
 	copy(b, "text")
-	binary.BigEndian.PutUint32(b[8:], uint32(len(s)+1))
-	copy(b[12:], s)
+	copy(b[8:], s)
 	return b
 }
 
@@ -241,7 +282,10 @@ func pivotRow(a [3][4]float64, col int) int {
 	return piv
 }
 
-// adapt returns the diagonal-scaled Bradford matrix adapting white from to.
+// adapt returns the chromatic adaptation matrix that takes white from to in
+// the given cone domain. The scaling happens between the transform into the
+// cone domain and the transform back, so the order is b⁻¹ · diag · b and not
+// the other way round: scaling XYZ directly is a different, wrong matrix.
 func adapt(b [3][3]float64, from, to [3]float64) [3][3]float64 {
 	f := matMulVec(b, from)
 	t := matMulVec(b, to)
@@ -250,8 +294,7 @@ func adapt(b [3][3]float64, from, to [3]float64) [3][3]float64 {
 		{0, t[1] / f[1], 0},
 		{0, 0, t[2] / f[2]},
 	}
-	m := matMul(d, b)
-	return matMul(m, matInv(b))
+	return matMul(matInv(b), matMul(d, b))
 }
 
 func matMul(a, b2 [3][3]float64) [3][3]float64 {
