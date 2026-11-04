@@ -16,11 +16,14 @@ func LoadMulti(dir string, files []string) (*Model, error) {
 	}
 	l := FileLoader(dir)
 	for _, f := range files {
-		src, err := os.ReadFile(f)
+		p, src, err := readSchema(dir, f)
 		if err != nil {
-			return nil, fmt.Errorf("read %s: %w", f, err)
+			return nil, err
 		}
-		if err := r.file(f, src, l, nil); err != nil {
+		// The path that was actually read becomes the base for that
+		// document's own imports, so relative schemaLocation hrefs resolve
+		// against the directory the set lives in rather than the caller's.
+		if err := r.file(p, src, l, nil); err != nil {
 			return nil, err
 		}
 	}
@@ -33,3 +36,21 @@ func LoadMulti(dir string, files []string) (*Model, error) {
 
 // Dir returns the directory of a path, for provenance strings.
 func Dir(p string) string { return path.Dir(p) }
+
+// readSchema reads one top-level schema document. A relative name that does
+// not exist where the command stands is looked for under dir, which is what
+// makes "-dir DIR -schema NAME.xsd" work: the flag says where the set lives,
+// and a caller should not have to cd into it as well.
+func readSchema(dir, f string) (string, []byte, error) {
+	if src, err := os.ReadFile(f); err == nil {
+		return f, src, nil
+	} else if dir == "" || dir == "." || path.IsAbs(f) {
+		return "", nil, fmt.Errorf("read %s: %w", f, err)
+	}
+	alt := path.Join(dir, filepathClean(f))
+	src, err := os.ReadFile(alt)
+	if err != nil {
+		return "", nil, err
+	}
+	return alt, src, nil
+}

@@ -204,6 +204,44 @@ func TestLoadMulti(t *testing.T) {
 	}
 }
 
+// TestLoadMultiResolvesNamesAgainstDir is how the generator gets invoked: -dir
+// says where a schema set lives, so a bare file name has to be enough, and that
+// document's own imports resolve under the same directory instead of wherever
+// the command happens to be standing.
+func TestLoadMultiResolvesNamesAgainstDir(t *testing.T) {
+	root := t.TempDir()
+	main := filepath.Join(root, "maindoc")
+	writeSchema(t, filepath.Join(root, "common"), "b.xsd", `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:u" xmlns:u="urn:u" elementFormDefault="qualified">
+  <xs:element name="rb" type="u:Tu"/>
+  <xs:complexType name="Tu"><xs:sequence><xs:element name="y" type="xs:string"/></xs:sequence></xs:complexType>
+</xs:schema>`)
+	writeSchema(t, main, "a.xsd", `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:t" xmlns:t="urn:t" xmlns:u="urn:u" elementFormDefault="qualified">
+  <xs:import namespace="urn:u" schemaLocation="../common/b.xsd"/>
+  <xs:element name="ra" type="t:Ta"/>
+  <xs:complexType name="Ta"><xs:sequence><xs:element ref="u:rb"/></xs:sequence></xs:complexType>
+</xs:schema>`)
+
+	m, err := LoadMulti(main, []string{"a.xsd"})
+	if err != nil {
+		t.Fatalf("by bare name under -dir: %v", err)
+	}
+	for _, id := range []string{"{urn:t}ra", "{urn:u}rb"} {
+		if _, ok := m.Decls[id]; !ok {
+			t.Errorf("%s missing from a name-resolved load", id)
+		}
+	}
+	// A path that resolves where the caller stands still wins over -dir.
+	if _, err := LoadMulti(".", []string{filepath.Join(main, "a.xsd")}); err != nil {
+		t.Errorf("explicit path: %v", err)
+	}
+	// A name in neither place is the caller's mistake, and says so.
+	if _, err := LoadMulti(main, []string{"nope.xsd"}); err == nil {
+		t.Error("a name that exists nowhere loaded without an error")
+	}
+}
+
 func TestDir(t *testing.T) {
 	for _, tc := range []struct{ in, want string }{
 		{"schemas-src/ubl/maindoc/x.xsd", "schemas-src/ubl/maindoc"},
