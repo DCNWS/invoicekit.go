@@ -789,7 +789,11 @@ func (p *parser) parseKindTest(kind string) (*nodeTest, error) {
 			if err != nil {
 				return nil, err
 			}
-			nt.name, nt.ns = nested.name, nested.ns
+			// The name inside the kind test constrains the match just as it
+			// does in a bare name test: "element(ram:A)" is one element, not
+			// every element in the ram namespace. Only a starred argument stays
+			// a wildcard.
+			nt.name, nt.ns, nt.wild = nested.name, nested.ns, nested.wild
 		}
 	}
 	for depth := 1; depth > 0; {

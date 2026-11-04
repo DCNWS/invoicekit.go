@@ -1220,13 +1220,13 @@ func stepSelf(nt *nodeTest, n any, out []any) []any {
 }
 
 func stepParent(nt *nodeTest, n any, out []any) []any {
-	el := elementOf(n)
-	if el == nil || el.Parent == nil || el.Parent.IsDoc {
+	p := parentOf(n)
+	if p == nil || p.IsDoc {
 		return out
 	}
 	// A bare ".." carries no test at all; anything else has to match.
-	if (nt.kind == "" && nt.name == "") || matchTest(nt, el.Parent) {
-		out = append(out, el.Parent)
+	if (nt.kind == "" && nt.name == "") || matchTest(nt, p) {
+		out = append(out, p)
 	}
 	return out
 }
@@ -1257,14 +1257,13 @@ func stepDescendant(nt *nodeTest, n any, out []any) []any {
 }
 
 func stepAncestor(nt *nodeTest, n any, out []any) []any {
-	el := elementOf(n)
-	if el == nil {
+	if elementOf(n) == nil {
 		return out
 	}
 	if nt.axis == "ancestor-or-self" && matchAny(nt, n) {
 		out = append(out, n)
 	}
-	for p := el.Parent; p != nil && !p.IsDoc; p = p.Parent {
+	for p := parentOf(n); p != nil && !p.IsDoc; p = p.Parent {
 		if matchTest(nt, p) {
 			out = append(out, p)
 		}
@@ -1342,6 +1341,23 @@ func elementOf(v any) *Node {
 			return nil
 		}
 		return n
+	case *attrNode:
+		return n.parent
+	case *textNode:
+		return n.parent
+	}
+	return nil
+}
+
+// parentOf returns the element a node is inside: the parent element for an
+// element, and the owning element for a virtual attribute or text node. A
+// virtual node hangs off its element, not off the element's parent, so
+// "@id/.." is the element carrying the attribute, which is what a rule such as
+// "@currencyID/parent::*" needs.
+func parentOf(v any) *Node {
+	switch n := v.(type) {
+	case *Node:
+		return n.Parent
 	case *attrNode:
 		return n.parent
 	case *textNode:
