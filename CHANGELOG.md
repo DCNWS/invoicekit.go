@@ -11,7 +11,10 @@ XRechnung CIUS 2.6.0 (XRechnung 3.0.2) and Peppol BIS Billing 3.0 release
 3.0.21. No release so far has moved a rule set, so no release so far has
 changed what is valid. `einvoice.Artefacts()` reports these at runtime.
 
-## v0.2.12 — 2026-11-10
+## v0.2.13 — 2026-11-10
+
+(v0.2.12 was cut and retired before its binaries went out: a release tag
+that has been published once cannot be reused here, so the number skipped.)
 
 Rule sets unchanged: EN 16931 Schematron v1.3.17, XRechnung CIUS 2.6.0
 (XRechnung 3.0.2) and Peppol BIS Billing 3.0 release 3.0.21. Nothing in this

@@ -72,7 +72,7 @@ finding into an annotation titled with the rule id.
 Rule sets: EN 16931 v1.3.17, XRechnung CIUS 2.6.0 (XRechnung 3.0.2), Peppol BIS\nBilling 3.0 release 3.0.21, all embedded at build time. The library itself is\n\`go get github.com/dcnws/invoicekit.go\`; these binaries are the same module\nbuilt with \`CGO_ENABLED=0\` and verified on the CEF conformance documents.
 
 Checksums: \`sha256sum -c SHA256SUMS.txt\`.`;
-process.stdout.write(JSON.stringify({ tag_name: tag, name: `einv ${version}`, body, draft: false, prerelease: false }));
+process.stdout.write(JSON.stringify({ tag_name: tag, name: `einv ${version}`, body, draft: true, prerelease: false }));
 ')
     release=$(curl -s -X POST -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
       -d "$body" "$api/releases")
@@ -94,9 +94,19 @@ for f in "$dist"/*.tar.gz "$dist"/SHA256SUMS.txt; do
   code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
     -H "Authorization: Bearer $token" -H 'Content-Type: application/octet-stream' \
     --data-binary "@$f" "https://uploads.github.com/repos/$slug/releases/$id/assets?name=$name")
-  [ "$code" = 201 ] || { echo "uploading $name failed: HTTP $code" >&2; exit 1; }
+  [ "$code" = 201 ] || { echo "uploading $name failed: HTTP $code" >&2; echo "a published release is immutable: assets can only be attached while it is a draft" >&2; exit 1; }
   echo "uploaded $name"
 done
+# GitHub makes a release immutable the moment it leaves the draft, so the publish
+# step comes after the uploads, not before: attach everything, then release.
+is_draft=$(curl -s -H "Authorization: Bearer $token" "$api/releases/$id" \
+  | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>console.log(JSON.parse(d).draft))')
+if [ "$is_draft" = true ]; then
+  code=$(curl -s -o /dev/null -w '%{http_code}' -X PATCH -H "Authorization: Bearer $token" \
+    -H 'Content-Type: application/json' -d '{"draft": false}' "$api/releases/$id")
+  [ "$code" = 200 ] || { echo "could not publish the release: HTTP $code" >&2; exit 1; }
+  echo "published $tag"
+fi
 
 # Prove the point of the whole exercise: someone with no GitHub account can see
 # the release and count what it has been asked for.
