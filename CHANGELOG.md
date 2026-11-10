@@ -11,6 +11,67 @@ XRechnung CIUS 2.6.0 (XRechnung 3.0.2) and Peppol BIS Billing 3.0 release
 3.0.21. No release so far has moved a rule set, so no release so far has
 changed what is valid. `einvoice.Artefacts()` reports these at runtime.
 
+## v0.2.12 — 2026-11-10
+
+Rule sets unchanged: EN 16931 Schematron v1.3.17, XRechnung CIUS 2.6.0
+(XRechnung 3.0.2) and Peppol BIS Billing 3.0 release 3.0.21. Nothing in this
+release changes what is valid; it changes what the checker wrongly complains
+about, and what a generated document is made of.
+
+- **Fixed:** `xs:any` was read with its occurrence counts left at zero, so a
+  UBL document's extension content was reported as "not allowed here".
+  `ExtensionContentType` is a sequence holding exactly one `xs:any`, and that
+  is where national and community profiles put their business-process
+  content — so invoices that every other validator accepted were rejected
+  outright. A wildcard now keeps its `minOccurs`/`maxOccurs`, and matching it
+  no longer descends into its subtree and complains about a schema the
+  document is not using. The embedded UBL model has been regenerated; the
+  only change in it is the wildcard gaining those counts.
+- **Fixed:** a Schematron that failed to compile reported its errors once and
+  then returned a clean verdict to anyone who called it twice. Compile keeps
+  reporting the collected errors and Validate refuses such a schema, so a
+  broken rule set can never produce a pass.
+- **Fixed:** XPath node tests. `text()`, `comment()` and
+  `processing-instruction()` were flagged as wild name tests because they do
+  not constrain a name, so they matched every element and attribute they were
+  tested against; `element(ram:A)` and `attribute(id)` carried the same flag,
+  so a named kind test matched the whole namespace. A child step `prefix:*`
+  resolved its prefix through a path that returned an empty namespace for an
+  undeclared prefix, which let a mistyped prefix match everything.
+- **Fixed:** node identity for attributes and element text. A step built a
+  fresh node each time it ran, so `@id | @id` counted the same attribute
+  twice and `a[1]/text() is a[1]/text()` was false; `parent::` from a virtual
+  node started one level too high, `name()` dropped the prefix,
+  `prefix-from-QName()` returned the local name, and `namespace-uri()` was not
+  a builtin at all. An empty document panicked on the root step rather than
+  having no root element.
+- **Fixed:** a missing operand — `1 +`, an empty predicate, an absent call
+  argument — compiled into an expression with a nil child. Every expression
+  now passes through one place that can tell "the operand is missing" from
+  "the operand has ended", and a bare `/` or `//`, which is legal XPath and
+  common in hand-written Schematron, selects the document node and its
+  descendants instead of failing to parse.
+- **Fixed:** the PDF filters. `RunLengthDecode` copied one byte too few for a
+  literal run and one too few for a repeat run, so a filtered stream came back
+  short by a byte per run. `ASCII85Decode` padded a group cut short by the
+  writer with zeros, which rounds the last recovered byte down; the unknown
+  digits are now the largest digit of the alphabet, with a 64-bit accumulator,
+  since a padded group can pass 2^32.
+- **Fixed:** the ICC profile generated for a hybrid PDF. Reading it back with a
+  colour engine found six defects: the chromatic adaptation multiplied the
+  inverse Bradford transform by the cone response of the source white instead
+  of the destination's, the header's PCS illuminant ran into the creator field,
+  a v4 output profile has to carry `chad` and there was none, `desc` wrote an
+  ASCII count over the reserved field and started its text four bytes early,
+  `cprt` gave a length prefix to a `textType`, which has none, and `gTRC` was
+  missing from the tag table while the tag data was not aligned to the
+  4-byte boundary ICC asks for. The primaries now match the published sRGB
+  D50 values, their columns sum to the profile's white point, and Ghostscript
+  renders a hybrid PDF carrying the profile without complaint.
+- **Added:** a coverage pass over the XPath engine, the XSD reader, the PDF
+  writer and filters, the hybrid auditor and the command functions, including
+  the error paths that only a malformed document can provoke.
+
 ## v0.2.11 — 2026-11-03
 
 - **Fixed:** a fiscal number is no longer written as a VAT number. UBL

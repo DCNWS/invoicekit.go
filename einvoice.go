@@ -41,7 +41,7 @@ import (
 // Version is the release of this library, reported by the command line, the
 // WebAssembly build and the HTTP service so that a verdict can always be traced
 // back to the artefacts that produced it.
-const Version = "0.2.11"
+const Version = "0.2.12"
 
 // Syntax identifies the concrete syntax of an invoice document.
 type Syntax string
