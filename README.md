@@ -204,7 +204,7 @@ This repository is itself a GitHub Action, so a pull request that changes an
 invoice can be checked without adding a toolchain, a container image or a JVM:
 
 ```yaml
-- uses: DCNWS/invoicekit.go@v0.2.9
+- uses: DCNWS/invoicekit.go@v0.2.13
   with:
     files: "invoices/*.xml"
     cius: xrechnung          # EN 16931 plus the German CIUS, optional
